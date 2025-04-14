@@ -1,6 +1,12 @@
 const express = require("express");
 const router = express.Router();
 
+// Проста регулярка для перевірки email
+function isValidEmail(email) {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return regex.test(email);
+}
+
 router.post("/", async (req, res) => {
   const { productId, email, quantity } = req.body;
 
@@ -8,10 +14,8 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ error: "Missing required fields." });
   }
 
-  // Перевірка чи є з'єднання з БД
-  if (!req.db) {
-    console.error("❌ Database connection not available");
-    return res.status(500).json({ error: "Database connection failed." });
+  if (!isValidEmail(email)) {
+    return res.status(400).json({ error: "Invalid email format." });
   }
 
   const order = {
@@ -21,14 +25,14 @@ router.post("/", async (req, res) => {
     createdAt: new Date()
   };
 
-  console.log("⏳ Inserting order to DB:", order);
-
   try {
     const result = await req.db.collection("orders").insertOne(order);
-    console.log("✅ Insert result:", result);
-    res.status(201).json({ message: "Order placed successfully!", orderId: result.insertedId });
+    res.status(201).json({
+      message: "Order placed successfully!",
+      orderId: result.insertedId
+    });
   } catch (err) {
-    console.error("❌ Order error:", err);
+    console.error("Order error:", err);
     res.status(500).json({ error: "Order processing failed." });
   }
 });
