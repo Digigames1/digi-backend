@@ -1,9 +1,12 @@
 const express = require("express");
 const { MongoClient } = require("mongodb");
+const morgan = require("morgan"); // 👈 додано morgan
 require("dotenv").config();
 
 const app = express();
+
 app.use(express.json());
+app.use(morgan("dev")); // 👈 логування HTTP-запитів
 
 const orderRouter = require("./routers/order");
 
@@ -13,7 +16,7 @@ let db;
 async function startServer() {
   try {
     await client.connect();
-    db = client.db("digi"); // Назва бази (можеш змінити, якщо хочеш)
+    db = client.db("Digi"); // 👈 назва бази (з великої, як у MongoDB)
     console.log("✅ Connected to MongoDB");
 
     // Передаємо db у роутер
