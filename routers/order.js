@@ -8,6 +8,12 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ error: "Missing required fields." });
   }
 
+  // Перевірка чи є з'єднання з БД
+  if (!req.db) {
+    console.error("❌ Database connection not available");
+    return res.status(500).json({ error: "Database connection failed." });
+  }
+
   const order = {
     productId,
     email,
@@ -15,11 +21,14 @@ router.post("/", async (req, res) => {
     createdAt: new Date()
   };
 
+  console.log("⏳ Inserting order to DB:", order);
+
   try {
     const result = await req.db.collection("orders").insertOne(order);
+    console.log("✅ Insert result:", result);
     res.status(201).json({ message: "Order placed successfully!", orderId: result.insertedId });
   } catch (err) {
-    console.error("Order error:", err);
+    console.error("❌ Order error:", err);
     res.status(500).json({ error: "Order processing failed." });
   }
 });
