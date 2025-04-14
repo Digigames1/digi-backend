@@ -1,10 +1,8 @@
 const express = require("express");
 const router = express.Router();
 
-// Проста регулярка для перевірки email
 function isValidEmail(email) {
-  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return regex.test(email);
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 router.post("/", async (req, res) => {
@@ -18,6 +16,14 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ error: "Invalid email format." });
   }
 
+  if (typeof productId !== "number" || productId <= 0) {
+    return res.status(400).json({ error: "Invalid productId. Must be a number > 0." });
+  }
+
+  if (!Number.isInteger(quantity) || quantity < 1) {
+    return res.status(400).json({ error: "Invalid quantity. Must be an integer ≥ 1." });
+  }
+
   const order = {
     productId,
     email,
@@ -27,10 +33,7 @@ router.post("/", async (req, res) => {
 
   try {
     const result = await req.db.collection("orders").insertOne(order);
-    res.status(201).json({
-      message: "Order placed successfully!",
-      orderId: result.insertedId
-    });
+    res.status(201).json({ message: "Order placed successfully!", orderId: result.insertedId });
   } catch (err) {
     console.error("Order error:", err);
     res.status(500).json({ error: "Order processing failed." });
