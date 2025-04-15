@@ -7,18 +7,15 @@ const GIFTERY_LOGIN = process.env.GIFTERY_LOGIN;
 const GIFTERY_PASSWORD = process.env.GIFTERY_PASSWORD;
 const GIFTERY_SECRET = process.env.GIFTERY_SECRET;
 
-// Маршрут для отримання товарів
 router.get("/", async (req, res) => {
   try {
     const response = await axios.post("https://api.giftery.ru/v2/marketplace/catalog", {
       login: GIFTERY_LOGIN,
       password: GIFTERY_PASSWORD,
       secret: GIFTERY_SECRET,
-      params: {
-        category_id: null, // можна вказати конкретну категорію
-        currency: "UAH",   // або USD / EUR
-        lang: "uk"
-      }
+      currency: "UAH",    // Валюта
+      lang: "uk",         // Мова
+      category_id: null   // За потреби — можна задати категорію
     });
 
     const products = response.data.data || [];
@@ -30,4 +27,3 @@ router.get("/", async (req, res) => {
 });
 
 module.exports = router;
-
