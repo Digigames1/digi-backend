@@ -2,19 +2,134 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8" />
-  <title>Панель адміністратора DigiGames</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Адмін-панель DigiGames</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f7f9fc;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    .login {
+      margin-bottom: 1.5rem;
+    }
+
+    input[type="password"] {
+      padding: 0.5rem;
+      font-size: 1rem;
+      width: 250px;
+    }
+
+    button {
+      padding: 0.5rem 1rem;
+      margin-left: 10px;
+      font-size: 1rem;
+      cursor: pointer;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+
+    table {
+      margin: 2rem auto;
+      border-collapse: collapse;
+      width: 90%;
+      background: white;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 0.75rem;
+      text-align: center;
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    .error {
+      color: red;
+      margin-top: 1rem;
+    }
+  </style>
 </head>
 <body>
-  <h1>🔐 Адмін-панель DigiGames</h1>
-  <button onclick="loadOrders()">Завантажити замовлення</button>
-  <pre id="output"></pre>
+  <h1>Адмін-панель DigiGames</h1>
+
+  <div class="login">
+    <input type="password" id="tokenInput" placeholder="Введіть токен для доступу" />
+    <button onclick="loadOrders()">Увійти</button>
+  </div>
+
+  <div class="error" id="errorMessage"></div>
+
+  <table id="ordersTable" style="display:none;">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Product ID</th>
+        <th>Email</th>
+        <th>Quantity</th>
+        <th>Created At</th>
+      </tr>
+    </thead>
+    <tbody id="ordersBody"></tbody>
+  </table>
 
   <script>
     async function loadOrders() {
-      const token = prompt("Введіть адмін токен:");
-      const response = await fetch(`/api/order/admin?token=${token}`);
-      const data = await response.json();
-      document.getElementById("output").textContent = JSON.stringify(data, null, 2);
+      const token = document.getElementById("tokenInput").value.trim();
+      const errorMessage = document.getElementById("errorMessage");
+      const table = document.getElementById("ordersTable");
+      const body = document.getElementById("ordersBody");
+
+      errorMessage.textContent = "";
+      table.style.display = "none";
+      body.innerHTML = "";
+
+      if (!token) {
+        errorMessage.textContent = "❗ Введіть токен.";
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/order/admin?token=${token}`);
+        const data = await res.json();
+
+        if (res.status !== 200) {
+          errorMessage.textContent = data.error || "Помилка доступу.";
+          return;
+        }
+
+        data.forEach(order => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${order._id}</td>
+            <td>${order.productId}</td>
+            <td>${order.email}</td>
+            <td>${order.quantity}</td>
+            <td>${new Date(order.createdAt).toLocaleString()}</td>
+          `;
+          body.appendChild(row);
+        });
+
+        table.style.display = "table";
+      } catch (err) {
+        errorMessage.textContent = "⚠️ Помилка при завантаженні.";
+        console.error(err);
+      }
     }
   </script>
 </body>
