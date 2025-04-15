@@ -1,136 +1,43 @@
-<!DOCTYPE html>
-<html lang="uk">
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Адмін-панель DigiGames</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f7f9fc;
-      padding: 2rem;
-      text-align: center;
-    }
-
-    h1 {
-      color: #333;
-    }
-
-    .login {
-      margin-bottom: 1.5rem;
-    }
-
-    input[type="password"] {
-      padding: 0.5rem;
-      font-size: 1rem;
-      width: 250px;
-    }
-
-    button {
-      padding: 0.5rem 1rem;
-      margin-left: 10px;
-      font-size: 1rem;
-      cursor: pointer;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 5px;
-    }
-
-    table {
-      margin: 2rem auto;
-      border-collapse: collapse;
-      width: 90%;
-      background: white;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
-
-    th, td {
-      border: 1px solid #ddd;
-      padding: 0.75rem;
-      text-align: center;
-    }
-
-    th {
-      background-color: #f2f2f2;
-    }
-
-    tr:nth-child(even) {
-      background-color: #f9f9f9;
-    }
-
-    .error {
-      color: red;
-      margin-top: 1rem;
-    }
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2487.5">
+  <style type="text/css">
+    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
+    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
   </style>
 </head>
 <body>
-  <h1>Адмін-панель DigiGames</h1>
-
-  <div class="login">
-    <input type="password" id="tokenInput" placeholder="Введіть токен для доступу" />
-    <button onclick="loadOrders()">Увійти</button>
-  </div>
-
-  <div class="error" id="errorMessage"></div>
-
-  <table id="ordersTable" style="display:none;">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Product ID</th>
-        <th>Email</th>
-        <th>Quantity</th>
-        <th>Created At</th>
-      </tr>
-    </thead>
-    <tbody id="ordersBody"></tbody>
-  </table>
-
-  <script>
-    async function loadOrders() {
-      const token = document.getElementById("tokenInput").value.trim();
-      const errorMessage = document.getElementById("errorMessage");
-      const table = document.getElementById("ordersTable");
-      const body = document.getElementById("ordersBody");
-
-      errorMessage.textContent = "";
-      table.style.display = "none";
-      body.innerHTML = "";
-
-      if (!token) {
-        errorMessage.textContent = "❗ Введіть токен.";
-        return;
-      }
-
-      try {
-        const res = await fetch(`/api/order/admin?token=${token}`);
-        const data = await res.json();
-
-        if (res.status !== 200) {
-          errorMessage.textContent = data.error || "Помилка доступу.";
-          return;
-        }
-
-        data.forEach(order => {
-          const row = document.createElement("tr");
-          row.innerHTML = `
-            <td>${order._id}</td>
-            <td>${order.productId}</td>
-            <td>${order.email}</td>
-            <td>${order.quantity}</td>
-            <td>${new Date(order.createdAt).toLocaleString()}</td>
-          `;
-          body.appendChild(row);
-        });
-
-        table.style.display = "table";
-      } catch (err) {
-        errorMessage.textContent = "⚠️ Помилка при завантаженні.";
-        console.error(err);
-      }
-    }
-  </script>
+<p class="p1">&lt;!DOCTYPE html&gt;</p>
+<p class="p1">&lt;html lang="en"&gt;</p>
+<p class="p1">&lt;head&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;meta charset="UTF-8"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;title&gt;🛠️ Адмін-панель DigiGames&lt;/title&gt;</p>
+<p class="p1">&lt;/head&gt;</p>
+<p class="p1">&lt;body&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;h1&gt;Замовлення&lt;/h1&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;ul id="orders"&gt;&lt;/ul&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;script&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>fetch("/api/order/admin?token=supersecrettoken123")</p>
+<p class="p1"><span class="Apple-converted-space">      </span>.then((res) =&gt; res.json())</p>
+<p class="p1"><span class="Apple-converted-space">      </span>.then((orders) =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const list = document.getElementById("orders");</p>
+<p class="p1"><span class="Apple-converted-space">        </span>orders.forEach((order) =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const li = document.createElement("li");</p>
+<p class="p1"><span class="Apple-converted-space">          </span>li.textContent = `ID: ${order._id} — ${order.email} (${order.quantity} × ${order.productId})`;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>list.appendChild(li);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>});</p>
+<p class="p1"><span class="Apple-converted-space">      </span>})</p>
+<p class="p1"><span class="Apple-converted-space">      </span>.catch((err) =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>console.error("❌ Error loading orders", err);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>});</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;/script&gt;</p>
+<p class="p1">&lt;/body&gt;</p>
+<p class="p1">&lt;/html&gt;</p>
 </body>
 </html>
