@@ -1,1 +1,21 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <title>Панель адміністратора DigiGames</title>
+</head>
+<body>
+  <h1>🔐 Адмін-панель DigiGames</h1>
+  <button onclick="loadOrders()">Завантажити замовлення</button>
+  <pre id="output"></pre>
 
+  <script>
+    async function loadOrders() {
+      const token = prompt("Введіть адмін токен:");
+      const response = await fetch(`/api/order/admin?token=${token}`);
+      const data = await response.json();
+      document.getElementById("output").textContent = JSON.stringify(data, null, 2);
+    }
+  </script>
+</body>
+</html>
