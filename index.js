@@ -1,12 +1,16 @@
 const express = require("express");
 const { MongoClient } = require("mongodb");
 const morgan = require("morgan");
+const path = require("path");
 require("dotenv").config();
 
 const app = express();
 
 app.use(express.json());
 app.use(morgan("dev"));
+
+// 🔽 Статичні файли (для admin.html)
+app.use(express.static(path.join(__dirname, "public")));
 
 const orderRouter = require("./routers/order");
 const adminRouter = require("./routers/admin");
@@ -43,3 +47,4 @@ async function startServer() {
 }
 
 startServer();
+
