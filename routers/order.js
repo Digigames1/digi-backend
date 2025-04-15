@@ -69,6 +69,21 @@ router.get("/", async (req, res) => {
   }
 });
 
+// ✅ GET: Адмін-доступ (тільки з токеном)
+router.get("/admin", async (req, res) => {
+  const token = req.query.token;
+
+  if (token !== process.env.ADMIN_TOKEN) {
+    return res.status(403).json({ error: "Unauthorized access." });
+  }
+
+  try {
+    const orders = await req.db.collection("orders").find().toArray();
+    res.status(200).json(orders);
+  } catch (err) {
+    console.error("❌ Admin fetch error:", err);
+    res.status(500).json({ error: "Failed to fetch orders." });
+  }
+});
+
 module.exports = router;
-
-
