@@ -12,8 +12,10 @@ app.use(morgan("dev"));
 // 🔽 Статичні файли (для admin.html)
 app.use(express.static(path.join(__dirname, "public")));
 
+// 🔽 Роутери
 const orderRouter = require("./routers/order");
 const adminRouter = require("./routers/admin");
+const productsRouter = require("./routers/products"); // ⬅️ Додано
 
 const client = new MongoClient(process.env.DB_URL);
 let db;
@@ -21,8 +23,7 @@ let db;
 async function startServer() {
   try {
     await client.connect();
-    db = client.db("digi"); // назва бази (залиш digi)
-
+    db = client.db("digi");
     console.log("✅ Connected to MongoDB");
 
     // Публічні запити
@@ -37,6 +38,9 @@ async function startServer() {
       next();
     }, adminRouter);
 
+    // 🔽 Продукти з Giftery
+    app.use("/api/products", productsRouter); // ⬅️ Підключено
+
     const PORT = process.env.PORT || 10000;
     app.listen(PORT, () => {
       console.log(`✅ Server is live on port ${PORT}`);
@@ -47,4 +51,3 @@ async function startServer() {
 }
 
 startServer();
-
