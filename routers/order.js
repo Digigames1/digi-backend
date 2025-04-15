@@ -17,28 +17,31 @@ router.post("/", async (req, res) => {
   };
 
   try {
-    // Збереження в базу
     const result = await req.db.collection("orders").insertOne(order);
+    console.log("✅ Order saved to DB:", result.insertedId);
 
-    // Налаштування пошти
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
+        pass: process.env.EMAIL_PASS
+      }
     });
 
-    // Зміст листа
     const mailOptions = {
-      from: `"Digigames" <${process.env.EMAIL_USER}>`,
+      from: `"DigiGames" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: "🎁 Ваш подарунок від Digigames",
-      text: `Дякуємо за замовлення!\n\nВаш товар (ID: ${productId}) буде оброблено.\n\nКількість: ${quantity}`,
+      subject: "🎁 Ваш подарунок від DigiGames!",
+      text: `Дякуємо за замовлення! Ваш товар №${productId}. Кількість: ${quantity}.`
     };
 
-    // Відправка листа
-    await transporter.sendMail(mailOptions);
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error("❌ Email sending failed:", error);
+      } else {
+        console.log("📧 Email sent successfully:", info.response);
+      }
+    });
 
     res.status(201).json({ message: "Order placed successfully!", orderId: result.insertedId });
   } catch (err) {
