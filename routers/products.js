@@ -14,8 +14,8 @@ router.get("/", async (req, res) => {
       secret: GIFTERY_SECRET,
       params: {
         category_id: null,
-        currency: "UAH",
-        lang: "uk"
+        currency: "USD",
+        lang: "en"
       }
     });
 
