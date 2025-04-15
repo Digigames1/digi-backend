@@ -1,27 +1,12 @@
 const express = require("express");
 const router = express.Router();
-
-function isValidEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
+const nodemailer = require("nodemailer");
 
 router.post("/", async (req, res) => {
   const { productId, email, quantity } = req.body;
 
   if (!productId || !email || !quantity) {
     return res.status(400).json({ error: "Missing required fields." });
-  }
-
-  if (!isValidEmail(email)) {
-    return res.status(400).json({ error: "Invalid email format." });
-  }
-
-  if (typeof productId !== "number" || productId <= 0) {
-    return res.status(400).json({ error: "Invalid productId. Must be a number > 0." });
-  }
-
-  if (!Number.isInteger(quantity) || quantity < 1) {
-    return res.status(400).json({ error: "Invalid quantity. Must be an integer ≥ 1." });
   }
 
   const order = {
@@ -32,7 +17,29 @@ router.post("/", async (req, res) => {
   };
 
   try {
+    // Збереження в базу
     const result = await req.db.collection("orders").insertOne(order);
+
+    // Налаштування пошти
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    // Зміст листа
+    const mailOptions = {
+      from: `"Digigames" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: "🎁 Ваш подарунок від Digigames",
+      text: `Дякуємо за замовлення!\n\nВаш товар (ID: ${productId}) буде оброблено.\n\nКількість: ${quantity}`,
+    };
+
+    // Відправка листа
+    await transporter.sendMail(mailOptions);
+
     res.status(201).json({ message: "Order placed successfully!", orderId: result.insertedId });
   } catch (err) {
     console.error("Order error:", err);
@@ -41,3 +48,4 @@ router.post("/", async (req, res) => {
 });
 
 module.exports = router;
+
