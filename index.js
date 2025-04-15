@@ -16,7 +16,7 @@ let db;
 async function startServer() {
   try {
     await client.connect();
-    db = client.db("Digi"); // 👈 назва бази (з великої, як у MongoDB)
+    db = client.db("digi"); // 👈 назва бази (з великої, як у MongoDB)
     console.log("✅ Connected to MongoDB");
 
     // Передаємо db у роутер
