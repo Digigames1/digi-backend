@@ -1,38 +1,36 @@
 const express = require("express");
 const router = express.Router();
 const axios = require("axios");
-const crypto = require("crypto");
 
+const GIFTERY_LOGIN = process.env.GIFTERY_LOGIN;
+const GIFTERY_PASSWORD = process.env.GIFTERY_PASSWORD;
 const GIFTERY_SECRET = process.env.GIFTERY_SECRET;
 
-// ⏱ Отримуємо Unix time
-function getUnixTime() {
-  return Math.floor(Date.now() / 1000);
-}
-
-// 🔐 Створюємо підпис (signature)
-function generateSignature(secret, time) {
-  const hmac = crypto.createHmac("sha256", secret);
-  hmac.update(String(time));
-  return hmac.digest("base64");
-}
-
 router.get("/", async (req, res) => {
-  const time = getUnixTime();
-  const signature = generateSignature(GIFTERY_SECRET, time);
-
-  const url = `https://api-stg.giftery.pro:7443/api/v2/products?currency=USD&responseType=short`;
-
   try {
-    const response = await axios.get(url, {
-      headers: {
-        accept: "application/json",
-        time: time,
-        signature: signature,
-      },
+    // 1. Отримуємо токен
+    const authResponse = await axios.post("https://api-stg.giftery.pro:7443/api/v2/auth", {
+      login: GIFTERY_LOGIN,
+      password: GIFTERY_PASSWORD,
     });
 
-    res.json(response.data);
+    const token = authResponse.data?.token;
+    if (!token) {
+      throw new Error("Не вдалося отримати токен.");
+    }
+
+    // 2. Запит на продукти
+    const productsResponse = await axios.get(
+      "https://api-stg.giftery.pro:7443/api/v2/products?currency=USD&responseType=short",
+      {
+        headers: {
+          accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    res.json(productsResponse.data);
   } catch (err) {
     console.error("❌ Failed to fetch products from Giftery:");
     if (err.response) {
@@ -41,6 +39,7 @@ router.get("/", async (req, res) => {
     } else {
       console.error("Message:", err.message);
     }
+
     res.status(500).json({ error: "Failed to fetch products from Giftery" });
   }
 });
