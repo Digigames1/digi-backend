@@ -3,32 +3,36 @@ const router = express.Router();
 const axios = require("axios");
 
 const {
+  GIFTERY_API_URL,
   GIFTERY_LOGIN,
-  GIFTERY_PASSWORD,
-  GIFTERY_API_URL
+  GIFTERY_PASSWORD
 } = process.env;
 
-// Отримання токена
+// Генерація токена
 async function getToken() {
-  const url = `${GIFTERY_API_URL}/api/v2/authenticate`;
+  const authUrl = `${GIFTERY_API_URL}/authenticate`;
 
-  const response = await axios.post(url, {
-    login: GIFTERY_LOGIN,
-    password: GIFTERY_PASSWORD
-  });
+  try {
+    const response = await axios.post(authUrl, {
+      login: GIFTERY_LOGIN,
+      password: GIFTERY_PASSWORD
+    });
 
-  return response.data.data.token;
+    return response.data.data.token;
+  } catch (err) {
+    console.error("❌ Failed to get token from Giftery:", err.response?.data || err.message);
+    throw new Error("Token error");
+  }
 }
 
 router.get("/", async (req, res) => {
   try {
     const token = await getToken();
 
-    const url = `${GIFTERY_API_URL}/api/v2/products?currency=USD&responseType=short`;
-    const response = await axios.get(url, {
+    const response = await axios.get(`${GIFTERY_API_URL}/products?currency=USD&responseType=short`, {
       headers: {
         accept: "application/json",
-        Authorization: `Bearer ${token}`
+        Authorization: `Bearer ${token}` // ⬅️ ОБОВ'ЯЗКОВО!
       }
     });
 
@@ -40,4 +44,3 @@ router.get("/", async (req, res) => {
 });
 
 module.exports = router;
-
