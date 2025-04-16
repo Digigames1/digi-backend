@@ -1,40 +1,40 @@
 const express = require("express");
-const axios = require("axios");
 const router = express.Router();
+const axios = require("axios");
+const crypto = require("crypto");
 
+// 🔐 Дані з .env
 const {
-  GIFTERY_API_URL,
   GIFTERY_LOGIN,
   GIFTERY_PASSWORD,
-  GIFTERY_SECRET
+  GIFTERY_SECRET,
+  GIFTERY_API_URL
 } = process.env;
 
+// 🔁 Генерація HMAC-підпису
+function generateSignature(login, password, secret, time) {
+  const data = login + password + time;
+  const hmac = crypto.createHmac("sha256", secret).update(data).digest("base64");
+  return hmac;
+}
+
 router.get("/", async (req, res) => {
+  const time = Math.floor(Date.now() / 1000); // поточний час в секундах
+  const signature = generateSignature(GIFTERY_LOGIN, GIFTERY_PASSWORD, GIFTERY_SECRET, time);
+
   try {
-    // 1️⃣ Авторизація: отримуємо токен
-    const authResponse = await axios.post(`${GIFTERY_API_URL}/auth`, {
-      login: GIFTERY_LOGIN,
-      password: GIFTERY_PASSWORD,
-      secret: GIFTERY_SECRET
-    });
-
-    const token = authResponse.data.token;
-    if (!token) {
-      return res.status(401).json({ error: "Authorization failed, no token returned." });
-    }
-
-    // 2️⃣ Отримуємо список товарів
-    const productsResponse = await axios.get(`${GIFTERY_API_URL}/products?currency=USD&responseType=short`, {
+    const response = await axios.get(`${GIFTERY_API_URL}/products?currency=USD&responseType=short`, {
       headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json"
+        accept: "application/json",
+        time: time.toString(),
+        signature: signature,
       }
     });
 
-    res.json(productsResponse.data);
+    res.json(response.data);
   } catch (error) {
     console.error("❌ Auth or fetch error:", error.response?.data || error.message);
-    res.status(500).json({ error: "Failed to fetch products from Giftery" });
+    res.status(error.response?.status || 500).json({ error: "Failed to fetch products from Giftery" });
   }
 });
 
