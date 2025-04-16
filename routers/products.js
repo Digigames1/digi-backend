@@ -1,33 +1,34 @@
 const express = require("express");
 const router = express.Router();
 const axios = require("axios");
-const crypto = require("crypto");
 
 // 🔐 Дані з .env
 const {
   GIFTERY_LOGIN,
   GIFTERY_PASSWORD,
-  GIFTERY_SECRET,
   GIFTERY_API_URL
 } = process.env;
 
-// 🔁 Генерація HMAC-підпису
-function generateSignature(login, password, secret, time) {
-  const data = login + password + time;
-  const hmac = crypto.createHmac("sha256", secret).update(data).digest("base64");
-  return hmac;
+async function getToken() {
+  const authUrl = `${GIFTERY_API_URL}/authenticate`;
+
+  const response = await axios.post(authUrl, {
+    login: GIFTERY_LOGIN,
+    password: GIFTERY_PASSWORD
+  });
+
+  return response.data.data.token;
 }
 
 router.get("/", async (req, res) => {
-  const time = Math.floor(Date.now() / 1000); // поточний час в секундах
-  const signature = generateSignature(GIFTERY_LOGIN, GIFTERY_PASSWORD, GIFTERY_SECRET, time);
-
   try {
-    const response = await axios.get(`${GIFTERY_API_URL}/products?currency=USD&responseType=short`, {
+    const token = await getToken();
+
+    const productUrl = `${GIFTERY_API_URL}/products?currency=USD&responseType=short`;
+    const response = await axios.get(productUrl, {
       headers: {
         accept: "application/json",
-        time: time.toString(),
-        signature: signature,
+        Authorization: `Bearer ${token}`
       }
     });
 
@@ -39,4 +40,3 @@ router.get("/", async (req, res) => {
 });
 
 module.exports = router;
-
