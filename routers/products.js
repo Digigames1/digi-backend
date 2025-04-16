@@ -1,40 +1,59 @@
 const express = require("express");
-const router = express.Router();
 const axios = require("axios");
+const crypto = require("crypto");
+const router = express.Router();
 
+// 🔐 Дані з .env
 const {
-  GIFTERY_API_URL,
   GIFTERY_LOGIN,
-  GIFTERY_PASSWORD
+  GIFTERY_PASSWORD,
+  GIFTERY_SECRET,
+  GIFTERY_API_URL
 } = process.env;
 
-// Генерація токена
+// 🧠 Хелпер: генерація токена авторизації
 async function getToken() {
-  const authUrl = `${GIFTERY_API_URL}/authenticate`;
+  const authUrl = `${GIFTERY_API_URL}/auth`;
+  const time = Math.floor(Date.now() / 1000);
+  const signature = crypto.createHmac("sha256", GIFTERY_SECRET)
+    .update(`${time}`)
+    .digest("base64");
 
-  try {
-    const response = await axios.post(authUrl, {
-      login: GIFTERY_LOGIN,
-      password: GIFTERY_PASSWORD
-    });
+  const headers = {
+    "Content-Type": "application/json",
+    time: time.toString(),
+    signature
+  };
 
-    return response.data.data.token;
-  } catch (err) {
-    console.error("❌ Failed to get token from Giftery:", err.response?.data || err.message);
-    throw new Error("Token error");
-  }
+  const body = {
+    login: GIFTERY_LOGIN,
+    password: GIFTERY_PASSWORD
+  };
+
+  const response = await axios.post(authUrl, body, { headers });
+  return { token: response.data.data.token, time };
 }
 
+// 🛍️ Маршрут: отримаємо каталог товарів
 router.get("/", async (req, res) => {
   try {
-    const token = await getToken();
+    const { token, time } = await getToken();
 
-    const response = await axios.get(`${GIFTERY_API_URL}/products?currency=USD&responseType=short`, {
-      headers: {
-        accept: "application/json",
-        Authorization: `Bearer ${token}` // ⬅️ ОБОВ'ЯЗКОВО!
-      }
-    });
+    const method = "GET";
+    const endpoint = "/products?currency=USD&responseType=short";
+
+    const signature = crypto.createHmac("sha256", GIFTERY_SECRET)
+      .update(`${time}${method}${endpoint}`)
+      .digest("base64");
+
+    const headers = {
+      accept: "application/json",
+      time: time.toString(),
+      signature,
+      Authorization: `Bearer ${token}`
+    };
+
+    const response = await axios.get(`${GIFTERY_API_URL}${endpoint}`, { headers });
 
     res.json(response.data);
   } catch (error) {
@@ -44,3 +63,4 @@ router.get("/", async (req, res) => {
 });
 
 module.exports = router;
+
