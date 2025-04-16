@@ -1,41 +1,49 @@
 const express = require("express");
 const router = express.Router();
 const axios = require("axios");
+const crypto = require("crypto");
 
-// 🔐 Дані з .env
-const GIFTERY_LOGIN = process.env.GIFTERY_LOGIN;
-const GIFTERY_PASSWORD = process.env.GIFTERY_PASSWORD;
 const GIFTERY_SECRET = process.env.GIFTERY_SECRET;
 
-// 🔄 Пісочниця Giftery
-const GIFTERY_URL = "https://stg.giftery.pro/api/v2/marketplace/catalog";
+// ⏱ Отримуємо Unix time
+function getUnixTime() {
+  return Math.floor(Date.now() / 1000);
+}
+
+// 🔐 Створюємо підпис (signature)
+function generateSignature(secret, time) {
+  const hmac = crypto.createHmac("sha256", secret);
+  hmac.update(String(time));
+  return hmac.digest("base64");
+}
 
 router.get("/", async (req, res) => {
+  const time = getUnixTime();
+  const signature = generateSignature(GIFTERY_SECRET, time);
+
+  const url = `https://api-stg.giftery.pro:7443/api/v2/products?currency=USD&responseType=short`;
+
   try {
-    const response = await axios.post(GIFTERY_URL, {
-      login: GIFTERY_LOGIN,
-      password: GIFTERY_PASSWORD,
-      secret: GIFTERY_SECRET,
-      params: {
-        category_id: null,
-        currency: "USD",
-        lang: "en"
-      }
+    const response = await axios.get(url, {
+      headers: {
+        accept: "application/json",
+        time: time,
+        signature: signature,
+      },
     });
 
-    const products = response.data.data || [];
-    console.log("✅ Products loaded:", products.length);
-    res.json(products);
-  } catch (error) {
+    res.json(response.data);
+  } catch (err) {
     console.error("❌ Failed to fetch products from Giftery:");
-    if (error.response) {
-      console.error("Status:", error.response.status);
-      console.error("Data:", error.response.data);
+    if (err.response) {
+      console.error("Status:", err.response.status);
+      console.error("Data:", err.response.data);
     } else {
-      console.error("Message:", error.message);
+      console.error("Message:", err.message);
     }
     res.status(500).json({ error: "Failed to fetch products from Giftery" });
   }
 });
 
 module.exports = router;
+
