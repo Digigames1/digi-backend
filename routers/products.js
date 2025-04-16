@@ -19,7 +19,7 @@ router.get("/", async (req, res) => {
       },
       params: {
         secret: GIFTERY_SECRET,
-        currency: "USD",
+        currency: "EUR",
         lang: "en"
       }
     });
