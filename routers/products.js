@@ -2,17 +2,17 @@ const express = require("express");
 const router = express.Router();
 const axios = require("axios");
 
-// 🔐 Дані з .env
 const {
   GIFTERY_LOGIN,
   GIFTERY_PASSWORD,
   GIFTERY_API_URL
 } = process.env;
 
+// Отримання токена
 async function getToken() {
-  const authUrl = `${GIFTERY_API_URL}/authenticate`;
+  const url = `${GIFTERY_API_URL}/api/v2/authenticate`;
 
-  const response = await axios.post(authUrl, {
+  const response = await axios.post(url, {
     login: GIFTERY_LOGIN,
     password: GIFTERY_PASSWORD
   });
@@ -24,8 +24,8 @@ router.get("/", async (req, res) => {
   try {
     const token = await getToken();
 
-    const productUrl = `${GIFTERY_API_URL}/products?currency=USD&responseType=short`;
-    const response = await axios.get(productUrl, {
+    const url = `${GIFTERY_API_URL}/api/v2/products?currency=USD&responseType=short`;
+    const response = await axios.get(url, {
       headers: {
         accept: "application/json",
         Authorization: `Bearer ${token}`
@@ -40,3 +40,4 @@ router.get("/", async (req, res) => {
 });
 
 module.exports = router;
+
