@@ -10,13 +10,15 @@ const {
   GIFTERY_API_URL
 } = process.env;
 
-async function getToken() {
-  const time = Math.floor(Date.now() / 1000).toString(); // секунда, рядком
-
-  const signature = crypto
-    .createHmac("sha256", GIFTERY_SECRET)
+function generateSignature(time, secret) {
+  return crypto.createHmac("sha256", secret)
     .update(time)
     .digest("base64");
+}
+
+async function getToken() {
+  const time = Math.floor(Date.now() / 1000).toString();
+  const signature = generateSignature(time, GIFTERY_SECRET);
 
   const headers = {
     "Content-Type": "application/json",
@@ -24,12 +26,13 @@ async function getToken() {
     signature
   };
 
-  const authResponse = await axios.post(`${GIFTERY_API_URL}/auth`, {
+  const body = {
     login: GIFTERY_LOGIN,
     password: GIFTERY_PASSWORD
-  }, { headers });
+  };
 
-  return authResponse.data.data.token;
+  const response = await axios.post(`${GIFTERY_API_URL}/auth`, body, { headers });
+  return response.data.data.token;
 }
 
 router.get("/", async (req, res) => {
@@ -51,3 +54,4 @@ router.get("/", async (req, res) => {
 });
 
 module.exports = router;
+
