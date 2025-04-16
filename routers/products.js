@@ -1,43 +1,49 @@
 const express = require("express");
-const router = express.Router();
 const axios = require("axios");
+const router = express.Router();
 
+// 🔐 Дані для авторизації
 const GIFTERY_LOGIN = process.env.GIFTERY_LOGIN;
 const GIFTERY_PASSWORD = process.env.GIFTERY_PASSWORD;
 
-// 1️⃣ Отримуємо access token
+// 🔁 Функція отримання токена
 async function getAuthToken() {
-  const authUrl = "https://api-stg.giftery.pro:7443/api/v2/authenticate";
-
-  const payload = {
-    login: GIFTERY_LOGIN,
-    password: GIFTERY_PASSWORD
-  };
-
-  const headers = {
-    "accept": "application/json",
-    "Content-Type": "application/json"
-  };
-
-  const response = await axios.post(authUrl, payload, { headers });
-  return response.data.data.token; // саме тут зберігається токен
-}
-
-// 2️⃣ Отримуємо товари
-router.get("/", async (req, res) => {
   try {
-    const token = await getAuthToken();
-
-    const productUrl = "https://api-stg.giftery.pro:7443/api/v2/products?currency=USD&responseType=short";
-    const response = await axios.get(productUrl, {
+    const response = await axios.post("https://api-stg.giftery.pro:7443/api/v2/authenticate", {
+      login: GIFTERY_LOGIN,
+      password: GIFTERY_PASSWORD,
+    }, {
       headers: {
-        Authorization: `Bearer ${token}`,
-        accept: "application/json",
+        "Content-Type": "application/json",
+        "Accept": "application/json"
       }
     });
 
-    const products = response.data.data || [];
-    res.json(products);
+    return response.data?.data?.accessToken;
+  } catch (error) {
+    console.error("❌ Failed to authenticate with Giftery:", error.response?.data || error.message);
+    return null;
+  }
+}
+
+// 📦 Маршрут отримання товарів
+router.get("/", async (req, res) => {
+  try {
+    const token = await getAuthToken();
+    if (!token) {
+      return res.status(401).json({ error: "Failed to authenticate with Giftery" });
+    }
+
+    console.log("🛡️ Access token:", token);
+
+    const response = await axios.get("https://api-stg.giftery.pro:7443/api/v2/products?currency=USD&responseType=short", {
+      headers: {
+        "Accept": "application/json",
+        "Authorization": `Bearer ${token}`
+      }
+    });
+
+    res.json(response.data?.data || []);
   } catch (error) {
     console.error("❌ Failed to fetch products from Giftery:");
     if (error.response) {
@@ -52,5 +58,6 @@ router.get("/", async (req, res) => {
 });
 
 module.exports = router;
+
 
 
