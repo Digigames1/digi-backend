@@ -1,45 +1,38 @@
 const express = require("express");
 const axios = require("axios");
-const crypto = require("crypto");
 const router = express.Router();
 
+// 🔐 Дані з .env
 const {
   GIFTERY_LOGIN,
   GIFTERY_PASSWORD,
-  GIFTERY_SECRET,
   GIFTERY_API_URL
 } = process.env;
 
-function generateSignature(time, secret) {
-  return crypto.createHmac("sha256", secret)
-    .update(time)
-    .digest("base64");
-}
-
+// Отримання токена з нового ендпоінта
 async function getToken() {
-  const time = Math.floor(Date.now() / 1000).toString();
-  const signature = generateSignature(time, GIFTERY_SECRET);
+  const authUrl = `${GIFTERY_API_URL}/auth`;
 
-  const headers = {
-    "Content-Type": "application/json",
-    time,
-    signature
-  };
-
-  const body = {
+  const response = await axios.post(authUrl, {
     login: GIFTERY_LOGIN,
     password: GIFTERY_PASSWORD
-  };
+  }, {
+    headers: {
+      accept: "application/json",
+      "Content-Type": "application/json"
+    }
+  });
 
-  const response = await axios.post(`${GIFTERY_API_URL}/auth`, body, { headers });
   return response.data.data.token;
 }
 
+// Отримання списку товарів
 router.get("/", async (req, res) => {
   try {
     const token = await getToken();
 
-    const response = await axios.get(`${GIFTERY_API_URL}/products?currency=USD&responseType=short`, {
+    const productUrl = `${GIFTERY_API_URL}/products?currency=USD&responseType=short`;
+    const response = await axios.get(productUrl, {
       headers: {
         accept: "application/json",
         Authorization: `Bearer ${token}`
@@ -54,4 +47,5 @@ router.get("/", async (req, res) => {
 });
 
 module.exports = router;
+
 
