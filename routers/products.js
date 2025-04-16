@@ -3,7 +3,6 @@ const axios = require("axios");
 const crypto = require("crypto");
 const router = express.Router();
 
-// 🔐 Дані з .env
 const {
   GIFTERY_LOGIN,
   GIFTERY_PASSWORD,
@@ -11,49 +10,38 @@ const {
   GIFTERY_API_URL
 } = process.env;
 
-// 🧠 Хелпер: генерація токена авторизації
 async function getToken() {
-  const authUrl = `${GIFTERY_API_URL}/auth`;
-  const time = Math.floor(Date.now() / 1000);
-  const signature = crypto.createHmac("sha256", GIFTERY_SECRET)
-    .update(`${time}`)
+  const time = Math.floor(Date.now() / 1000).toString(); // секунда, рядком
+
+  const signature = crypto
+    .createHmac("sha256", GIFTERY_SECRET)
+    .update(time)
     .digest("base64");
 
   const headers = {
     "Content-Type": "application/json",
-    time: time.toString(),
+    time,
     signature
   };
 
-  const body = {
+  const authResponse = await axios.post(`${GIFTERY_API_URL}/auth`, {
     login: GIFTERY_LOGIN,
     password: GIFTERY_PASSWORD
-  };
+  }, { headers });
 
-  const response = await axios.post(authUrl, body, { headers });
-  return { token: response.data.data.token, time };
+  return authResponse.data.data.token;
 }
 
-// 🛍️ Маршрут: отримаємо каталог товарів
 router.get("/", async (req, res) => {
   try {
-    const { token, time } = await getToken();
+    const token = await getToken();
 
-    const method = "GET";
-    const endpoint = "/products?currency=USD&responseType=short";
-
-    const signature = crypto.createHmac("sha256", GIFTERY_SECRET)
-      .update(`${time}${method}${endpoint}`)
-      .digest("base64");
-
-    const headers = {
-      accept: "application/json",
-      time: time.toString(),
-      signature,
-      Authorization: `Bearer ${token}`
-    };
-
-    const response = await axios.get(`${GIFTERY_API_URL}${endpoint}`, { headers });
+    const response = await axios.get(`${GIFTERY_API_URL}/products?currency=USD&responseType=short`, {
+      headers: {
+        accept: "application/json",
+        Authorization: `Bearer ${token}`
+      }
+    });
 
     res.json(response.data);
   } catch (error) {
@@ -63,4 +51,3 @@ router.get("/", async (req, res) => {
 });
 
 module.exports = router;
-
