@@ -29,28 +29,52 @@ async function getAuthToken() {
   }
 }
 
-// Запит на отримання товарів
+// Запит на отримання товарівconst express = require("express");
+const router = express.Router();
+const axios = require("axios");
+
+const {
+  GIFTERY_API_URL,
+  GIFTERY_LOGIN,
+  GIFTERY_PASSWORD,
+  GIFTERY_SECRET,
+} = process.env;
+
+// 🔐 Отримати токен авторизації
+async function authenticate() {
+  const response = await axios.post(`${GIFTERY_API_URL}/authenticate`, {
+    login: GIFTERY_LOGIN,
+    password: GIFTERY_PASSWORD,
+    secret: GIFTERY_SECRET,
+  });
+
+  return response.data?.data?.token;
+}
+
+// 🛍️ Отримати продукти
 router.get("/", async (req, res) => {
   try {
-    const token = await getAuthToken();
+    const token = await authenticate();
+
     if (!token) {
-      return res.status(401).json({ error: "❌ Authentication failed" });
+      throw new Error("No token received from Giftery");
     }
 
-    const response = await axios.get(
-      "https://api-stg.giftery.pro:7443/api/v2/products?currency=USD&responseType=short",
+    const productsResponse = await axios.get(
+      `${GIFTERY_API_URL}/products?currency=USD&responseType=short`,
       {
         headers: {
-          "accept": "application/json",
-          "Authorization": `Bearer ${token}`,
-        }
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
       }
     );
 
-    res.json(response.data?.data || []);
+    const products = productsResponse.data?.data || [];
+    res.json(products);
   } catch (error) {
-    console.error("❌ Failed to fetch products:", error.response?.data || error.message);
-    res.status(500).json({ error: "❌ Failed to fetch products from Giftery" });
+    console.error("❌ Auth error:", error.response?.data || error.message);
+    res.status(401).json({ error: "Failed to authenticate with Giftery" });
   }
 });
 
