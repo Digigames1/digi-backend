@@ -24,7 +24,7 @@ async function getAccessToken() {
     }
   );
 
-  console.log("🔐 Access token:", response.data.access_token);
+  console.log("🔐 Bamboo Access Token:", response.data.access_token);
   return response.data.access_token;
 }
 
@@ -39,7 +39,7 @@ router.get("/", async (req, res) => {
       }
     });
 
-    console.log("✅ Bamboo products fetched:", response.data.length);
+    console.log("✅ Bamboo Products Fetched:", response.data.length);
     res.json(response.data);
   } catch (error) {
     console.error("❌ Bamboo fetch error:", error.response?.data || error.message);
@@ -50,6 +50,7 @@ router.get("/", async (req, res) => {
 });
 
 module.exports = router;
+
 
 
 
