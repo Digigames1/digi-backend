@@ -5,57 +5,62 @@ const crypto = require("crypto");
 
 // 🔐 Дані з .env
 const {
+  GIFTERY_API_URL,
   GIFTERY_LOGIN,
   GIFTERY_PASSWORD,
-  GIFTERY_SECRET,
-  GIFTERY_API_URL
+  GIFTERY_SECRET
 } = process.env;
 
-// Функція для генерації time і signature
-function generateSignature(secret) {
-  const time = Math.floor(Date.now() / 1000).toString();
-  const signature = crypto
-    .createHmac("sha256", secret)
-    .update(time)
-    .digest("base64");
-  return { time, signature };
-}
-
-// Отримати токен
+// ✅ Функція для отримання токена
 async function getToken() {
-  const authUrl = `${GIFTERY_API_URL}/auth`;
-  const response = await axios.post(authUrl, {
+  const time = Math.floor(Date.now() / 1000).toString();
+
+  const payload = time + GIFTERY_LOGIN + GIFTERY_PASSWORD;
+  const secretBuffer = Buffer.from(GIFTERY_SECRET, "base64");
+
+  const signature = crypto
+    .createHmac("sha256", secretBuffer)
+    .update(payload)
+    .digest("base64");
+
+  const response = await axios.post(`${GIFTERY_API_URL}/auth`, {
     login: GIFTERY_LOGIN,
     password: GIFTERY_PASSWORD
+  }, {
+    headers: {
+      "Content-Type": "application/json",
+      "accept": "application/json",
+      "time": time,
+      "signature": signature
+    }
   });
-  return response.data.data.token;
+
+  return response.data.token;
 }
 
-// Отримати продукти
+// 🔽 Роут на отримання продуктів
 router.get("/", async (req, res) => {
   try {
     const token = await getToken();
-    const { time, signature } = generateSignature(GIFTERY_SECRET);
 
-    const productsUrl = `${GIFTERY_API_URL}/products?currency=USD&responseType=short`;
-
-    const response = await axios.get(productsUrl, {
+    const response = await axios.get(`${GIFTERY_API_URL}/products?currency=USD&responseType=short`, {
       headers: {
-        Authorization: `Bearer ${token}`,
-        accept: "application/json",
-        time: time,
-        signature: signature
+        "Authorization": `Bearer ${token}`,
+        "accept": "application/json"
       }
     });
 
     res.json(response.data);
   } catch (error) {
     console.error("❌ Auth or fetch error:", error.response?.data || error.message);
-    res.status(error.response?.status || 500).json({ error: "Failed to fetch products from Giftery" });
+    res.status(error.response?.status || 500).json({
+      error: "Failed to fetch products from Giftery"
+    });
   }
 });
 
 module.exports = router;
+
 
 
 
