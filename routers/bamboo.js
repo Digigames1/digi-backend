@@ -3,37 +3,36 @@ const router = express.Router();
 const axios = require("axios");
 
 const {
-  BAMBOO_CLIENT_ID,
-  BAMBOO_CLIENT_SECRET,
-  BAMBOO_BASE_URL
+  BAMBOO_PROD_CLIENT_ID,
+  BAMBOO_PROD_CLIENT_SECRET,
+  BAMBOO_PROD_BASE_URL
 } = process.env;
-
-// 👉 Генеруємо Basic Token
-function getBasicAuthToken() {
-  const credentials = `${BAMBOO_CLIENT_ID}:${BAMBOO_CLIENT_SECRET}`;
-  return Buffer.from(credentials).toString("base64");
-}
 
 router.get("/", async (req, res) => {
   try {
-    const authToken = getBasicAuthToken();
+    // 🧾 Формуємо Basic Auth
+    const credentials = `${BAMBOO_PROD_CLIENT_ID}:${BAMBOO_PROD_CLIENT_SECRET}`;
+    const encodedAuth = Buffer.from(credentials).toString("base64");
 
-    const url = `${BAMBOO_BASE_URL}/api/integration/v2.0/catalog?CurrencyCode=USD&CountryCode=US&PageSize=100&PageIndex=0`;
+    const url = `${BAMBOO_PROD_BASE_URL}/api/integration/v2.0/catalog?CurrencyCode=USD&CountryCode=US&PageSize=100&PageIndex=0`;
 
-    console.log("📦 Bamboo catalog request to:", url);
+    console.log("🌍 Bamboo PRODUCTION URL:", url);
 
     const response = await axios.get(url, {
       headers: {
-        Authorization: `Basic ${authToken}`,
+        Authorization: `Basic ${encodedAuth}`,
         Accept: "application/json"
       }
     });
 
+    console.log("✅ Bamboo production catalog items:", response.data?.items?.length || 0);
+
     res.json(response.data);
   } catch (error) {
-    console.error("❌ Bamboo fetch error:", error.response?.data || error.message);
+    const err = error.response?.data || error.message;
+    console.error("❌ Bamboo PRODUCTION fetch error:", err);
     res.status(error.response?.status || 500).json({
-      error: "Failed to fetch products from Bamboo"
+      error: "Failed to fetch products from Bamboo Production"
     });
   }
 });
