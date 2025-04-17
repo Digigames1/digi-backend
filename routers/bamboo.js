@@ -8,7 +8,7 @@ const {
   BAMBOO_BASE_URL
 } = process.env;
 
-// Отримати токен Bamboo
+// Отримання токену
 async function getAccessToken() {
   const response = await axios.post(
     `${BAMBOO_BASE_URL}/v1/oauth/token`,
@@ -24,20 +24,22 @@ async function getAccessToken() {
     }
   );
 
+  console.log("🔐 Access token:", response.data.access_token);
   return response.data.access_token;
 }
 
-// Отримати продукти з Bamboo
+// Отримання продуктів
 router.get("/", async (req, res) => {
   try {
     const token = await getAccessToken();
 
-    const response = await axios.get(`${BAMBOO_BASE_URL}/v1/catalog`, {
+    const response = await axios.get(`${BAMBOO_BASE_URL}/api/Products`, {
       headers: {
         Authorization: `Bearer ${token}`
       }
     });
 
+    console.log("✅ Bamboo products fetched:", response.data.length);
     res.json(response.data);
   } catch (error) {
     console.error("❌ Bamboo fetch error:", error.response?.data || error.message);
@@ -48,6 +50,7 @@ router.get("/", async (req, res) => {
 });
 
 module.exports = router;
+
 
 
 
