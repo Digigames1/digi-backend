@@ -15,7 +15,8 @@ app.use(express.static(path.join(__dirname, "public")));
 // 🔽 Роутери
 const orderRouter = require("./routers/order");
 const adminRouter = require("./routers/admin");
-const productsRouter = require("./routers/products"); // ⬅️ Додано
+const productsRouter = require("./routers/products");
+const bambooRouter = require("./routers/bamboo"); // 🆕 Bamboo
 
 const client = new MongoClient(process.env.DB_URL);
 let db;
@@ -39,7 +40,10 @@ async function startServer() {
     }, adminRouter);
 
     // 🔽 Продукти з Giftery
-    app.use("/api/products", productsRouter); // ⬅️ Підключено
+    app.use("/api/products", productsRouter);
+
+    // 🆕 Каталог з Bamboo
+    app.use("/api/bamboo", bambooRouter);
 
     const PORT = process.env.PORT || 10000;
     app.listen(PORT, () => {
@@ -51,3 +55,4 @@ async function startServer() {
 }
 
 startServer();
+
