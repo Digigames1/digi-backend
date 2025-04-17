@@ -12,19 +12,21 @@ const {
 } = process.env;
 
 function generateSignature(secret, time) {
-  return crypto
+  const signature = crypto
     .createHmac("sha256", secret)
     .update(time)
     .digest("base64");
+
+  // 🧾 Логування time і signature
+  console.log("🔐 Time:", time);
+  console.log("🔐 Signature:", signature);
+
+  return signature;
 }
 
 async function getGifteryToken() {
   const time = Math.floor(Date.now() / 1000).toString();
   const signature = generateSignature(GIFTERY_SECRET, time);
-
-  // 🔍 Логування для перевірки
-  console.log("⏱️ time:", time);
-  console.log("🔐 signature:", signature);
 
   const response = await axios.post(
     `${GIFTERY_API_URL}/auth`,
