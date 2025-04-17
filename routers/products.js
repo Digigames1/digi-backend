@@ -22,6 +22,10 @@ async function getGifteryToken() {
   const time = Math.floor(Date.now() / 1000).toString();
   const signature = generateSignature(GIFTERY_SECRET, time);
 
+  // 🔍 Логування для перевірки
+  console.log("⏱️ time:", time);
+  console.log("🔐 signature:", signature);
+
   const response = await axios.post(
     `${GIFTERY_API_URL}/auth`,
     {
@@ -66,6 +70,7 @@ router.get("/", async (req, res) => {
 });
 
 module.exports = router;
+
 
 
 
