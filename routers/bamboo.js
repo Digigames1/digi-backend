@@ -8,39 +8,24 @@ const {
   BAMBOO_BASE_URL
 } = process.env;
 
-// Отримати токен Bamboo
-async function getAccessToken() {
-  const tokenUrl = `${BAMBOO_BASE_URL}/v2/oauth/token`;
-  console.log("🔐 Отримання токена з:", tokenUrl);
-
-  const response = await axios.post(
-    tokenUrl,
-    {
-      client_id: BAMBOO_CLIENT_ID,
-      client_secret: BAMBOO_CLIENT_SECRET,
-      grant_type: "client_credentials"
-    },
-    {
-      headers: {
-        "Content-Type": "application/json"
-      }
-    }
-  );
-
-  return response.data.access_token;
+// 👉 Генеруємо Basic Token
+function getBasicAuthToken() {
+  const credentials = `${BAMBOO_CLIENT_ID}:${BAMBOO_CLIENT_SECRET}`;
+  return Buffer.from(credentials).toString("base64");
 }
 
-// Отримати продукти з Bamboo
 router.get("/", async (req, res) => {
   try {
-    const token = await getAccessToken();
+    const authToken = getBasicAuthToken();
 
-    const catalogUrl = `${BAMBOO_BASE_URL}/v2/catalog`;
-    console.log("📦 Запит каталогу Bamboo:", catalogUrl);
+    const url = `${BAMBOO_BASE_URL}/api/integration/v2.0/catalog?CurrencyCode=USD&CountryCode=US&PageSize=100&PageIndex=0`;
 
-    const response = await axios.get(catalogUrl, {
+    console.log("📦 Bamboo catalog request to:", url);
+
+    const response = await axios.get(url, {
       headers: {
-        Authorization: `Bearer ${token}`
+        Authorization: `Basic ${authToken}`,
+        Accept: "application/json"
       }
     });
 
