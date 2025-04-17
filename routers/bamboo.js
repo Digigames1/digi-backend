@@ -8,13 +8,17 @@ const {
   BAMBOO_BASE_URL
 } = process.env;
 
-// 👉 Додано лог для перевірки URL
+// 🔍 Лог базового URL для перевірки
 console.log("🌍 BAMBOO_BASE_URL =", BAMBOO_BASE_URL);
 
-// Отримати токен Bamboo
+// Функція для отримання токена
 async function getAccessToken() {
+  const url = `${BAMBOO_BASE_URL}/v1/oauth/token`;
+
+  console.log("🔐 Отримання токена з:", url);
+
   const response = await axios.post(
-    `${BAMBOO_BASE_URL}/v1/oauth/token`,
+    url,
     {
       client_id: BAMBOO_CLIENT_ID,
       client_secret: BAMBOO_CLIENT_SECRET,
@@ -27,23 +31,29 @@ async function getAccessToken() {
     }
   );
 
+  console.log("✅ Bamboo токен отримано");
   return response.data.access_token;
 }
 
-// Отримати продукти з Bamboo
+// Отримати список продуктів
 router.get("/", async (req, res) => {
   try {
     const token = await getAccessToken();
 
-    const response = await axios.get(`${BAMBOO_BASE_URL}/v1/catalog`, {
+    const catalogUrl = `${BAMBOO_BASE_URL}/v1/catalog`;
+    console.log("📦 Запит до каталогу:", catalogUrl);
+
+    const response = await axios.get(catalogUrl, {
       headers: {
         Authorization: `Bearer ${token}`
       }
     });
 
+    console.log("✅ Отримано продукти з Bamboo:", response.data?.length || "✓");
     res.json(response.data);
   } catch (error) {
-    console.error("❌ Bamboo fetch error:", error.response?.data || error.message);
+    const errData = error.response?.data || error.message;
+    console.error("❌ Bamboo fetch error:", errData);
     res.status(error.response?.status || 500).json({
       error: "Failed to fetch products from Bamboo"
     });
@@ -51,6 +61,7 @@ router.get("/", async (req, res) => {
 });
 
 module.exports = router;
+
 
 
 
