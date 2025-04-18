@@ -5,100 +5,56 @@ document.addEventListener("DOMContentLoaded", async () => {
   const productsContainer = document.getElementById("products");
   const brandTitle = document.getElementById("brand-title");
 
-  const modal = document.getElementById("buyModal");
-  const orderForm = document.getElementById("orderForm");
-  const successMessage = document.getElementById("successMessage");
-
-  const clientNameInput = document.getElementById("clientName");
-  const clientEmailInput = document.getElementById("clientEmail");
-  const productIdInput = document.getElementById("selectedProductId");
-  const selectedPriceInput = document.getElementById("selectedPrice");
-
   try {
     const apiUrl = region ? `/api/${brand}/${region}` : `/api/${brand}`;
     const res = await fetch(apiUrl);
     const data = await res.json();
-
-    console.log("📦 Дані, що прийшли:", data);
 
     if (!data || !data.items || !data.items.length) {
       productsContainer.innerHTML = "<p>Товари не знайдено.</p>";
       return;
     }
 
-    brandTitle.textContent = `${brand.toUpperCase()} ${region?.toUpperCase() || ""}`;
+    brandTitle.textContent = brand.toUpperCase();
 
-    data.items.forEach(item => {
-      item.products?.forEach(product => {
-        const el = document.createElement("div");
-        el.className = "product-item";
-        el.innerHTML = `
+    // Групуємо товари по підкатегоріях (наприклад: USA, CANADA)
+    const grouped = {};
+    data.items.forEach((item) => {
+      const groupKey = item.name; // Наприклад: Playstation USA
+      if (!grouped[groupKey]) grouped[groupKey] = [];
+      grouped[groupKey].push(item);
+    });
+
+    for (const groupName in grouped) {
+      const subcategory = document.createElement("div");
+      subcategory.className = "subcategory";
+
+      const title = document.createElement("div");
+      title.className = "subcategory-title";
+      title.textContent = groupName;
+
+      const list = document.createElement("div");
+      list.className = "product-list";
+
+      grouped[groupName].forEach(item => {
+        const productEl = document.createElement("div");
+        productEl.className = "product-item";
+        productEl.innerHTML = `
           <div>
-            <div class="product-name">${product.name}</div>
-            <div class="product-price">$${product.price?.min.toFixed(2)}</div>
+            <div class="product-name">${item.name}</div>
+            <div class="product-price">$${item.price.min.toFixed(2)}</div>
           </div>
-          <button class="buy-btn" data-id="${product.id}" data-price="${product.price?.min}">Buy</button>
+          <button class="buy-btn" data-id="${item.id}" data-price="${item.price.min}">Buy</button>
         `;
-        productsContainer.appendChild(el);
+        list.appendChild(productEl);
       });
-    });
 
-    // Відкриття модального вікна
-    document.querySelectorAll(".buy-btn").forEach(button => {
-      button.addEventListener("click", (e) => {
-        const productId = e.target.dataset.id;
-        const price = e.target.dataset.price;
+      subcategory.appendChild(title);
+      subcategory.appendChild(list);
+      productsContainer.appendChild(subcategory);
+    }
 
-        productIdInput.value = productId;
-        selectedPriceInput.value = price;
-
-        clientNameInput.value = "";
-        clientEmailInput.value = "";
-        successMessage.style.display = "none";
-
-        modal.style.display = "block";
-      });
-    });
-
-    // Закриття по кліку поза формою
-    window.onclick = function (event) {
-      if (event.target === modal) {
-        modal.style.display = "none";
-      }
-    };
-
-    // Відправка форми
-    orderForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-
-      const payload = {
-        productId: productIdInput.value,
-        email: clientEmailInput.value,
-        quantity: 1,
-        name: clientNameInput.value,
-        price: selectedPriceInput.value
-      };
-
-      try {
-        const res = await fetch("/api/order", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(payload)
-        });
-
-        const result = await res.json();
-
-        if (res.ok) {
-          successMessage.style.display = "block";
-        } else {
-          alert("Помилка: " + result.error || "Спробуйте ще раз");
-        }
-      } catch (err) {
-        alert("Помилка: " + err.message);
-      }
-    });
+    // [🔜 optionally додається логіка покупки якщо потрібно]
 
   } catch (err) {
     console.error("❌ Load error:", err.message);
