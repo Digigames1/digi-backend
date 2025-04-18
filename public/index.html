@@ -4,39 +4,97 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>DigiGames</title>
-  <link rel="stylesheet" href="/style.css" />
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      background: #f5f3ff;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #6c4ccf;
+      color: white;
+      padding: 1rem 2rem;
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 2rem;
+    }
+
+    .category-grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1.5rem;
+      padding: 2rem;
+    }
+
+    .category-card {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      width: 180px;
+      text-align: center;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      transition: transform 0.2s;
+    }
+
+    .category-card:hover {
+      transform: scale(1.05);
+    }
+
+    .category-card a {
+      text-decoration: none;
+      color: #6c4ccf;
+      font-weight: bold;
+    }
+
+    footer {
+      background: #eee;
+      padding: 2rem;
+      text-align: center;
+      margin-top: auto;
+    }
+
+    footer a {
+      color: #6c4ccf;
+      text-decoration: none;
+      margin: 0 1rem;
+      font-weight: bold;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
 <body>
   <header>
-    <div class="container">
-      <h1 class="logo">🎮 DigiGames</h1>
-      <nav>
-        <ul>
-          <li><a href="/about">About Us</a></li>
-          <li><a href="/contacts">Contacts</a></li>
-          <li><a href="/partnership">Partnership</a></li>
-        </ul>
-      </nav>
-    </div>
+    <h1>DigiGames</h1>
   </header>
 
-  <main class="container">
-    <h2 class="section-title">Категорії</h2>
+  <main>
     <div class="category-grid">
-      <a href="/playstation" class="category-card">PlayStation</a>
-      <a href="/steam" class="category-card">Steam</a>
-      <a href="/xbox" class="category-card">Xbox</a>
-      <a href="/netflix" class="category-card">Netflix</a>
-      <a href="/roblox" class="category-card">Roblox</a>
-      <a href="/apple" class="category-card">Apple</a>
-      <a href="/nintendo" class="category-card">Nintendo</a>
+      <div class="category-card"><a href="/playstation">Playstation</a></div>
+      <div class="category-card"><a href="/steam">Steam</a></div>
+      <div class="category-card"><a href="/xbox">Xbox</a></div>
+      <div class="category-card"><a href="/netflix">Netflix</a></div>
+      <div class="category-card"><a href="/roblox">Roblox</a></div>
+      <div class="category-card"><a href="/apple">Apple</a></div>
+      <div class="category-card"><a href="/nintendo">Nintendo</a></div>
     </div>
   </main>
 
   <footer>
-    <div class="container">
-      <p>© 2025 DigiGames. All rights reserved.</p>
-    </div>
+    <a href="#">About Us</a>
+    <a href="#">Contacts</a>
+    <a href="#">Partnership</a>
   </footer>
 </body>
 </html>
