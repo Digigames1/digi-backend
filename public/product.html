@@ -32,12 +32,32 @@
       font-weight: bold;
       color: #2c7;
     }
+    #variant-select {
+      margin-top: 1rem;
+      padding: 0.5rem;
+      font-size: 1rem;
+    }
+    #buy-button {
+      margin-top: 1rem;
+      padding: 0.6rem 1.2rem;
+      font-size: 1rem;
+      background-color: #28c76f;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #buy-button:hover {
+      background-color: #20b265;
+    }
   </style>
 </head>
 <body>
   <div class="product-container">
     <h1 id="product-name">Loading...</h1>
     <img id="product-logo" class="product-logo" src="" alt="" style="display: none;" />
+    <select id="variant-select" style="display: none;"></select>
+    <button id="buy-button" style="display: none;">🛒 Купити</button>
     <p class="price" id="product-price"></p>
     <p id="product-description"></p>
   </div>
