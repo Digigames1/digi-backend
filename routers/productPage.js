@@ -1,23 +1,24 @@
 const express = require("express");
 const router = express.Router();
 const axios = require("axios");
-const base64 = require("base-64");
 
+// Дані з .env
 const {
   BAMBOO_CLIENT_ID,
   BAMBOO_CLIENT_SECRET,
   BAMBOO_BASE_URL
 } = process.env;
 
-// Створити Basic Auth заголовок
+// 🔐 Створюємо Basic Auth заголовок вручну
 function createBasicAuthHeader() {
-  const token = base64.encode(`${BAMBOO_CLIENT_ID}:${BAMBOO_CLIENT_SECRET}`);
-  return `Basic ${token}`;
+  const raw = `${BAMBOO_CLIENT_ID}:${BAMBOO_CLIENT_SECRET}`;
+  const encoded = Buffer.from(raw).toString("base64");
+  return `Basic ${encoded}`;
 }
 
+// 🔁 Отримати продукти з Bamboo по категорії (наприклад, Playstation)
 router.get("/api/:brand/:region?", async (req, res) => {
   const { brand, region } = req.params;
-
   const queryParams = {
     CurrencyCode: "USD",
     PageSize: 100,
@@ -29,21 +30,27 @@ router.get("/api/:brand/:region?", async (req, res) => {
     queryParams.CountryCode = region.toUpperCase();
   }
 
+  const catalogUrl = `${BAMBOO_BASE_URL}/api/integration/v2.0/catalog`;
+
   console.log("📦 Fetching Bamboo catalog with params:", queryParams);
 
   try {
-    const response = await axios.get(`${BAMBOO_BASE_URL}/api/integration/v2.0/catalog`, {
+    const response = await axios.get(catalogUrl, {
+      params: queryParams,
       headers: {
-        Authorization: createBasicAuthHeader()
-      },
-      params: queryParams
+        Authorization: createBasicAuthHeader(),
+        Accept: "application/json"
+      }
     });
 
-    console.log(`✅ Received Bamboo data. Count: ${response.data.count}`);
-    res.json(response.data);
+    const data = response.data;
+
+    console.log("✅ Received Bamboo data. Count:", data.count);
+    res.json(data);
   } catch (error) {
-    console.error("❌ Bamboo fetch error:", error.response?.data || error.message);
-    res.status(error.response?.status || 500).json({ error: "Failed to fetch products from Bamboo" });
+    const err = error.response?.data || error.message;
+    console.error("❌ Dynamic route error:", err);
+    res.status(error.response?.status || 500).json({ error: "Failed to load Bamboo catalog" });
   }
 });
 
