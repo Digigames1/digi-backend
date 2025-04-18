@@ -17,6 +17,7 @@ const orderRouter = require("./routers/order");
 const adminRouter = require("./routers/admin");
 const productsRouter = require("./routers/products");
 const bambooRouter = require("./routers/bamboo");
+const productPageRouter = require("./routers/productPage"); // 🆕 Динамічний роут
 
 const client = new MongoClient(process.env.DB_URL);
 let db;
@@ -45,8 +46,11 @@ async function startServer() {
     // 🔽 Каталог з Bamboo
     app.use("/api/bamboo", bambooRouter);
 
-    // 🧭 Динамічні сторінки товарів (наприклад /steam)
-    app.get("/:product", (req, res) => {
+    // 🧭 API динамічних сторінок (Playstation / Steam / тощо)
+    app.use("/", productPageRouter); // 🆕
+
+    // 🧭 Фронт динамічних сторінок (наприклад /steam або /steam/usa)
+    app.get("/:brand/:region?", (req, res) => {
       res.sendFile(path.join(__dirname, "public", "product.html"));
     });
 
@@ -60,3 +64,4 @@ async function startServer() {
 }
 
 startServer();
+
