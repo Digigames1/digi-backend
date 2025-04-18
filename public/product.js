@@ -19,27 +19,32 @@ document.addEventListener("DOMContentLoaded", async () => {
     const res = await fetch(apiUrl);
     const data = await res.json();
 
-    if (!data || !data.length) {
-      productsContainer.innerHTML = "<p>Товари не знайдено.</p>";
-      return;
-    }
-
     brandTitle.textContent = `${brand.toUpperCase()} ${region?.toUpperCase() || ""}`;
 
+    let found = false;
+
     data.forEach(item => {
-      item.products?.forEach(product => {
-        const el = document.createElement("div");
-        el.className = "product-item";
-        el.innerHTML = `
-          <div>
-            <div class="product-name">${product.name}</div>
-            <div class="product-price">$${product.price?.min.toFixed(2)}</div>
-          </div>
-          <button class="buy-btn" data-id="${product.id}" data-price="${product.price?.min}">Buy</button>
-        `;
-        productsContainer.appendChild(el);
-      });
+      if (item.products && item.products.length > 0) {
+        item.products.forEach(product => {
+          found = true;
+
+          const el = document.createElement("div");
+          el.className = "product-item";
+          el.innerHTML = `
+            <div>
+              <div class="product-name">${product.name}</div>
+              <div class="product-price">$${product.price?.min.toFixed(2)}</div>
+            </div>
+            <button class="buy-btn" data-id="${product.id}" data-price="${product.price?.min}">Buy</button>
+          `;
+          productsContainer.appendChild(el);
+        });
+      }
     });
+
+    if (!found) {
+      productsContainer.innerHTML = "<p>Товари не знайдено.</p>";
+    }
 
     // Відкриття модального вікна
     document.querySelectorAll(".buy-btn").forEach(button => {
@@ -91,7 +96,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (res.ok) {
           successMessage.style.display = "block";
         } else {
-          alert("Помилка: " + result.error || "Спробуйте ще раз");
+          alert("Помилка: " + (result.error || "Спробуйте ще раз"));
         }
       } catch (err) {
         alert("Помилка: " + err.message);
@@ -103,5 +108,3 @@ document.addEventListener("DOMContentLoaded", async () => {
     productsContainer.innerHTML = "<p>Помилка завантаження товарів.</p>";
   }
 });
-
-
