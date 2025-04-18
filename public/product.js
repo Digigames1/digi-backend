@@ -1,19 +1,44 @@
 document.addEventListener("DOMContentLoaded", async () => {
-  const path = window.location.pathname;
-  const productSlug = path.split("/")[1]; // напр. 'steam' з '/steam'
+  const pathParts = window.location.pathname.split("/");
+  const productSlug = pathParts[pathParts.length - 1].toLowerCase();
+
+  const nameElement = document.getElementById("product-name");
+  const priceElement = document.getElementById("product-price");
+  const descriptionElement = document.getElementById("product-description");
+  const logoElement = document.getElementById("product-logo");
 
   try {
-    const res = await fetch(`/api/bamboo?name=${productSlug}`);
+    const res = await fetch("/api/bamboo");
     const data = await res.json();
 
-    const item = data.items[0];
+    if (!data.items || data.items.length === 0) {
+      nameElement.textContent = "No products found.";
+      return;
+    }
 
-    document.getElementById("product-name").textContent = item.name || productSlug;
-    document.getElementById("product-description").textContent = item.description || "No description";
-    document.getElementById("product-image").src = item.logoUrl || "";
-    document.getElementById("product-price").textContent = item.products[0].price.min || "N/A";
+    const product = data.items.find(p => 
+      p.name.toLowerCase().includes(productSlug)
+    );
+
+    if (!product) {
+      nameElement.textContent = "Product not found.";
+      return;
+    }
+
+    nameElement.textContent = product.name;
+    descriptionElement.textContent = product.description || "No description provided.";
+    
+    if (product.products?.[0]?.price?.min) {
+      priceElement.textContent = `Price: $${product.products[0].price.min}`;
+    }
+
+    if (product.logoUrl) {
+      logoElement.src = product.logoUrl;
+      logoElement.style.display = "block";
+    }
+
   } catch (err) {
-    document.getElementById("product-name").textContent = "Product not found";
-    console.error("Failed to load product:", err);
+    nameElement.textContent = "Error loading product.";
+    console.error("❌ Product page error:", err);
   }
 });
