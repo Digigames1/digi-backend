@@ -1,69 +1,62 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uk">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Product</title>
+  <title>Товари</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       padding: 2rem;
       background: #f9f9f9;
     }
-    .product-container {
-      max-width: 960px;
-      margin: auto;
-      padding: 2rem;
-      background: #fff;
-      border-radius: 8px;
+    h1 {
       text-align: center;
+      margin-bottom: 1.5rem;
     }
-    .product-logo {
-      max-width: 220px;
-      margin: 1rem auto;
+    .product-container {
+      max-width: 800px;
+      margin: auto;
+      background: #fff;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-    .price {
-      color: #2c7;
+    .product-container a {
+      display: block;
+      margin: 0.5rem 0;
+      text-decoration: none;
+      color: #007bff;
       font-weight: bold;
     }
-    .variants {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 1rem;
-      margin-top: 2rem;
+    .product-container a:hover {
+      text-decoration: underline;
     }
-    .variant {
-      background: #f2f2f2;
-      padding: 1rem;
+    .product-container div {
+      border: 1px solid #ccc;
       border-radius: 8px;
-      width: 200px;
-      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      padding: 1rem;
+      margin-bottom: 1rem;
     }
-    .variant-logo {
-      max-width: 100%;
-      height: auto;
-      margin-bottom: 0.5rem;
-    }
-    a, button {
-      margin-top: 0.5rem;
-      display: inline-block;
+    button {
+      background: #28a745;
+      color: #fff;
+      border: none;
       padding: 0.5rem 1rem;
-      text-decoration: none;
-      background-color: #28a745;
-      color: white;
-      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    button:hover {
+      background: #218838;
     }
   </style>
 </head>
 <body>
   <div class="product-container">
-    <h1 id="product-name">Loading...</h1>
-    <img id="product-logo" class="product-logo" style="display:none;" />
-    <p id="product-description"></p>
-    <p id="product-price" class="price"></p>
-    <div id="product-variants" class="variants"></div>
+    <p>Завантаження...</p>
   </div>
+
   <script src="/product.js"></script>
 </body>
 </html>
