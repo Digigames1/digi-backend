@@ -2,18 +2,46 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Product Page</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="/css/styles.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Product</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+      background: #f9f9f9;
+    }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+    .product-container {
+      max-width: 600px;
+      margin: auto;
+      padding: 2rem;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .product-logo {
+      max-width: 100%;
+      height: auto;
+      margin-bottom: 1rem;
+    }
+    .price {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #2c7;
+    }
+  </style>
 </head>
 <body>
-  <div class="container">
+  <div class="product-container">
     <h1 id="product-name">Loading...</h1>
-    <img id="product-image" src="" alt="" width="200" />
+    <img id="product-logo" class="product-logo" src="" alt="" style="display: none;" />
+    <p class="price" id="product-price"></p>
     <p id="product-description"></p>
-    <p><strong>Price:</strong> <span id="product-price"></span> USD</p>
   </div>
 
-  <script src="/js/product.js"></script>
+  <script src="/product.js"></script>
 </body>
 </html>
