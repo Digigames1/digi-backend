@@ -1,53 +1,50 @@
 document.addEventListener("DOMContentLoaded", async () => {
-  const path = window.location.pathname.replace("/", "").toLowerCase();
-  const container = document.querySelector(".product-container");
-  container.innerHTML = "<h1>Loading...</h1>";
+  const path = window.location.pathname;
+  const parts = path.split("/").filter(Boolean);
+  const brand = parts[0];
+  const region = parts[1];
+
+  const nameEl = document.getElementById("product-name");
+  const logoEl = document.getElementById("product-logo");
+  const descEl = document.getElementById("product-description");
+  const priceEl = document.getElementById("product-price");
+  const variantsEl = document.getElementById("product-variants");
 
   try {
-    const res = await fetch("/api/bamboo");
-    const data = await res.json();
+    const response = await fetch(`/${brand}${region ? "/" + region : ""}`);
+    const data = await response.json();
 
-    // Знаходимо ВСІ айтеми, які містять ключове слово (наприклад, steam)
-    const matchingItems = data.items.filter(item =>
-      item.name.toLowerCase().includes(path)
-    );
+    nameEl.innerText = brand.toUpperCase();
 
-    if (!matchingItems.length) {
-      container.innerHTML = "<h1>No products found.</h1>";
-      return;
+    if (data.mode === "categories") {
+      // Виводимо підкатегорії
+      variantsEl.innerHTML = data.categories.map(cat => `
+        <div class="variant">
+          <img src="${cat.logoUrl}" alt="${cat.brandName}" class="variant-logo"/>
+          <h3>${cat.brandName}</h3>
+          <a href="/${brand}/${cat.countryCode.toLowerCase()}">Переглянути</a>
+        </div>
+      `).join("");
+    } else {
+      // Виводимо товари
+      logoEl.src = data.logoUrl;
+      logoEl.style.display = "block";
+      descEl.innerText = data.description;
+
+      variantsEl.innerHTML = data.products.map(p => `
+        <div class="variant">
+          <h3>${data.name}</h3>
+          <p>Nominal: ${p.minFaceValue} ${data.currencyCode}</p>
+          <p class="price">Price: $${p.price?.min?.toFixed(2)}</p>
+          <button>Купити</button>
+        </div>
+      `).join("");
     }
-
-    // Беремо загальну інфу з першого
-    const brand = matchingItems[0];
-
-    container.innerHTML = `
-      <h1>${path.toUpperCase()}</h1>
-      <img class="product-logo" src="${brand.logoUrl}" alt="${brand.name}" />
-      <p>${brand.description || ""}</p>
-      <div class="grid-container" id="product-grid"></div>
-    `;
-
-    const grid = document.getElementById("product-grid");
-
-    matchingItems.forEach(item => {
-      item.products?.forEach(product => {
-        const price = product.price?.min?.toFixed(2) || "N/A";
-        const nominal = product.minFaceValue ? `${product.minFaceValue} ${item.currencyCode}` : "N/A";
-        grid.innerHTML += `
-          <div class="product-card">
-            <p><strong>${item.name}</strong></p>
-            <p>Nominal: ${nominal}</p>
-            <p class="price">Price: $${price}</p>
-            <button class="buy-button">Купити</button>
-          </div>
-        `;
-      });
-    });
-
   } catch (err) {
-    console.error("❌ Error:", err);
-    container.innerHTML = "<h1>Error loading products</h1>";
+    nameEl.innerText = "Error loading product.";
+    console.error("❌", err.message);
   }
 });
+
 
 
