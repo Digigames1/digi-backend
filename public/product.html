@@ -11,74 +11,61 @@
       background: #f9f9f9;
     }
     .product-container {
-      max-width: 1000px;
+      max-width: 960px;
       margin: auto;
       padding: 2rem;
       background: #fff;
       border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
       text-align: center;
     }
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 1rem;
-    }
     .product-logo {
-      max-width: 300px;
-      height: auto;
-      margin-bottom: 1rem;
-    }
-    .description {
-      font-size: 1rem;
-      color: #333;
-      margin-bottom: 2rem;
-    }
-    .grid-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-      justify-content: center;
-    }
-    .product-card {
-      background: #f5f5f5;
-      border-radius: 8px;
-      padding: 1rem;
-      flex: 1 1 200px;
-      min-width: 200px;
-      max-width: 250px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    }
-    .product-card p {
-      margin: 0.5rem 0;
+      max-width: 220px;
+      margin: 1rem auto;
     }
     .price {
-      font-size: 1rem;
-      font-weight: bold;
       color: #2c7;
+      font-weight: bold;
     }
-    .buy-button {
-      background: #28a745;
-      color: white;
-      border: none;
-      padding: 0.5rem 1rem;
-      border-radius: 4px;
-      cursor: pointer;
+    .variants {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    .variant {
+      background: #f2f2f2;
+      padding: 1rem;
+      border-radius: 8px;
+      width: 200px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+    .variant-logo {
+      max-width: 100%;
+      height: auto;
+      margin-bottom: 0.5rem;
+    }
+    a, button {
       margin-top: 0.5rem;
-    }
-    .buy-button:hover {
-      background: #218838;
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      text-decoration: none;
+      background-color: #28a745;
+      color: white;
+      border-radius: 4px;
     }
   </style>
 </head>
 <body>
   <div class="product-container">
     <h1 id="product-name">Loading...</h1>
-    <img id="product-logo" class="product-logo" src="" alt="" style="display: none;" />
-    <p id="product-description" class="description"></p>
-    <div class="grid-container" id="product-grid"></div>
+    <img id="product-logo" class="product-logo" style="display:none;" />
+    <p id="product-description"></p>
+    <p id="product-price" class="price"></p>
+    <div id="product-variants" class="variants"></div>
   </div>
-
   <script src="/product.js"></script>
 </body>
 </html>
+
 
