@@ -4,127 +4,60 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>DigiGames</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(to bottom right, #ffffff, #f0f0ff);
-      color: #333;
-    }
-
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 1rem 2rem;
-      background-color: #fff;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
-
-    .logo {
-      font-size: 1.8rem;
-      font-weight: bold;
-      color: #6a0dad;
-      text-decoration: none;
-    }
-
-    .categories {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-      justify-content: center;
-      padding: 2rem;
-    }
-
-    .category-card {
-      background-color: #fff;
-      border: 1px solid #e0e0e0;
-      border-radius: 10px;
-      width: 160px;
-      text-align: center;
-      padding: 1rem;
-      text-decoration: none;
-      color: #333;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-    }
-
-    .category-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 6px 16px rgba(0,0,0,0.1);
-    }
-
-    .category-card img {
-      width: 64px;
-      height: 64px;
-      object-fit: contain;
-      margin-bottom: 0.5rem;
-    }
-
-    footer {
-      background-color: #f4f4f4;
-      padding: 2rem;
-      text-align: center;
-      font-size: 0.9rem;
-      color: #555;
-    }
-
-    footer a {
-      margin: 0 1rem;
-      color: #6a0dad;
-      text-decoration: none;
-    }
-
-    @media (max-width: 600px) {
-      .category-card {
-        width: 45%;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
   <header>
-    <a href="/" class="logo">🎮 DigiGames</a>
+    <div class="container">
+      <div class="logo-area">
+        <img src="/icons/gamepad.svg" alt="logo" class="logo-icon" />
+        <h1 class="logo">DigiGames</h1>
+      </div>
+    </div>
   </header>
 
-  <main>
-    <div class="categories">
+  <main class="container">
+    <div class="category-grid">
       <a href="/playstation" class="category-card">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/4/4e/Playstation_logo_colour.svg" alt="Playstation">
+        <img src="/icons/playstation.svg" alt="Playstation" />
         Playstation
       </a>
       <a href="/steam" class="category-card">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/8/83/Steam_icon_logo.svg" alt="Steam">
+        <img src="/icons/steam.svg" alt="Steam" />
         Steam
       </a>
       <a href="/xbox" class="category-card">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/4/43/Xbox_one_logo.svg" alt="Xbox">
+        <img src="/icons/xbox.svg" alt="Xbox" />
         Xbox
       </a>
       <a href="/netflix" class="category-card">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg" alt="Netflix">
+        <img src="/icons/netflix.svg" alt="Netflix" />
         Netflix
       </a>
       <a href="/roblox" class="category-card">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/3/3a/Roblox_icon_-_2022.svg" alt="Roblox">
+        <img src="/icons/roblox.svg" alt="Roblox" />
         Roblox
       </a>
       <a href="/apple" class="category-card">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" alt="Apple">
+        <img src="/icons/apple.svg" alt="Apple" />
         Apple
       </a>
       <a href="/nintendo" class="category-card">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/0/0d/Nintendo.svg" alt="Nintendo">
+        <img src="/icons/nintendo.svg" alt="Nintendo" />
         Nintendo
       </a>
     </div>
   </main>
 
   <footer>
-    <a href="#">About Us</a>
-    <a href="#">Contacts</a>
-    <a href="#">Partnership</a>
-    <p>&copy; 2025 DigiGames. All rights reserved.</p>
+    <div class="container">
+      <nav class="footer-nav">
+        <a href="/about.html">About Us</a>
+        <a href="/contacts.html">Contacts</a>
+        <a href="/partnership.html">Partnership</a>
+      </nav>
+      <p>© 2025 DigiGames. All rights reserved.</p>
+    </div>
   </footer>
 </body>
 </html>
