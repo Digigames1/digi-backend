@@ -1,59 +1,63 @@
-document.addEventListener("DOMContentLoaded", async () => {
-  const pathParts = window.location.pathname.split("/").filter(Boolean);
-  const [brand, region] = pathParts;
+const pathParts = window.location.pathname.split("/").filter(Boolean);
+const [brand, region] = pathParts;
 
-  const container = document.querySelector(".product-container");
-  container.innerHTML = "<p>Завантаження...</p>";
+const apiUrl = `/api/${brand}${region ? `/${region}` : ""}`;
+const container = document.querySelector(".product-container");
 
-  const apiUrl = region
-    ? `/api/${brand}/${region}`
-    : `/api/${brand}`;
+fetch(apiUrl)
+  .then(res => res.json())
+  .then(data => {
+    const items = data.items || [];
 
-  try {
-    const res = await fetch(apiUrl);
-    const data = await res.json();
-
-    if (!Array.isArray(data) || data.length === 0) {
-      container.innerHTML = "<p>Товари не знайдено.</p>";
+    if (!items.length) {
+      container.innerHTML = `<p>Товари не знайдено.</p>`;
       return;
     }
 
+    // Якщо ми на сторінці /brand (наприклад /playstation)
     if (!region) {
-      // 👉 Якщо ми на сторінці /playstation — показуємо регіони
+      const regionsShown = new Set();
+
       container.innerHTML = `<h1>${brand.toUpperCase()}</h1>`;
-      data.forEach(region => {
-        const div = document.createElement("div");
-        div.classList.add("brand-box");
-        div.innerHTML = `
-          <img src="${region.logo}" alt="${region.name}" />
-          <h3>${region.region}</h3>
-          <a href="/${brand}/${region.region.toLowerCase()}">Переглянути</a>
-        `;
-        container.appendChild(div);
+
+      items.forEach(item => {
+        const regionCode = item.countryCode?.toLowerCase();
+
+        if (!regionsShown.has(regionCode)) {
+          regionsShown.add(regionCode);
+          const link = document.createElement("a");
+          link.href = `/${brand}/${regionCode}`;
+          link.textContent = `${item.name} (${regionCode.toUpperCase()})`;
+          link.style.display = "block";
+          link.style.margin = "0.5rem 0";
+          container.appendChild(link);
+        }
       });
+
     } else {
-      // 👉 Якщо ми на сторінці /playstation/usa — показуємо товари
-      container.innerHTML = `<h1>${brand.toUpperCase()} / ${region.toUpperCase()}</h1>`;
-      data.forEach(product => {
-        const div = document.createElement("div");
-        div.classList.add("product-box");
-        div.innerHTML = `
-          <img src="${product.logo}" alt="${product.name}" />
-          <p><strong>${product.name}</strong></p>
-          <p>${product.price} ${product.currency}</p>
-          <button onclick="buyProduct(${product.id})">Купити</button>
-        `;
-        container.appendChild(div);
+      // Якщо ми на сторінці /brand/region (наприклад /playstation/usa)
+      container.innerHTML = `<h1>${brand.toUpperCase()} — ${region.toUpperCase()}</h1>`;
+
+      items.forEach(item => {
+        item.products?.forEach(product => {
+          const box = document.createElement("div");
+          box.style.border = "1px solid #ccc";
+          box.style.margin = "1rem 0";
+          box.style.padding = "1rem";
+          box.style.borderRadius = "8px";
+          box.innerHTML = `
+            <h3>${product.name}</h3>
+            <p>💰 ${product.price.min} ${product.price.currencyCode}</p>
+            <button onclick="alert('Додано до кошика!')">Купити</button>
+          `;
+          container.appendChild(box);
+        });
       });
     }
-  } catch (err) {
-    console.error("❌ Error loading product:", err);
-    container.innerHTML = "<p>Помилка завантаження товарів.</p>";
-  }
-});
-
-function buyProduct(id) {
-  alert(`🛒 Ви вибрали товар з ID: ${id}\nТут буде логіка оплати.`);
-}
+  })
+  .catch(err => {
+    console.error("❌ Failed to load product:", err);
+    container.innerHTML = `<p>Помилка завантаження товару</p>`;
+  });
 
 
