@@ -17,34 +17,38 @@ document.addEventListener("DOMContentLoaded", async () => {
   try {
     const apiUrl = region ? `/api/${brand}/${region}` : `/api/${brand}`;
     const res = await fetch(apiUrl);
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("❌ HTTP Error:", res.status, errorText);
+      productsContainer.innerHTML = "<p>Помилка завантаження товарів.</p>";
+      return;
+    }
+
     const data = await res.json();
+    console.log("📦 Данні, що прийшли:", data);
+
+    if (!data || !data.length) {
+      productsContainer.innerHTML = "<p>Товари не знайдено.</p>";
+      return;
+    }
 
     brandTitle.textContent = `${brand.toUpperCase()} ${region?.toUpperCase() || ""}`;
 
-    let found = false;
-
     data.forEach(item => {
-      if (item.products && item.products.length > 0) {
-        item.products.forEach(product => {
-          found = true;
-
-          const el = document.createElement("div");
-          el.className = "product-item";
-          el.innerHTML = `
-            <div>
-              <div class="product-name">${product.name}</div>
-              <div class="product-price">$${product.price?.min.toFixed(2)}</div>
-            </div>
-            <button class="buy-btn" data-id="${product.id}" data-price="${product.price?.min}">Buy</button>
-          `;
-          productsContainer.appendChild(el);
-        });
-      }
+      item.products?.forEach(product => {
+        const el = document.createElement("div");
+        el.className = "product-item";
+        el.innerHTML = `
+          <div>
+            <div class="product-name">${product.name}</div>
+            <div class="product-price">$${product.price?.min.toFixed(2)}</div>
+          </div>
+          <button class="buy-btn" data-id="${product.id}" data-price="${product.price?.min}">Buy</button>
+        `;
+        productsContainer.appendChild(el);
+      });
     });
-
-    if (!found) {
-      productsContainer.innerHTML = "<p>Товари не знайдено.</p>";
-    }
 
     // Відкриття модального вікна
     document.querySelectorAll(".buy-btn").forEach(button => {
@@ -105,6 +109,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   } catch (err) {
     console.error("❌ Load error:", err.message);
+    console.error("❌ Full error object:", err);
     productsContainer.innerHTML = "<p>Помилка завантаження товарів.</p>";
   }
 });
+
