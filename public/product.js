@@ -17,34 +17,36 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     brandTitle.textContent = brand.toUpperCase();
 
-    // Групуємо товари по підкатегоріях (наприклад: USA, CANADA)
     const grouped = {};
-    data.items.forEach((item) => {
-      const groupKey = item.name; // Наприклад: Playstation USA
+
+    data.items.forEach(item => {
+      const groupKey = item.name;
       if (!grouped[groupKey]) grouped[groupKey] = [];
       grouped[groupKey].push(item);
     });
 
-    for (const groupName in grouped) {
+    for (const group in grouped) {
       const subcategory = document.createElement("div");
       subcategory.className = "subcategory";
 
       const title = document.createElement("div");
       title.className = "subcategory-title";
-      title.textContent = groupName;
+      title.textContent = group;
 
       const list = document.createElement("div");
       list.className = "product-list";
 
-      grouped[groupName].forEach(item => {
+      grouped[group].forEach(product => {
+        if (!product.price || typeof product.price.min !== "number") return; // 🛡️ Перевірка
+
         const productEl = document.createElement("div");
         productEl.className = "product-item";
         productEl.innerHTML = `
           <div>
-            <div class="product-name">${item.name}</div>
-            <div class="product-price">$${item.price.min.toFixed(2)}</div>
+            <div class="product-name">${product.name}</div>
+            <div class="product-price">$${product.price.min.toFixed(2)}</div>
           </div>
-          <button class="buy-btn" data-id="${item.id}" data-price="${item.price.min}">Buy</button>
+          <button class="buy-btn" data-id="${product.id}" data-price="${product.price.min}">Buy</button>
         `;
         list.appendChild(productEl);
       });
@@ -54,12 +56,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       productsContainer.appendChild(subcategory);
     }
 
-    // [🔜 optionally додається логіка покупки якщо потрібно]
-
   } catch (err) {
     console.error("❌ Load error:", err.message);
     productsContainer.innerHTML = "<p>Помилка завантаження товарів.</p>";
   }
 });
+
 
 
