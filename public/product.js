@@ -17,25 +17,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   try {
     const apiUrl = region ? `/api/${brand}/${region}` : `/api/${brand}`;
     const res = await fetch(apiUrl);
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error("❌ HTTP Error:", res.status, errorText);
-      productsContainer.innerHTML = "<p>Помилка завантаження товарів.</p>";
-      return;
-    }
-
     const data = await res.json();
-    console.log("📦 Данні, що прийшли:", data);
 
-    if (!data || !data.length) {
+    console.log("📦 Дані, що прийшли:", data);
+
+    if (!data || !data.items || !data.items.length) {
       productsContainer.innerHTML = "<p>Товари не знайдено.</p>";
       return;
     }
 
     brandTitle.textContent = `${brand.toUpperCase()} ${region?.toUpperCase() || ""}`;
 
-    data.forEach(item => {
+    data.items.forEach(item => {
       item.products?.forEach(product => {
         const el = document.createElement("div");
         el.className = "product-item";
@@ -100,7 +93,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (res.ok) {
           successMessage.style.display = "block";
         } else {
-          alert("Помилка: " + (result.error || "Спробуйте ще раз"));
+          alert("Помилка: " + result.error || "Спробуйте ще раз");
         }
       } catch (err) {
         alert("Помилка: " + err.message);
@@ -109,8 +102,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   } catch (err) {
     console.error("❌ Load error:", err.message);
-    console.error("❌ Full error object:", err);
     productsContainer.innerHTML = "<p>Помилка завантаження товарів.</p>";
   }
 });
+
 
