@@ -2,115 +2,74 @@ const express = require("express");
 const router = express.Router();
 const axios = require("axios");
 
-const {
-  BAMBOO_CLIENT_ID,
-  BAMBOO_CLIENT_SECRET
-} = process.env;
+// 🔐 Змінні з .env
+const BAMBOO_BASE_URL = "https://api.bamboocardportal.com"; // продакшен
+const BAMBOO_CATALOG_ENDPOINT = `${BAMBOO_BASE_URL}/api/integration/v2.0/catalog`;
 
-const BASE_URL = "https://api.bamboocardportal.com";
+const params = {
+  CurrencyCode: "USD",
+  CountryCode: "US",
+  PageSize: 100,
+  PageIndex: 0,
+};
 
-// 🔐 Авторизація
-async function getAccessToken() {
-  const response = await axios.post(
-    `${BASE_URL}/v1/oauth/token`,
-    {
-      client_id: BAMBOO_CLIENT_ID,
-      client_secret: BAMBOO_CLIENT_SECRET,
-      grant_type: "client_credentials"
-    },
-    {
-      headers: {
-        "Content-Type": "application/json"
-      }
-    }
-  );
-  return response.data.access_token;
-}
-
-// 📘 1. Повертає список підкатегорій (наприклад: USA, EUR, HKD)
+// ✅ 1. Отримати всі регіони певного бренду
 router.get("/api/:brand", async (req, res) => {
   const { brand } = req.params;
+
   try {
-    const token = await getAccessToken();
+    const response = await axios.get(BAMBOO_CATALOG_ENDPOINT, { params });
 
-    const response = await axios.get(
-      `${BASE_URL}/api/integration/v2.0/catalog?CurrencyCode=USD&CountryCode=US&PageSize=100&PageIndex=0`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      }
-    );
-
-    const items = response.data.items || [];
-
-    // 🔍 Фільтруємо потрібний бренд
-    const filtered = items.filter(item =>
-      item.name.toLowerCase().includes(brand.toLowerCase())
-    );
-
-    // 🧠 Витягуємо унікальні підкатегорії
-    const regions = [...new Set(
-      filtered.map(item => {
-        const name = item.name.toLowerCase();
-        const region = name.replace(brand.toLowerCase(), "").trim();
-        return region || "global";
-      })
-    )];
+    const regions = response.data.items
+      .filter(item => item.name.toLowerCase().includes(brand.toLowerCase()))
+      .map(item => ({
+        name: item.name,
+        region: extractRegion(item.name),
+        logo: item.logoUrl,
+      }));
 
     res.json(regions);
   } catch (error) {
-    console.error("❌ Dynamic route error:", error.message);
-    res.status(500).json({ error: "Failed to load regions" });
+    console.error("❌ Dynamic route error:", error.response?.data || error.message);
+    res.status(500).json({ error: "Failed to fetch brand category" });
   }
 });
 
-// 📘 2. Повертає товари для підкатегорії (наприклад: Playstation USA)
+// ✅ 2. Отримати товари для конкретного регіону бренду
 router.get("/api/:brand/:region", async (req, res) => {
   const { brand, region } = req.params;
 
   try {
-    const token = await getAccessToken();
+    const response = await axios.get(BAMBOO_CATALOG_ENDPOINT, { params });
 
-    const response = await axios.get(
-      `${BASE_URL}/api/integration/v2.0/catalog?CurrencyCode=USD&CountryCode=US&PageSize=100&PageIndex=0`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      }
+    const filtered = response.data.items.filter(item =>
+      item.name.toLowerCase().includes(brand.toLowerCase()) &&
+      item.name.toLowerCase().includes(region.toLowerCase())
     );
 
-    const items = response.data.items || [];
-
-    const products = [];
-
-    items.forEach(item => {
-      const name = item.name.toLowerCase();
-      const cleanedName = name.replace(/\s+/g, "");
-      const matchName = brand.toLowerCase();
-      const matchRegion = region.toLowerCase();
-
-      if (cleanedName.includes(matchName) && cleanedName.includes(matchRegion)) {
-        item.products.forEach(product => {
-          products.push({
-            name: product.name,
-            brand: item.name,
-            logo: item.logoUrl,
-            description: item.description,
-            price: product.price?.min,
-            currency: product.price?.currencyCode,
-          });
-        });
-      }
-    });
+    const products = filtered.flatMap(item =>
+      item.products.map(prod => ({
+        id: prod.id,
+        name: prod.name,
+        price: prod.price?.min || "N/A",
+        currency: prod.price?.currencyCode || "USD",
+        logo: item.logoUrl || "",
+      }))
+    );
 
     res.json(products);
   } catch (error) {
-    console.error("❌ Dynamic fetch error:", error.message);
-    res.status(500).json({ error: "Failed to load products for this region" });
+    console.error("❌ Dynamic route error:", error.response?.data || error.message);
+    res.status(500).json({ error: "Failed to fetch brand region" });
   }
 });
 
+// 🔎 Витягуємо регіон з назви
+function extractRegion(name) {
+  const parts = name.split(" ");
+  return parts.length > 1 ? parts.slice(1).join(" ") : "global";
+}
+
 module.exports = router;
+
 
