@@ -1,41 +1,51 @@
-const productName = window.location.pathname.slice(1).toLowerCase();
-const allowedKeywords = ['playstation', 'steam', 'itunes', 'xbox', 'netflix', 'spotify', 'roblox'];
+document.addEventListener("DOMContentLoaded", async () => {
+  const path = window.location.pathname.replace("/", "").toLowerCase();
 
-fetch("/api/bamboo")
-  .then(res => res.json())
-  .then(data => {
-    const items = data.items || [];
+  const container = document.querySelector(".product-container");
+  container.innerHTML = "<h1>Loading...</h1>";
 
-    // Знайдемо товар за назвою з URL, якщо вона є в списку дозволених
-    const product = items.find(item =>
-      allowedKeywords.some(keyword =>
-        item.name.toLowerCase().includes(keyword) &&
-        productName.includes(keyword)
-      )
+  try {
+    const res = await fetch("/api/bamboo");
+    const data = await res.json();
+
+    const brand = data.items.find(item =>
+      item.name.toLowerCase().includes(path)
     );
 
-    if (!product) {
-      document.getElementById("product-name").textContent = "Error loading product.";
+    if (!brand) {
+      container.innerHTML = "<h1>Error loading product.</h1>";
       return;
     }
 
-    const price = product.products?.[0]?.price?.min || "N/A";
+    // Очистити і почати виводити товари
+    container.innerHTML = `
+      <h1>${brand.name}</h1>
+      <img class="product-logo" src="${brand.logoUrl}" alt="${brand.name}" />
+      <p>${brand.description}</p>
+    `;
 
-    document.getElementById("product-name").textContent = product.name;
-    document.getElementById("product-logo").src = product.logoUrl;
-    document.getElementById("product-logo").style.display = "block";
-    document.getElementById("product-price").textContent = `Price: $${price}`;
-    document.getElementById("product-description").textContent = product.description;
+    if (!brand.products || brand.products.length === 0) {
+      container.innerHTML += `<p>No products available.</p>`;
+      return;
+    }
 
-    // Кнопка Купити
-    const buyBtn = document.createElement("button");
-    buyBtn.textContent = "🛒 Купити";
-    buyBtn.style.cssText = "padding: 0.5rem 1rem; font-size: 1rem; background: green; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 1rem;";
-    buyBtn.onclick = () => alert(`Ти обрав: ${product.name}\nЦіна: $${price}`);
-    document.querySelector(".product-container").appendChild(buyBtn);
-  })
-  .catch(err => {
-    document.getElementById("product-name").textContent = "Error loading product.";
-    console.error("❌ Fetch error:", err);
-  });
+    // Виводимо всі товари в бренді
+    brand.products.forEach((product) => {
+      const price = product.price?.min?.toFixed(2) || "N/A";
+      const productHTML = `
+        <div style="margin-top: 1rem; padding: 1rem; border-top: 1px solid #ccc;">
+          <p><strong>Nominal:</strong> ${product.minFaceValue} ${brand.currencyCode}</p>
+          <p class="price">Price: $${price}</p>
+          <button class="buy-button">🛒 Купити</button>
+        </div>
+      `;
+      container.innerHTML += productHTML;
+    });
+
+  } catch (error) {
+    console.error("❌ Error:", error);
+    container.innerHTML = "<h1>Failed to load product details.</h1>";
+  }
+});
+
 
