@@ -35,6 +35,11 @@ async function startServer() {
     app.use("/api/bamboo", bambooRouter);
     app.use("/", productPageRouter); // 🧭 API для динамічних категорій і підкатегорій
 
+    // 🏠 Головна сторінка
+    app.get("/", (req, res) => {
+      res.sendFile(path.join(__dirname, "public", "index.html"));
+    });
+
     // 🧭 Фронт (HTML) — динамічні сторінки
     app.get("/:brand/:region?", (req, res) => {
       res.sendFile(path.join(__dirname, "public", "product.html"));
@@ -50,6 +55,7 @@ async function startServer() {
 }
 
 startServer();
+
 
 
 
