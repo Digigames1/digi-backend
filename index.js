@@ -9,7 +9,7 @@ const app = express();
 app.use(express.json());
 app.use(morgan("dev"));
 
-// 🔽 Статичні файли (для admin.html та інших)
+// 🔽 Статичні файли
 app.use(express.static(path.join(__dirname, "public")));
 
 // 🔽 Роутери
@@ -17,7 +17,7 @@ const orderRouter = require("./routers/order");
 const adminRouter = require("./routers/admin");
 const productsRouter = require("./routers/products");
 const bambooRouter = require("./routers/bamboo");
-const dynamicProductRouter = require("./routers/dynamicProduct"); // ✅ Новий роут
+const productPageRouter = require("./routers/productPage"); // 🆕
 
 const client = new MongoClient(process.env.DB_URL);
 let db;
@@ -28,28 +28,14 @@ async function startServer() {
     db = client.db("digi");
     console.log("✅ Connected to MongoDB");
 
-    // Публічні запити
-    app.use("/api/order", (req, res, next) => {
-      req.db = db;
-      next();
-    }, orderRouter);
-
-    // Адмін
-    app.use("/api/admin", (req, res, next) => {
-      req.db = db;
-      next();
-    }, adminRouter);
-
-    // Giftery API
+    // 🔽 API
+    app.use("/api/order", (req, res, next) => { req.db = db; next(); }, orderRouter);
+    app.use("/api/admin", (req, res, next) => { req.db = db; next(); }, adminRouter);
     app.use("/api/products", productsRouter);
-
-    // Bamboo API
     app.use("/api/bamboo", bambooRouter);
+    app.use("/", productPageRouter); // 🧭 API для динамічних категорій і підкатегорій
 
-    // 🧭 Динамічний каталог за брендом (Playstation, Steam, тощо)
-    app.use("/", dynamicProductRouter);
-
-    // 🧭 Фронтовий шаблон для сторінки товару
+    // 🧭 Фронт (HTML) — динамічні сторінки
     app.get("/:brand/:region?", (req, res) => {
       res.sendFile(path.join(__dirname, "public", "product.html"));
     });
@@ -64,5 +50,6 @@ async function startServer() {
 }
 
 startServer();
+
 
 
