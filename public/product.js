@@ -1,63 +1,107 @@
-const pathParts = window.location.pathname.split("/").filter(Boolean);
-const [brand, region] = pathParts;
+document.addEventListener("DOMContentLoaded", async () => {
+  const brand = window.location.pathname.split("/")[1];
+  const region = window.location.pathname.split("/")[2];
 
-const apiUrl = `/api/${brand}${region ? `/${region}` : ""}`;
-const container = document.querySelector(".product-container");
+  const productsContainer = document.getElementById("products");
+  const brandTitle = document.getElementById("brand-title");
 
-fetch(apiUrl)
-  .then(res => res.json())
-  .then(data => {
-    const items = data.items || [];
+  const modal = document.getElementById("buyModal");
+  const orderForm = document.getElementById("orderForm");
+  const successMessage = document.getElementById("successMessage");
 
-    if (!items.length) {
-      container.innerHTML = `<p>Товари не знайдено.</p>`;
+  const clientNameInput = document.getElementById("clientName");
+  const clientEmailInput = document.getElementById("clientEmail");
+  const productIdInput = document.getElementById("selectedProductId");
+  const selectedPriceInput = document.getElementById("selectedPrice");
+
+  try {
+    const apiUrl = region ? `/api/${brand}/${region}` : `/api/${brand}`;
+    const res = await fetch(apiUrl);
+    const data = await res.json();
+
+    if (!data || !data.length) {
+      productsContainer.innerHTML = "<p>Товари не знайдено.</p>";
       return;
     }
 
-    // Якщо ми на сторінці /brand (наприклад /playstation)
-    if (!region) {
-      const regionsShown = new Set();
+    brandTitle.textContent = `${brand.toUpperCase()} ${region?.toUpperCase() || ""}`;
 
-      container.innerHTML = `<h1>${brand.toUpperCase()}</h1>`;
-
-      items.forEach(item => {
-        const regionCode = item.countryCode?.toLowerCase();
-
-        if (!regionsShown.has(regionCode)) {
-          regionsShown.add(regionCode);
-          const link = document.createElement("a");
-          link.href = `/${brand}/${regionCode}`;
-          link.textContent = `${item.name} (${regionCode.toUpperCase()})`;
-          link.style.display = "block";
-          link.style.margin = "0.5rem 0";
-          container.appendChild(link);
-        }
+    data.forEach(item => {
+      item.products?.forEach(product => {
+        const el = document.createElement("div");
+        el.className = "product-item";
+        el.innerHTML = `
+          <div>
+            <div class="product-name">${product.name}</div>
+            <div class="product-price">$${product.price?.min.toFixed(2)}</div>
+          </div>
+          <button class="buy-btn" data-id="${product.id}" data-price="${product.price?.min}">Buy</button>
+        `;
+        productsContainer.appendChild(el);
       });
+    });
 
-    } else {
-      // Якщо ми на сторінці /brand/region (наприклад /playstation/usa)
-      container.innerHTML = `<h1>${brand.toUpperCase()} — ${region.toUpperCase()}</h1>`;
+    // Відкриття модального вікна
+    document.querySelectorAll(".buy-btn").forEach(button => {
+      button.addEventListener("click", (e) => {
+        const productId = e.target.dataset.id;
+        const price = e.target.dataset.price;
 
-      items.forEach(item => {
-        item.products?.forEach(product => {
-          const box = document.createElement("div");
-          box.style.border = "1px solid #ccc";
-          box.style.margin = "1rem 0";
-          box.style.padding = "1rem";
-          box.style.borderRadius = "8px";
-          box.innerHTML = `
-            <h3>${product.name}</h3>
-            <p>💰 ${product.price.min} ${product.price.currencyCode}</p>
-            <button onclick="alert('Додано до кошика!')">Купити</button>
-          `;
-          container.appendChild(box);
+        productIdInput.value = productId;
+        selectedPriceInput.value = price;
+
+        clientNameInput.value = "";
+        clientEmailInput.value = "";
+        successMessage.style.display = "none";
+
+        modal.style.display = "block";
+      });
+    });
+
+    // Закриття по кліку поза формою
+    window.onclick = function (event) {
+      if (event.target === modal) {
+        modal.style.display = "none";
+      }
+    };
+
+    // Відправка форми
+    orderForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const payload = {
+        productId: productIdInput.value,
+        email: clientEmailInput.value,
+        quantity: 1,
+        name: clientNameInput.value,
+        price: selectedPriceInput.value
+      };
+
+      try {
+        const res = await fetch("/api/order", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
         });
-      });
-    }
-  })
-  .catch(err => {
-    console.error("❌ Failed to load product:", err);
-    container.innerHTML = `<p>Помилка завантаження товару</p>`;
-  });
+
+        const result = await res.json();
+
+        if (res.ok) {
+          successMessage.style.display = "block";
+        } else {
+          alert("Помилка: " + result.error || "Спробуйте ще раз");
+        }
+      } catch (err) {
+        alert("Помилка: " + err.message);
+      }
+    });
+
+  } catch (err) {
+    console.error("❌ Load error:", err.message);
+    productsContainer.innerHTML = "<p>Помилка завантаження товарів.</p>";
+  }
+});
 
 
