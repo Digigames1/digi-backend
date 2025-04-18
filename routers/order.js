@@ -1,6 +1,5 @@
 const express = require("express");
 const router = express.Router();
-const nodemailer = require("nodemailer");
 
 // Валідація email
 const validateEmail = (email) => {
@@ -8,20 +7,11 @@ const validateEmail = (email) => {
   return emailRegex.test(email);
 };
 
-// 📩 Налаштування транспорту
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
-
 router.post("/", async (req, res) => {
-  const { productId, email, quantity } = req.body;
+  const { productId, email, quantity, name, price } = req.body;
 
   // Перевірка
-  if (!productId || !email || !quantity) {
+  if (!productId || !email || !quantity || !name || !price) {
     return res.status(400).json({ error: "Missing required fields." });
   }
 
@@ -32,7 +22,10 @@ router.post("/", async (req, res) => {
   const order = {
     productId,
     email,
+    name,
     quantity,
+    price: parseFloat(price),
+    status: "pending",
     createdAt: new Date(),
   };
 
@@ -40,20 +33,12 @@ router.post("/", async (req, res) => {
     const result = await req.db.collection("orders").insertOne(order);
     console.log("✅ Order saved to DB:", result.insertedId);
 
-    // Надсилаємо лист
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: "🎁 Ваш подарунок від DigiGames",
-      text: `Дякуємо за замовлення!\n\nВаш товар: ${productId}\nКількість: ${quantity}`,
-    };
+    // 🔕 Тимчасово НЕ надсилаємо email
+    // Якщо потрібно, розкоментуй нижче і додай nodemailer + env
 
-    await transporter.sendMail(mailOptions);
-    console.log("📧 Email sent successfully");
-
-    res.status(201).json({ message: "Order placed successfully!", orderId: result.insertedId });
+    res.status(201).json({ message: "Order saved!", orderId: result.insertedId });
   } catch (err) {
-    console.error("Order error:", err);
+    console.error("❌ Order error:", err);
     res.status(500).json({ error: "Order processing failed." });
   }
 });
@@ -87,3 +72,4 @@ router.get("/admin", async (req, res) => {
 });
 
 module.exports = router;
+
