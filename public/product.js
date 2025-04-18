@@ -15,23 +15,23 @@ document.addEventListener("DOMContentLoaded", async () => {
   const isMainBrandPage = !region;
 
   try {
-    const apiUrl = region
-      ? `/api/${brand}/${region}`
-      : `/api/${brand}`;
-
+    const apiUrl = region ? `/api/${brand}/${region}` : `/api/${brand}`;
     const res = await fetch(apiUrl);
     const data = await res.json();
     console.log("📦 Дані, що прийшли:", data);
 
     brandTitle.textContent = brand.toUpperCase();
 
-    if (!data || !data.length) {
+    const items = data?.items || [];
+
+    if (!items.length) {
       productsContainer.innerHTML = "<p>Товари не знайдено.</p>";
       return;
     }
 
+    // 🔸 Головна сторінка бренду — вивід підкатегорій
     if (isMainBrandPage) {
-      data.forEach(item => {
+      items.forEach(item => {
         const countryCode = item.countryCode?.toLowerCase();
         const regionPath = `${brand}/${countryCode}`;
         const el = document.createElement("div");
@@ -41,7 +41,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    data.forEach(item => {
+    // 🔸 Сторінка конкретної країни — показати товари
+    items.forEach(item => {
       item.products?.forEach(product => {
         const el = document.createElement("div");
         el.className = "product-item";
@@ -56,7 +57,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
     });
 
-    // Відкриття модального вікна
+    // Відкриття модалки
     document.querySelectorAll(".buy-btn").forEach(button => {
       button.addEventListener("click", (e) => {
         const productId = e.target.dataset.id;
@@ -64,14 +65,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         productIdInput.value = productId;
         selectedPriceInput.value = price;
-
         clientNameInput.value = "";
         clientEmailInput.value = "";
         modal.style.display = "block";
       });
     });
 
-    // Закриття по кліку поза формою
+    // Закриття модалки
     window.onclick = function (event) {
       if (event.target === modal) {
         modal.style.display = "none";
@@ -117,7 +117,4 @@ document.addEventListener("DOMContentLoaded", async () => {
     productsContainer.innerHTML = "<p>Помилка завантаження товарів.</p>";
   }
 });
-
-
-
 
