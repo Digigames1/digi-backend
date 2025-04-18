@@ -19,12 +19,14 @@
       background: #6c4ccf;
       color: white;
       padding: 1rem 2rem;
-      text-align: center;
+      display: flex;
+      align-items: center;
     }
 
-    h1 {
-      margin: 0;
-      font-size: 2rem;
+    .logo {
+      font-size: 1.8rem;
+      font-weight: bold;
+      margin-right: auto;
     }
 
     .category-grid {
@@ -42,17 +44,20 @@
       width: 180px;
       text-align: center;
       box-shadow: 0 0 10px rgba(0,0,0,0.05);
-      transition: transform 0.2s;
+      transition: transform 0.3s, box-shadow 0.3s;
+      cursor: pointer;
     }
 
     .category-card:hover {
-      transform: scale(1.05);
+      transform: translateY(-5px);
+      box-shadow: 0 12px 20px rgba(0,0,0,0.1);
     }
 
     .category-card a {
       text-decoration: none;
       color: #6c4ccf;
       font-weight: bold;
+      font-size: 1.1rem;
     }
 
     footer {
@@ -76,7 +81,7 @@
 </head>
 <body>
   <header>
-    <h1>DigiGames</h1>
+    <div class="logo">🎮 DigiGames</div>
   </header>
 
   <main>
@@ -98,3 +103,4 @@
   </footer>
 </body>
 </html>
+
