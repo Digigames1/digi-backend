@@ -10,10 +10,6 @@
       padding: 2rem;
       background: #f9f9f9;
     }
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 0.5rem;
-    }
     .product-container {
       max-width: 600px;
       margin: auto;
@@ -21,6 +17,11 @@
       background: #fff;
       border-radius: 8px;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
     }
     .product-logo {
       max-width: 100%;
@@ -31,24 +32,24 @@
       font-size: 1.2rem;
       font-weight: bold;
       color: #2c7;
+      margin-bottom: 1rem;
     }
-    #variant-select {
-      margin-top: 1rem;
-      padding: 0.5rem;
+    .description {
       font-size: 1rem;
+      color: #333;
     }
-    #buy-button {
-      margin-top: 1rem;
-      padding: 0.6rem 1.2rem;
+    button {
+      padding: 0.7rem 1.5rem;
       font-size: 1rem;
-      background-color: #28c76f;
+      background-color: #28a745;
       color: white;
       border: none;
-      border-radius: 4px;
+      border-radius: 5px;
       cursor: pointer;
+      margin-top: 1.5rem;
     }
-    #buy-button:hover {
-      background-color: #20b265;
+    button:hover {
+      background-color: #218838;
     }
   </style>
 </head>
@@ -56,12 +57,11 @@
   <div class="product-container">
     <h1 id="product-name">Loading...</h1>
     <img id="product-logo" class="product-logo" src="" alt="" style="display: none;" />
-    <select id="variant-select" style="display: none;"></select>
-    <button id="buy-button" style="display: none;">🛒 Купити</button>
     <p class="price" id="product-price"></p>
-    <p id="product-description"></p>
+    <p id="product-description" class="description"></p>
   </div>
 
   <script src="/product.js"></script>
 </body>
 </html>
+
