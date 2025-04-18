@@ -81,34 +81,57 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Відправка форми
     orderForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
+      e.preventDefault();document.addEventListener("DOMContentLoaded", async () => {
+  const brand = window.location.pathname.split("/")[1];
+  const region = window.location.pathname.split("/")[2];
 
-      const payload = {
-        productId: productIdInput.value,
-        email: clientEmailInput.value,
-        quantity: 1,
-        name: clientNameInput.value,
-        price: selectedPriceInput.value
-      };
+  const productsContainer = document.getElementById("products");
+  const brandTitle = document.getElementById("brand-title");
 
-      try {
-        const res = await fetch("/api/order", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(payload)
-        });
+  const isMainBrandPage = !region;
 
-        if (res.ok) {
-          window.location.href = "/order-success.html"; // ✅ Переадресація
-        } else {
-          const result = await res.json();
-          alert("Помилка: " + result.error || "Спробуйте ще раз");
-        }
-      } catch (err) {
-        alert("Помилка: " + err.message);
-      }
+  try {
+    const apiUrl = region
+      ? `/api/${brand}/${region}`
+      : `/api/${brand}`;
+
+    const res = await fetch(apiUrl);
+    const data = await res.json();
+    console.log("📦 Дані, що прийшли:", data);
+
+    brandTitle.textContent = brand.toUpperCase();
+
+    if (!data || !data.length) {
+      productsContainer.innerHTML = "<p>Товари не знайдено.</p>";
+      return;
+    }
+
+    // 🧭 Показати підкатегорії
+    if (isMainBrandPage) {
+      data.forEach(item => {
+        const countryCode = item.countryCode?.toLowerCase();
+        const regionPath = `${brand}/${countryCode}`;
+        const el = document.createElement("div");
+        el.innerHTML = `<a href="/${regionPath}" style="display:block; margin: 0.5rem 0; font-weight: bold;">${item.name}</a>`;
+        productsContainer.appendChild(el);
+      });
+      return;
+    }
+
+    // 🛍️ Показати продукти конкретної підкатегорії
+    data.forEach(item => {
+      item.products?.forEach(product => {
+        const el = document.createElement("div");
+        el.className = "product-item";
+        el.innerHTML = `
+          <div>
+            <div class="product-name">${product.name}</div>
+            <div class="product-price">$${product.price?.min?.toFixed(2)}</div>
+          </div>
+          <button class="buy-btn" data-id="${product.id}" data-price="${product.price?.min}">Buy</button>
+        `;
+        productsContainer.appendChild(el);
+      });
     });
 
   } catch (err) {
