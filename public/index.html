@@ -6,93 +6,117 @@
   <title>DigiGames</title>
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
       margin: 0;
-      background: #f5f3ff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to bottom right, #ffffff, #f0f0ff);
       color: #333;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
     }
 
     header {
-      background: #6c4ccf;
-      color: white;
-      padding: 1rem 2rem;
       display: flex;
       align-items: center;
+      justify-content: space-between;
+      padding: 1rem 2rem;
+      background-color: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
 
     .logo {
       font-size: 1.8rem;
       font-weight: bold;
-      margin-right: auto;
+      color: #6a0dad;
+      text-decoration: none;
     }
 
-    .category-grid {
+    .categories {
       display: flex;
       flex-wrap: wrap;
+      gap: 1rem;
       justify-content: center;
-      gap: 1.5rem;
       padding: 2rem;
     }
 
     .category-card {
-      background: white;
-      border-radius: 12px;
-      padding: 1.5rem;
-      width: 180px;
+      background-color: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      width: 160px;
       text-align: center;
-      box-shadow: 0 0 10px rgba(0,0,0,0.05);
-      transition: transform 0.3s, box-shadow 0.3s;
-      cursor: pointer;
+      padding: 1rem;
+      text-decoration: none;
+      color: #333;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
     }
 
     .category-card:hover {
       transform: translateY(-5px);
-      box-shadow: 0 12px 20px rgba(0,0,0,0.1);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.1);
     }
 
-    .category-card a {
-      text-decoration: none;
-      color: #6c4ccf;
-      font-weight: bold;
-      font-size: 1.1rem;
+    .category-card img {
+      width: 64px;
+      height: 64px;
+      object-fit: contain;
+      margin-bottom: 0.5rem;
     }
 
     footer {
-      background: #eee;
+      background-color: #f4f4f4;
       padding: 2rem;
       text-align: center;
-      margin-top: auto;
+      font-size: 0.9rem;
+      color: #555;
     }
 
     footer a {
-      color: #6c4ccf;
-      text-decoration: none;
       margin: 0 1rem;
-      font-weight: bold;
+      color: #6a0dad;
+      text-decoration: none;
     }
 
-    footer a:hover {
-      text-decoration: underline;
+    @media (max-width: 600px) {
+      .category-card {
+        width: 45%;
+      }
     }
   </style>
 </head>
 <body>
   <header>
-    <div class="logo">🎮 DigiGames</div>
+    <a href="/" class="logo">🎮 DigiGames</a>
   </header>
 
   <main>
-    <div class="category-grid">
-      <div class="category-card"><a href="/playstation">Playstation</a></div>
-      <div class="category-card"><a href="/steam">Steam</a></div>
-      <div class="category-card"><a href="/xbox">Xbox</a></div>
-      <div class="category-card"><a href="/netflix">Netflix</a></div>
-      <div class="category-card"><a href="/roblox">Roblox</a></div>
-      <div class="category-card"><a href="/apple">Apple</a></div>
-      <div class="category-card"><a href="/nintendo">Nintendo</a></div>
+    <div class="categories">
+      <a href="/playstation" class="category-card">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/4/4e/Playstation_logo_colour.svg" alt="Playstation">
+        Playstation
+      </a>
+      <a href="/steam" class="category-card">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/8/83/Steam_icon_logo.svg" alt="Steam">
+        Steam
+      </a>
+      <a href="/xbox" class="category-card">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/4/43/Xbox_one_logo.svg" alt="Xbox">
+        Xbox
+      </a>
+      <a href="/netflix" class="category-card">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg" alt="Netflix">
+        Netflix
+      </a>
+      <a href="/roblox" class="category-card">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/3/3a/Roblox_icon_-_2022.svg" alt="Roblox">
+        Roblox
+      </a>
+      <a href="/apple" class="category-card">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" alt="Apple">
+        Apple
+      </a>
+      <a href="/nintendo" class="category-card">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/0/0d/Nintendo.svg" alt="Nintendo">
+        Nintendo
+      </a>
     </div>
   </main>
 
@@ -100,7 +124,9 @@
     <a href="#">About Us</a>
     <a href="#">Contacts</a>
     <a href="#">Partnership</a>
+    <p>&copy; 2025 DigiGames. All rights reserved.</p>
   </footer>
 </body>
 </html>
+
 
