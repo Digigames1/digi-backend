@@ -11,20 +11,33 @@ body {
   padding: 1rem;
 }
 
+/* Header */
 header {
   background-color: #6a0dad;
   color: #fff;
   padding: 1rem 0;
 }
 
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
 .logo {
-  margin: 0;
   font-size: 2rem;
+  font-weight: bold;
+  color: #fff;
+  text-decoration: none;
 }
 
 nav ul {
   list-style: none;
   padding: 0;
+  margin: 0;
   display: flex;
   gap: 1rem;
 }
@@ -35,6 +48,11 @@ nav a {
   font-weight: bold;
 }
 
+nav a:hover {
+  text-decoration: underline;
+}
+
+/* Main */
 main {
   margin-top: 2rem;
 }
@@ -42,12 +60,15 @@ main {
 .section-title {
   font-size: 1.8rem;
   margin-bottom: 1rem;
+  text-align: center;
 }
 
+/* Category Grid */
 .category-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 1rem;
+  padding: 0 1rem;
 }
 
 .category-card {
@@ -68,9 +89,20 @@ main {
   color: white;
 }
 
+/* Footer */
 footer {
   margin-top: 3rem;
   padding: 1rem 0;
   background-color: #eee;
   text-align: center;
+}
+
+footer a {
+  color: #6a0dad;
+  text-decoration: none;
+  margin: 0 0.5rem;
+}
+
+footer a:hover {
+  text-decoration: underline;
 }
