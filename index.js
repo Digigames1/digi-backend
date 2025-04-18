@@ -9,14 +9,14 @@ const app = express();
 app.use(express.json());
 app.use(morgan("dev"));
 
-// 🔽 Статичні файли (для admin.html)
+// 🔽 Статичні файли (для admin.html та інші)
 app.use(express.static(path.join(__dirname, "public")));
 
 // 🔽 Роутери
 const orderRouter = require("./routers/order");
 const adminRouter = require("./routers/admin");
 const productsRouter = require("./routers/products");
-const bambooRouter = require("./routers/bamboo"); // 🆕 Bamboo
+const bambooRouter = require("./routers/bamboo");
 
 const client = new MongoClient(process.env.DB_URL);
 let db;
@@ -42,8 +42,13 @@ async function startServer() {
     // 🔽 Продукти з Giftery
     app.use("/api/products", productsRouter);
 
-    // 🆕 Каталог з Bamboo
+    // 🔽 Каталог з Bamboo
     app.use("/api/bamboo", bambooRouter);
+
+    // 🧭 Динамічні сторінки товарів (наприклад /steam)
+    app.get("/:product", (req, res) => {
+      res.sendFile(path.join(__dirname, "public", "product.html"));
+    });
 
     const PORT = process.env.PORT || 10000;
     app.listen(PORT, () => {
@@ -55,4 +60,3 @@ async function startServer() {
 }
 
 startServer();
-
