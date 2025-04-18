@@ -8,18 +8,23 @@ const {
   BAMBOO_BASE_URL
 } = process.env;
 
-// 🔐 Отримання токена Bamboo
-async function getAccessToken() {
+// Отримати токен доступу
+async function getBambooToken() {
+  const url = `${BAMBOO_BASE_URL}/oauth/token`;
+  console.log("🔐 Отримання токена з:", url);
+
   try {
     const response = await axios.post(
-      `${BAMBOO_BASE_URL}/oauth/token`,
+      url,
       {
         client_id: BAMBOO_CLIENT_ID,
         client_secret: BAMBOO_CLIENT_SECRET,
         grant_type: "client_credentials"
       },
       {
-        headers: { "Content-Type": "application/json" }
+        headers: {
+          "Content-Type": "application/json"
+        }
       }
     );
 
@@ -30,50 +35,39 @@ async function getAccessToken() {
   }
 }
 
-// 📦 Каталог з Bamboo за брендом/регіоном
+// Маршрут для бренду (наприклад /playstation або /steam)
 router.get("/api/:brand/:region?", async (req, res) => {
   const { brand, region } = req.params;
-  const name = brand.charAt(0).toUpperCase() + brand.slice(1); // Наприклад: playstation → Playstation
 
-  const params = {
+  const queryParams = {
     CurrencyCode: "USD",
     PageSize: 100,
     PageIndex: 0,
-    Name: name
+    Name: brand.charAt(0).toUpperCase() + brand.slice(1) // e.g. 'playstation'
   };
 
   if (region) {
-    params.CountryCode = region.toUpperCase();
+    queryParams.CountryCode = region.toUpperCase();
   }
 
-  console.log("📦 Fetching Bamboo catalog with params:", params);
+  console.log("📦 Fetching Bamboo catalog with params:", queryParams);
 
   try {
-    const token = await getAccessToken();
+    const token = await getBambooToken();
 
     const response = await axios.get(`${BAMBOO_BASE_URL}/api/integration/v2.0/catalog`, {
       headers: {
         Authorization: `Bearer ${token}`
       },
-      params
+      params: queryParams
     });
 
-    const catalog = response.data;
-    console.log("✅ Received Bamboo data. Count:", catalog.count);
-
-    // ⚠️ Лог всіх назв (щоб бачити що приходить)
-    catalog.items.forEach((item, i) => {
-      console.log(`${i + 1}. ${item.name} (${item.countryCode}) — ${item.products?.length || 0} products`);
-    });
-
-    res.json(catalog);
+    console.log(`✅ Received Bamboo data. Count: ${response.data.count}`);
+    res.json(response.data);
   } catch (error) {
     console.error("❌ Dynamic route error:", error.response?.data || error.message);
-    res.status(error.response?.status || 500).json({
-      error: "Failed to fetch products from Bamboo"
-    });
+    res.status(error.response?.status || 500).json({ error: "Failed to fetch products from Bamboo" });
   }
 });
 
 module.exports = router;
-
