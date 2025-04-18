@@ -10,50 +10,38 @@ document.addEventListener("DOMContentLoaded", async () => {
     const res = await fetch(apiUrl);
     const data = await res.json();
 
-    if (!data || !data.items || !data.items.length) {
+    if (!data || !data.items || data.items.length === 0) {
       productsContainer.innerHTML = "<p>Товари не знайдено.</p>";
       return;
     }
 
     brandTitle.textContent = brand.toUpperCase();
 
-    const grouped = {};
-
-    data.items.forEach(item => {
-      const groupKey = item.name;
-      if (!grouped[groupKey]) grouped[groupKey] = [];
-      grouped[groupKey].push(item);
-    });
-
-    for (const group in grouped) {
-      const subcategory = document.createElement("div");
-      subcategory.className = "subcategory";
-
-      const title = document.createElement("div");
-      title.className = "subcategory-title";
-      title.textContent = group;
-
-      const list = document.createElement("div");
-      list.className = "product-list";
-
-      grouped[group].forEach(product => {
-        if (!product.price || typeof product.price.min !== "number") return; // 🛡️ Перевірка
-
-        const productEl = document.createElement("div");
-        productEl.className = "product-item";
-        productEl.innerHTML = `
-          <div>
-            <div class="product-name">${product.name}</div>
-            <div class="product-price">$${product.price.min.toFixed(2)}</div>
-          </div>
-          <button class="buy-btn" data-id="${product.id}" data-price="${product.price.min}">Buy</button>
-        `;
-        list.appendChild(productEl);
+    if (!region) {
+      // Показуємо список підкатегорій
+      data.items.forEach(item => {
+        const link = document.createElement("a");
+        link.href = `/${brand}/${item.countryCode.toLowerCase()}`;
+        link.textContent = item.name;
+        link.className = "subcategory-link";
+        productsContainer.appendChild(link);
       });
-
-      subcategory.appendChild(title);
-      subcategory.appendChild(list);
-      productsContainer.appendChild(subcategory);
+    } else {
+      // Показуємо список товарів у вибраній країні
+      data.items.forEach(item => {
+        item.products?.forEach(product => {
+          const el = document.createElement("div");
+          el.className = "product-item";
+          el.innerHTML = `
+            <div>
+              <div class="product-name">${product.name}</div>
+              <div class="product-price">$${product.price?.min?.toFixed(2)}</div>
+            </div>
+            <button class="buy-btn" data-id="${product.id}" data-price="${product.price?.min}">Buy</button>
+          `;
+          productsContainer.appendChild(el);
+        });
+      });
     }
 
   } catch (err) {
