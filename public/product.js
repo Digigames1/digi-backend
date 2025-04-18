@@ -1,63 +1,41 @@
-document.addEventListener("DOMContentLoaded", async () => {
-  const pathParts = window.location.pathname.split("/");
-  const productSlug = pathParts[pathParts.length - 1].toLowerCase();
+const productName = window.location.pathname.slice(1).toLowerCase();
+const allowedKeywords = ['playstation', 'steam', 'itunes', 'xbox', 'netflix', 'spotify', 'roblox'];
 
-  const nameElement = document.getElementById("product-name");
-  const productList = document.getElementById("product-variants");
-  const descriptionElement = document.getElementById("product-description");
-  const logoElement = document.getElementById("product-logo");
-  const buySection = document.getElementById("buy-section");
+fetch("/api/bamboo")
+  .then(res => res.json())
+  .then(data => {
+    const items = data.items || [];
 
-  try {
-    const res = await fetch("/api/bamboo");
-    const data = await res.json();
-
-    const product = data.items.find(p =>
-      p.name.toLowerCase().includes(productSlug)
+    // Знайдемо товар за назвою з URL, якщо вона є в списку дозволених
+    const product = items.find(item =>
+      allowedKeywords.some(keyword =>
+        item.name.toLowerCase().includes(keyword) &&
+        productName.includes(keyword)
+      )
     );
 
     if (!product) {
-      nameElement.textContent = "Product not found.";
+      document.getElementById("product-name").textContent = "Error loading product.";
       return;
     }
 
-    nameElement.textContent = product.name;
-    descriptionElement.textContent = product.description || "No description.";
-    
-    if (product.logoUrl) {
-      logoElement.src = product.logoUrl;
-      logoElement.style.display = "block";
-    }
+    const price = product.products?.[0]?.price?.min || "N/A";
 
-    if (product.products?.length > 0) {
-      // Створюємо селектор
-      const select = document.createElement("select");
-      select.id = "variant-select";
+    document.getElementById("product-name").textContent = product.name;
+    document.getElementById("product-logo").src = product.logoUrl;
+    document.getElementById("product-logo").style.display = "block";
+    document.getElementById("product-price").textContent = `Price: $${price}`;
+    document.getElementById("product-description").textContent = product.description;
 
-      product.products.forEach((variant, index) => {
-        const option = document.createElement("option");
-        option.value = index;
-        option.textContent = `$${variant.minFaceValue} — $${variant.price.min}`;
-        select.appendChild(option);
-      });
+    // Кнопка Купити
+    const buyBtn = document.createElement("button");
+    buyBtn.textContent = "🛒 Купити";
+    buyBtn.style.cssText = "padding: 0.5rem 1rem; font-size: 1rem; background: green; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 1rem;";
+    buyBtn.onclick = () => alert(`Ти обрав: ${product.name}\nЦіна: $${price}`);
+    document.querySelector(".product-container").appendChild(buyBtn);
+  })
+  .catch(err => {
+    document.getElementById("product-name").textContent = "Error loading product.";
+    console.error("❌ Fetch error:", err);
+  });
 
-      productList.appendChild(select);
-
-      // Додаємо кнопку Купити
-      const btn = document.createElement("button");
-      btn.textContent = "🛒 Купити";
-      btn.style.marginTop = "10px";
-      btn.onclick = () => {
-        const selected = product.products[select.value];
-        console.log("🛍 Обраний товар:", selected);
-        alert(`Ти обрав: ${product.name} на $${selected.minFaceValue} за $${selected.price.min}`);
-      };
-
-      buySection.appendChild(btn);
-    }
-
-  } catch (err) {
-    nameElement.textContent = "Error loading product.";
-    console.error("❌ Product page error:", err);
-  }
-});
