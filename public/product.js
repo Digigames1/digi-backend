@@ -3,56 +3,57 @@ document.addEventListener("DOMContentLoaded", async () => {
   const [brand, region] = pathParts;
 
   const container = document.querySelector(".product-container");
-  container.innerHTML = "<p>Loading...</p>";
+  container.innerHTML = "<p>Завантаження...</p>";
+
+  const apiUrl = region
+    ? `/api/${brand}/${region}`
+    : `/api/${brand}`;
 
   try {
-    const res = await fetch(`/api/${brand}/${region || ""}`);
+    const res = await fetch(apiUrl);
     const data = await res.json();
 
-    if (region) {
-      // 🧾 Детальна сторінка підкатегорії (наприклад: /playstation/usa)
-      container.innerHTML = `
-        <h1>${data.name}</h1>
-        <img src="${data.logoUrl}" alt="${data.name}" class="product-logo" />
-        <p class="description">${data.description}</p>
-        <div class="denominations" style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem;"></div>
-      `;
+    if (!Array.isArray(data) || data.length === 0) {
+      container.innerHTML = "<p>Товари не знайдено.</p>";
+      return;
+    }
 
-      const denomContainer = container.querySelector(".denominations");
-      data.products.forEach((p) => {
+    if (!region) {
+      // 👉 Якщо ми на сторінці /playstation — показуємо регіони
+      container.innerHTML = `<h1>${brand.toUpperCase()}</h1>`;
+      data.forEach(region => {
         const div = document.createElement("div");
-        div.style.border = "1px solid #ccc";
-        div.style.borderRadius = "8px";
-        div.style.padding = "1rem";
-        div.style.flex = "1 0 200px";
-
+        div.classList.add("brand-box");
         div.innerHTML = `
-          <strong>${p.name}</strong><br>
-          Nominal: ${p.minFaceValue} ${p.price.currencyCode}<br>
-          <span class="price">Price: $${p.price.min.toFixed(2)}</span><br>
-          <button>Купити</button>
+          <img src="${region.logo}" alt="${region.name}" />
+          <h3>${region.region}</h3>
+          <a href="/${brand}/${region.region.toLowerCase()}">Переглянути</a>
         `;
-        denomContainer.appendChild(div);
+        container.appendChild(div);
       });
     } else {
-      // 📦 Головна сторінка категорії (наприклад: /playstation)
-      container.innerHTML = `<h1>${brand} — ${data.length} брендів</h1>`;
-      data.forEach((brandItem) => {
+      // 👉 Якщо ми на сторінці /playstation/usa — показуємо товари
+      container.innerHTML = `<h1>${brand.toUpperCase()} / ${region.toUpperCase()}</h1>`;
+      data.forEach(product => {
         const div = document.createElement("div");
-        div.style.margin = "2rem 0";
+        div.classList.add("product-box");
         div.innerHTML = `
-          <h2><a href="/${brand}/${brandItem.regionSlug}">${brandItem.name}</a></h2>
-          <img src="${brandItem.logoUrl}" alt="${brandItem.name}" style="max-width: 200px; display: block; margin-bottom: 1rem;" />
-          <p>${brandItem.description || ""}</p>
+          <img src="${product.logo}" alt="${product.name}" />
+          <p><strong>${product.name}</strong></p>
+          <p>${product.price} ${product.currency}</p>
+          <button onclick="buyProduct(${product.id})">Купити</button>
         `;
         container.appendChild(div);
       });
     }
   } catch (err) {
-    console.error(err);
-    container.innerHTML = "<p>Error loading product.</p>";
+    console.error("❌ Error loading product:", err);
+    container.innerHTML = "<p>Помилка завантаження товарів.</p>";
   }
 });
 
+function buyProduct(id) {
+  alert(`🛒 Ви вибрали товар з ID: ${id}\nТут буде логіка оплати.`);
+}
 
 
