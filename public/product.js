@@ -1,48 +1,56 @@
 document.addEventListener("DOMContentLoaded", async () => {
-  const path = window.location.pathname;
-  const parts = path.split("/").filter(Boolean);
-  const brand = parts[0];
-  const region = parts[1];
+  const pathParts = window.location.pathname.split("/").filter(Boolean);
+  const [brand, region] = pathParts;
 
-  const nameEl = document.getElementById("product-name");
-  const logoEl = document.getElementById("product-logo");
-  const descEl = document.getElementById("product-description");
-  const priceEl = document.getElementById("product-price");
-  const variantsEl = document.getElementById("product-variants");
+  const container = document.querySelector(".product-container");
+  container.innerHTML = "<p>Loading...</p>";
 
   try {
-    const response = await fetch(`/${brand}${region ? "/" + region : ""}`);
-    const data = await response.json();
+    const res = await fetch(`/api/${brand}/${region || ""}`);
+    const data = await res.json();
 
-    nameEl.innerText = brand.toUpperCase();
+    if (region) {
+      // 🧾 Детальна сторінка підкатегорії (наприклад: /playstation/usa)
+      container.innerHTML = `
+        <h1>${data.name}</h1>
+        <img src="${data.logoUrl}" alt="${data.name}" class="product-logo" />
+        <p class="description">${data.description}</p>
+        <div class="denominations" style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem;"></div>
+      `;
 
-    if (data.mode === "categories") {
-      // Виводимо підкатегорії
-      variantsEl.innerHTML = data.categories.map(cat => `
-        <div class="variant">
-          <img src="${cat.logoUrl}" alt="${cat.brandName}" class="variant-logo"/>
-          <h3>${cat.brandName}</h3>
-          <a href="/${brand}/${cat.countryCode.toLowerCase()}">Переглянути</a>
-        </div>
-      `).join("");
-    } else {
-      // Виводимо товари
-      logoEl.src = data.logoUrl;
-      logoEl.style.display = "block";
-      descEl.innerText = data.description;
+      const denomContainer = container.querySelector(".denominations");
+      data.products.forEach((p) => {
+        const div = document.createElement("div");
+        div.style.border = "1px solid #ccc";
+        div.style.borderRadius = "8px";
+        div.style.padding = "1rem";
+        div.style.flex = "1 0 200px";
 
-      variantsEl.innerHTML = data.products.map(p => `
-        <div class="variant">
-          <h3>${data.name}</h3>
-          <p>Nominal: ${p.minFaceValue} ${data.currencyCode}</p>
-          <p class="price">Price: $${p.price?.min?.toFixed(2)}</p>
+        div.innerHTML = `
+          <strong>${p.name}</strong><br>
+          Nominal: ${p.minFaceValue} ${p.price.currencyCode}<br>
+          <span class="price">Price: $${p.price.min.toFixed(2)}</span><br>
           <button>Купити</button>
-        </div>
-      `).join("");
+        `;
+        denomContainer.appendChild(div);
+      });
+    } else {
+      // 📦 Головна сторінка категорії (наприклад: /playstation)
+      container.innerHTML = `<h1>${brand} — ${data.length} брендів</h1>`;
+      data.forEach((brandItem) => {
+        const div = document.createElement("div");
+        div.style.margin = "2rem 0";
+        div.innerHTML = `
+          <h2><a href="/${brand}/${brandItem.regionSlug}">${brandItem.name}</a></h2>
+          <img src="${brandItem.logoUrl}" alt="${brandItem.name}" style="max-width: 200px; display: block; margin-bottom: 1rem;" />
+          <p>${brandItem.description || ""}</p>
+        `;
+        container.appendChild(div);
+      });
     }
   } catch (err) {
-    nameEl.innerText = "Error loading product.";
-    console.error("❌", err.message);
+    console.error(err);
+    container.innerHTML = "<p>Error loading product.</p>";
   }
 });
 
