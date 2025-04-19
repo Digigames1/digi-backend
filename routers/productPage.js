@@ -2,21 +2,20 @@ const express = require("express");
 const router = express.Router();
 const axios = require("axios");
 
-// Дані з .env
 const {
   BAMBOO_CLIENT_ID,
   BAMBOO_CLIENT_SECRET,
   BAMBOO_BASE_URL
 } = process.env;
 
-// 🔐 Створюємо Basic Auth заголовок вручну
+// 🔐 Basic Auth
 function createBasicAuthHeader() {
   const raw = `${BAMBOO_CLIENT_ID}:${BAMBOO_CLIENT_SECRET}`;
   const encoded = Buffer.from(raw).toString("base64");
   return `Basic ${encoded}`;
 }
 
-// 🔁 Отримати продукти з Bamboo по категорії (наприклад, Playstation)
+// 🔁 Динамічні категорії /api/:brand/:region?
 router.get("/api/:brand/:region?", async (req, res) => {
   const { brand, region } = req.params;
   const queryParams = {
@@ -43,14 +42,45 @@ router.get("/api/:brand/:region?", async (req, res) => {
       }
     });
 
-    const data = response.data;
-
-    console.log("✅ Received Bamboo data. Count:", data.count);
-    res.json(data);
+    console.log("✅ Received Bamboo data. Count:", response.data.count);
+    res.json(response.data);
   } catch (error) {
     const err = error.response?.data || error.message;
     console.error("❌ Dynamic route error:", err);
     res.status(error.response?.status || 500).json({ error: "Failed to load Bamboo catalog" });
+  }
+});
+
+// 🔍 Пошук товарів
+router.get("/api/search", async (req, res) => {
+  const { query } = req.query;
+
+  if (!query) {
+    return res.status(400).json({ error: "Missing query parameter" });
+  }
+
+  const catalogUrl = `${BAMBOO_BASE_URL}/api/integration/v2.0/catalog`;
+
+  try {
+    const response = await axios.get(catalogUrl, {
+      params: {
+        CurrencyCode: "USD",
+        PageSize: 100,
+        PageIndex: 0,
+        Name: query
+      },
+      headers: {
+        Authorization: createBasicAuthHeader(),
+        Accept: "application/json"
+      }
+    });
+
+    console.log(`🔍 Search query: ${query}, Results: ${response.data.count}`);
+    res.json(response.data);
+  } catch (error) {
+    const err = error.response?.data || error.message;
+    console.error("❌ Search route error:", err);
+    res.status(error.response?.status || 500).json({ error: "Failed to perform search" });
   }
 });
 
