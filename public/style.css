@@ -3,42 +3,44 @@ body {
   font-family: "Segoe UI", sans-serif;
   background-color: #f7f5ff;
   color: #333;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
 }
 
 .container {
-  max-width: 1000px;
+  width: 100%;
+  max-width: 1100px;
   margin: 0 auto;
   padding: 1rem;
 }
 
-/* Header */
 header {
   background-color: #6a0dad;
   color: #fff;
-  padding: 1rem 0;
 }
 
-.header-container {
+.header-flex {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  max-width: 1000px;
-  margin: auto;
-  padding: 0 1rem;
 }
 
-.logo-img {
-  height: 40px;
+.logo {
+  margin: 0;
+  font-size: 2rem;
 }
 
-.header-links a {
-  color: #fff;
-  margin-left: 1.5rem;
-  text-decoration: none;
-  font-weight: bold;
+main {
+  flex-grow: 1;
+  padding-top: 2rem;
 }
 
-/* Categories */
 .section-title {
   font-size: 1.8rem;
   margin-bottom: 1rem;
@@ -47,8 +49,9 @@ header {
 
 .category-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 1.2rem;
+  justify-items: center;
 }
 
 .category-card {
@@ -59,9 +62,10 @@ header {
   font-size: 1rem;
   color: #6a0dad;
   font-weight: bold;
-  text-decoration: none;
   border: 2px solid #6a0dad;
   transition: 0.3s ease;
+  width: 100%;
+  max-width: 150px;
 }
 
 .category-card:hover {
@@ -69,16 +73,22 @@ header {
   color: white;
 }
 
-.category-icon {
-  width: 50px;
-  height: 50px;
+.category-card img {
+  max-width: 60px;
+  height: auto;
   margin-bottom: 0.5rem;
 }
 
-/* Footer */
 footer {
-  margin-top: 3rem;
-  padding: 1rem 0;
   background-color: #eee;
   text-align: center;
+  padding: 1.2rem 0;
+  font-size: 0.9rem;
+  margin-top: auto;
+}
+
+footer a {
+  margin: 0 0.5rem;
+  color: #6a0dad;
+  font-weight: bold;
 }
