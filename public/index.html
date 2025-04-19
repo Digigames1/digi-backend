@@ -4,57 +4,65 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>DigiGames</title>
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
   <header>
     <div class="container header-flex">
-      <div class="logo">🎮 DigiGames</div>
+      <div class="logo">
+        <img src="/icons/logo.png" alt="DigiGames Logo" style="height: 40px;">
+      </div>
+      <div class="search-container">
+        <input type="text" id="searchInput" placeholder="Search...">
+      </div>
     </div>
   </header>
 
   <main class="container">
-    <h1 class="section-title">Обери категорію</h1>
+    <h1 class="section-title">Gift Card Categories</h1>
     <div class="category-grid">
-      <a class="category-card" href="/playstation">
-        <img src="/icons/playstation.png" alt="Playstation" />
+      <a href="/playstation" class="category-card">
+        <img src="/icons/playstation.png" alt="Playstation">
         Playstation
       </a>
-      <a class="category-card" href="/steam">
-        <img src="/icons/steam.png" alt="Steam" />
+      <a href="/steam" class="category-card">
+        <img src="/icons/steam.png" alt="Steam">
         Steam
       </a>
-      <a class="category-card" href="/xbox">
-        <img src="/icons/xbox.png" alt="Xbox" />
+      <a href="/xbox" class="category-card">
+        <img src="/icons/xbox.png" alt="Xbox">
         Xbox
       </a>
-      <a class="category-card" href="/nintendo">
-        <img src="/icons/nintendo.png" alt="Nintendo" />
-        Nintendo
-      </a>
-      <a class="category-card" href="/netflix">
-        <img src="/icons/netflix.png" alt="Netflix" />
+      <a href="/netflix" class="category-card">
+        <img src="/icons/netflix.png" alt="Netflix">
         Netflix
       </a>
-      <a class="category-card" href="/apple">
-        <img src="/icons/apple.png" alt="Apple" />
+      <a href="/roblox" class="category-card">
+        <img src="/icons/roblox.png" alt="Roblox">
+        Roblox
+      </a>
+      <a href="/apple" class="category-card">
+        <img src="/icons/apple.png" alt="Apple">
         Apple
       </a>
-      <a class="category-card" href="/roblox">
-        <img src="/icons/roblox.png" alt="Roblox" />
-        Roblox
+      <a href="/nintendo" class="category-card">
+        <img src="/icons/nintendo.png" alt="Nintendo">
+        Nintendo
       </a>
     </div>
   </main>
 
   <footer>
-    <div class="container footer-links">
-      <a href="/about.html">About Us</a>
-      <a href="/contacts.html">Contacts</a>
+    <div class="container">
+      <a href="/about.html">About Us</a> |
+      <a href="/contacts.html">Contacts</a> |
       <a href="/partnership.html">Partnership</a>
     </div>
   </footer>
+
+  <script src="/script.js"></script>
 </body>
 </html>
+
 
 
