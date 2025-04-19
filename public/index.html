@@ -9,46 +9,24 @@
 <body>
   <header>
     <div class="container header-flex">
-      <div class="logo">
-        <img src="/icons/logo.png" alt="DigiGames Logo" style="height: 40px;">
-      </div>
-      <div class="search-container">
-        <input type="text" id="searchInput" placeholder="Search...">
-      </div>
+      <a href="/" class="logo">🎮 DigiGames</a>
+      <form id="searchForm" class="header-search">
+        <input type="text" id="headerSearchInput" placeholder="Search games..." />
+        <button type="submit">🔍</button>
+      </form>
     </div>
   </header>
 
   <main class="container">
     <h1 class="section-title">Gift Card Categories</h1>
     <div class="category-grid">
-      <a href="/playstation" class="category-card">
-        <img src="/icons/playstation.png" alt="Playstation">
-        Playstation
-      </a>
-      <a href="/steam" class="category-card">
-        <img src="/icons/steam.png" alt="Steam">
-        Steam
-      </a>
-      <a href="/xbox" class="category-card">
-        <img src="/icons/xbox.png" alt="Xbox">
-        Xbox
-      </a>
-      <a href="/netflix" class="category-card">
-        <img src="/icons/netflix.png" alt="Netflix">
-        Netflix
-      </a>
-      <a href="/roblox" class="category-card">
-        <img src="/icons/roblox.png" alt="Roblox">
-        Roblox
-      </a>
-      <a href="/apple" class="category-card">
-        <img src="/icons/apple.png" alt="Apple">
-        Apple
-      </a>
-      <a href="/nintendo" class="category-card">
-        <img src="/icons/nintendo.png" alt="Nintendo">
-        Nintendo
-      </a>
+      <a href="/playstation" class="category-card"><img src="/icons/playstation.png" /><span>Playstation</span></a>
+      <a href="/steam" class="category-card"><img src="/icons/steam.png" /><span>Steam</span></a>
+      <a href="/xbox" class="category-card"><img src="/icons/xbox.png" /><span>Xbox</span></a>
+      <a href="/netflix" class="category-card"><img src="/icons/netflix.png" /><span>Netflix</span></a>
+      <a href="/roblox" class="category-card"><img src="/icons/roblox.png" /><span>Roblox</span></a>
+      <a href="/apple" class="category-card"><img src="/icons/apple.png" /><span>Apple</span></a>
+      <a href="/nintendo" class="category-card"><img src="/icons/nintendo.png" /><span>Nintendo</span></a>
     </div>
   </main>
 
@@ -60,9 +38,23 @@
     </div>
   </footer>
 
-  <script src="/script.js"></script>
+  <script>
+    const form = document.getElementById("searchForm");
+    const input = document.getElementById("headerSearchInput");
+
+    input.focus();
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      const query = input.value.trim();
+      if (query) {
+        window.location.href = `/search.html?query=${encodeURIComponent(query)}`;
+      }
+    });
+  </script>
 </body>
 </html>
+
 
 
 
