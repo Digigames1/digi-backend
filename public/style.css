@@ -3,19 +3,10 @@ body {
   font-family: "Segoe UI", sans-serif;
   background-color: #f7f5ff;
   color: #333;
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
 }
 
 .container {
-  width: 100%;
-  max-width: 1100px;
+  max-width: 1000px;
   margin: 0 auto;
   padding: 1rem;
 }
@@ -23,6 +14,7 @@ a {
 header {
   background-color: #6a0dad;
   color: #fff;
+  padding: 1rem 0;
 }
 
 .header-flex {
@@ -32,26 +24,23 @@ header {
 }
 
 .logo {
-  margin: 0;
   font-size: 2rem;
+  font-weight: bold;
 }
 
 main {
-  flex-grow: 1;
-  padding-top: 2rem;
+  margin-top: 2rem;
 }
 
 .section-title {
   font-size: 1.8rem;
   margin-bottom: 1rem;
-  text-align: center;
 }
 
 .category-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-  gap: 1.2rem;
-  justify-items: center;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
 }
 
 .category-card {
@@ -62,10 +51,9 @@ main {
   font-size: 1rem;
   color: #6a0dad;
   font-weight: bold;
+  text-decoration: none;
   border: 2px solid #6a0dad;
   transition: 0.3s ease;
-  width: 100%;
-  max-width: 150px;
 }
 
 .category-card:hover {
@@ -74,21 +62,28 @@ main {
 }
 
 .category-card img {
-  max-width: 60px;
-  height: auto;
+  max-width: 50px;
   margin-bottom: 0.5rem;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 footer {
+  margin-top: 3rem;
+  padding: 1rem 0;
   background-color: #eee;
   text-align: center;
-  padding: 1.2rem 0;
-  font-size: 0.9rem;
-  margin-top: auto;
 }
 
-footer a {
-  margin: 0 0.5rem;
+.footer-links a {
+  margin: 0 1rem;
   color: #6a0dad;
+  text-decoration: none;
   font-weight: bold;
 }
+
+.footer-links a:hover {
+  text-decoration: underline;
+}
+
