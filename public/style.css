@@ -21,11 +21,42 @@ header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .logo {
   font-size: 2rem;
   font-weight: bold;
+  text-decoration: none;
+  color: #fff;
+}
+
+/* 🔍 Пошукове поле */
+.header-search {
+  display: flex;
+  background: #fff;
+  border-radius: 5px;
+  overflow: hidden;
+  max-width: 300px;
+  width: 100%;
+}
+
+.header-search input {
+  border: none;
+  padding: 0.5rem;
+  font-size: 1rem;
+  outline: none;
+  flex: 1;
+}
+
+.header-search button {
+  background: #6a0dad;
+  color: white;
+  border: none;
+  padding: 0 1rem;
+  cursor: pointer;
+  font-size: 1rem;
 }
 
 main {
@@ -35,6 +66,7 @@ main {
 .section-title {
   font-size: 1.8rem;
   margin-bottom: 1rem;
+  text-align: center;
 }
 
 .category-grid {
@@ -63,6 +95,7 @@ main {
 
 .category-card img {
   max-width: 50px;
+  height: 50px;
   margin-bottom: 0.5rem;
   display: block;
   margin-left: auto;
@@ -74,6 +107,9 @@ footer {
   padding: 1rem 0;
   background-color: #eee;
   text-align: center;
+  position: relative;
+  bottom: 0;
+  width: 100%;
 }
 
 .footer-links a {
@@ -87,3 +123,22 @@ footer {
   text-decoration: underline;
 }
 
+/* 📱 Мобільна адаптація */
+@media screen and (max-width: 600px) {
+  .header-flex {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .header-search {
+    width: 100%;
+  }
+
+  .category-grid {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  }
+
+  .logo {
+    font-size: 1.5rem;
+  }
+}
