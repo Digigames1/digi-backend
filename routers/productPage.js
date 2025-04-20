@@ -18,6 +18,7 @@ function createBasicAuthHeader() {
 // 🔁 Динамічні категорії /api/:brand/:region?
 router.get("/api/:brand/:region?", async (req, res) => {
   const { brand, region } = req.params;
+
   const queryParams = {
     CurrencyCode: "USD",
     PageSize: 100,
@@ -51,7 +52,7 @@ router.get("/api/:brand/:region?", async (req, res) => {
   }
 });
 
-// 🔍 Локальний пошук по всьому каталогу Bamboo
+// 🔍 Пошук товарів
 router.get("/api/search", async (req, res) => {
   const { query } = req.query;
 
@@ -59,53 +60,34 @@ router.get("/api/search", async (req, res) => {
     return res.status(400).json({ error: "Missing query parameter" });
   }
 
+  const formattedName = query.charAt(0).toUpperCase() + query.slice(1);
+
+  const queryParams = {
+    CurrencyCode: "USD",
+    PageSize: 100,
+    PageIndex: 0,
+    Name: formattedName // ✅ ВАЖЛИВО: це ключ до успішного пошуку
+  };
+
   const catalogUrl = `${BAMBOO_BASE_URL}/api/integration/v2.0/catalog`;
 
+  console.log("📦 Fetching Bamboo catalog with params:", queryParams);
+
   try {
-    let allItems = [];
-    let page = 0;
-    let hasMore = true;
-
-    while (hasMore && page < 10) {
-      const response = await axios.get(catalogUrl, {
-        params: {
-          CurrencyCode: "USD",
-          PageSize: 100,
-          PageIndex: page,
-        },
-        headers: {
-          Authorization: createBasicAuthHeader(),
-          Accept: "application/json"
-        }
-      });
-
-      const items = response.data.items || [];
-      allItems.push(...items);
-      hasMore = items.length === 100;
-      page++;
-    }
-
-    const filtered = allItems.filter(item => {
-      const brandMatch = item.name?.toLowerCase().includes(query.toLowerCase());
-      const productMatch = item.products?.some(p =>
-        p.name?.toLowerCase().includes(query.toLowerCase())
-      );
-      return brandMatch || productMatch;
+    const response = await axios.get(catalogUrl, {
+      params: queryParams,
+      headers: {
+        Authorization: createBasicAuthHeader(),
+        Accept: "application/json"
+      }
     });
 
-    console.log(`🔍 Local search for "${query}", results: ${filtered.length}`);
-
-    res.json({
-      pageIndex: 0,
-      pageSize: 100,
-      count: filtered.length,
-      items: filtered
-    });
-
+    console.log(`✅ Received Bamboo data. Count: ${response.data.count}`);
+    res.json(response.data);
   } catch (error) {
     const err = error.response?.data || error.message;
     console.error("❌ Search route error:", err);
-    res.status(error.response?.status || 500).json({ error: "Failed to search products" });
+    res.status(error.response?.status || 500).json({ error: "Failed to perform search" });
   }
 });
 
