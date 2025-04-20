@@ -8,42 +8,14 @@ const {
   BAMBOO_BASE_URL
 } = process.env;
 
+// 🔐 Basic Auth
 function createBasicAuthHeader() {
   const raw = `${BAMBOO_CLIENT_ID}:${BAMBOO_CLIENT_SECRET}`;
   const encoded = Buffer.from(raw).toString("base64");
   return `Basic ${encoded}`;
 }
 
-// 🔎 Пошук
-router.get("/api/search", async (req, res) => {
-  const query = req.query.q;
-  if (!query) return res.status(400).json({ error: "Missing query" });
-
-  const params = {
-    CurrencyCode: "USD",
-    PageSize: 100,
-    PageIndex: 0,
-    Name: query
-  };
-
-  try {
-    const response = await axios.get(`${BAMBOO_BASE_URL}/api/integration/v2.0/catalog`, {
-      headers: {
-        Authorization: createBasicAuthHeader(),
-        Accept: "application/json"
-      },
-      params
-    });
-
-    console.log(`🔍 Search results for "${query}":`, response.data.count);
-    res.json(response.data);
-  } catch (err) {
-    console.error("❌ Search error:", err.response?.data || err.message);
-    res.status(500).json({ error: "Search failed." });
-  }
-});
-
-// 🧭 Основна логіка: отримати продукти по бренду/регіону
+// 🔁 Динамічні категорії /api/:brand/:region?
 router.get("/api/:brand/:region?", async (req, res) => {
   const { brand, region } = req.params;
   const queryParams = {
@@ -59,6 +31,8 @@ router.get("/api/:brand/:region?", async (req, res) => {
 
   const catalogUrl = `${BAMBOO_BASE_URL}/api/integration/v2.0/catalog`;
 
+  console.log("📦 Fetching Bamboo catalog with params:", queryParams);
+
   try {
     const response = await axios.get(catalogUrl, {
       params: queryParams,
@@ -68,6 +42,7 @@ router.get("/api/:brand/:region?", async (req, res) => {
       }
     });
 
+    console.log("✅ Received Bamboo data. Count:", response.data.count);
     res.json(response.data);
   } catch (error) {
     const err = error.response?.data || error.message;
@@ -76,5 +51,38 @@ router.get("/api/:brand/:region?", async (req, res) => {
   }
 });
 
-module.exports = router;
+// 🔍 Пошук товарів
+router.get("/api/search", async (req, res) => {
+  console.log("🔍 Full query object:", req.query); // ⬅️ Додано лог
+  const { query } = req.query;
 
+  if (!query) {
+    return res.status(400).json({ error: "Missing query" });
+  }
+
+  const catalogUrl = `${BAMBOO_BASE_URL}/api/integration/v2.0/catalog`;
+
+  try {
+    const response = await axios.get(catalogUrl, {
+      params: {
+        CurrencyCode: "USD",
+        PageSize: 100,
+        PageIndex: 0,
+        Name: query
+      },
+      headers: {
+        Authorization: createBasicAuthHeader(),
+        Accept: "application/json"
+      }
+    });
+
+    console.log(`🔍 Search query: ${query}, Results: ${response.data.count}`);
+    res.json(response.data);
+  } catch (error) {
+    const err = error.response?.data || error.message;
+    console.error("❌ Search route error:", err);
+    res.status(error.response?.status || 500).json({ error: "Failed to perform search" });
+  }
+});
+
+module.exports = router;
