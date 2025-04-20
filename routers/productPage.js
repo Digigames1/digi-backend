@@ -62,21 +62,30 @@ router.get("/api/search", async (req, res) => {
   const catalogUrl = `${BAMBOO_BASE_URL}/api/integration/v2.0/catalog`;
 
   try {
-    const response = await axios.get(catalogUrl, {
-      params: {
-        CurrencyCode: "USD",
-        PageSize: 100,
-        PageIndex: 0,
-      },
-      headers: {
-        Authorization: createBasicAuthHeader(),
-        Accept: "application/json"
-      }
-    });
+    let allItems = [];
+    let page = 0;
+    let hasMore = true;
 
-    const items = response.data.items || [];
+    while (hasMore && page < 10) {
+      const response = await axios.get(catalogUrl, {
+        params: {
+          CurrencyCode: "USD",
+          PageSize: 100,
+          PageIndex: page,
+        },
+        headers: {
+          Authorization: createBasicAuthHeader(),
+          Accept: "application/json"
+        }
+      });
 
-    const filtered = items.filter(item => {
+      const items = response.data.items || [];
+      allItems.push(...items);
+      hasMore = items.length === 100;
+      page++;
+    }
+
+    const filtered = allItems.filter(item => {
       const brandMatch = item.name?.toLowerCase().includes(query.toLowerCase());
       const productMatch = item.products?.some(p =>
         p.name?.toLowerCase().includes(query.toLowerCase())
@@ -85,6 +94,7 @@ router.get("/api/search", async (req, res) => {
     });
 
     console.log(`🔍 Local search for "${query}", results: ${filtered.length}`);
+
     res.json({
       pageIndex: 0,
       pageSize: 100,
