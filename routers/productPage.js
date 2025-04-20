@@ -18,7 +18,6 @@ function createBasicAuthHeader() {
 // 🔁 Динамічні категорії /api/:brand/:region?
 router.get("/api/:brand/:region?", async (req, res) => {
   const { brand, region } = req.params;
-
   const queryParams = {
     CurrencyCode: "USD",
     PageSize: 100,
@@ -52,41 +51,51 @@ router.get("/api/:brand/:region?", async (req, res) => {
   }
 });
 
-// 🔍 Пошук товарів
+// 🔍 Локальний пошук по всьому каталогу Bamboo
 router.get("/api/search", async (req, res) => {
-  const searchQuery = req.query.query;
+  const { query } = req.query;
 
-  if (!searchQuery) {
+  if (!query) {
     return res.status(400).json({ error: "Missing query parameter" });
   }
 
-  // Важливо: передаємо Name як є, без форматування
-  const queryParams = {
-    CurrencyCode: "USD",
-    PageSize: 100,
-    PageIndex: 0,
-    Name: searchQuery
-  };
-
   const catalogUrl = `${BAMBOO_BASE_URL}/api/integration/v2.0/catalog`;
-
-  console.log("📦 Fetching Bamboo catalog with params:", queryParams);
 
   try {
     const response = await axios.get(catalogUrl, {
-      params: queryParams,
+      params: {
+        CurrencyCode: "USD",
+        PageSize: 100,
+        PageIndex: 0,
+      },
       headers: {
         Authorization: createBasicAuthHeader(),
         Accept: "application/json"
       }
     });
 
-    console.log(`🔍 Search query: ${searchQuery}, Results: ${response.data.count}`);
-    res.json(response.data);
+    const items = response.data.items || [];
+
+    const filtered = items.filter(item => {
+      const brandMatch = item.name?.toLowerCase().includes(query.toLowerCase());
+      const productMatch = item.products?.some(p =>
+        p.name?.toLowerCase().includes(query.toLowerCase())
+      );
+      return brandMatch || productMatch;
+    });
+
+    console.log(`🔍 Local search for "${query}", results: ${filtered.length}`);
+    res.json({
+      pageIndex: 0,
+      pageSize: 100,
+      count: filtered.length,
+      items: filtered
+    });
+
   } catch (error) {
     const err = error.response?.data || error.message;
     console.error("❌ Search route error:", err);
-    res.status(error.response?.status || 500).json({ error: "Failed to perform search" });
+    res.status(error.response?.status || 500).json({ error: "Failed to search products" });
   }
 });
 
