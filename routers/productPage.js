@@ -53,11 +53,10 @@ router.get("/api/:brand/:region?", async (req, res) => {
 
 // 🔍 Пошук товарів
 router.get("/api/search", async (req, res) => {
-  console.log("🔍 Full query object:", req.query); // ⬅️ Додано лог
   const { query } = req.query;
 
   if (!query) {
-    return res.status(400).json({ error: "Missing query" });
+    return res.status(400).json({ error: "Missing query parameter" });
   }
 
   const catalogUrl = `${BAMBOO_BASE_URL}/api/integration/v2.0/catalog`;
@@ -68,7 +67,7 @@ router.get("/api/search", async (req, res) => {
         CurrencyCode: "USD",
         PageSize: 100,
         PageIndex: 0,
-        Name: query
+        Name: query // 🔧 Виправлено тут
       },
       headers: {
         Authorization: createBasicAuthHeader(),
