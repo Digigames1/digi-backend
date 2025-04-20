@@ -59,23 +59,28 @@ router.get("/api/search", async (req, res) => {
     return res.status(400).json({ error: "Missing query parameter" });
   }
 
+  const formattedName = query.charAt(0).toUpperCase() + query.slice(1);
   const catalogUrl = `${BAMBOO_BASE_URL}/api/integration/v2.0/catalog`;
+
+  const queryParams = {
+    CurrencyCode: "USD",
+    PageSize: 100,
+    PageIndex: 0,
+    Name: formattedName
+  };
+
+  console.log("📦 Fetching Bamboo catalog with params:", queryParams);
 
   try {
     const response = await axios.get(catalogUrl, {
-      params: {
-        CurrencyCode: "USD",
-        PageSize: 100,
-        PageIndex: 0,
-        Name: query // 🔧 Виправлено тут
-      },
+      params: queryParams,
       headers: {
         Authorization: createBasicAuthHeader(),
         Accept: "application/json"
       }
     });
 
-    console.log(`🔍 Search query: ${query}, Results: ${response.data.count}`);
+    console.log(`✅ Received Bamboo data. Count: ${response.data.count}`);
     res.json(response.data);
   } catch (error) {
     const err = error.response?.data || error.message;
