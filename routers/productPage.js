@@ -18,6 +18,7 @@ function createBasicAuthHeader() {
 // 🔁 Динамічні категорії /api/:brand/:region?
 router.get("/api/:brand/:region?", async (req, res) => {
   const { brand, region } = req.params;
+
   const queryParams = {
     CurrencyCode: "USD",
     PageSize: 100,
@@ -59,13 +60,12 @@ router.get("/api/search", async (req, res) => {
     return res.status(400).json({ error: "Missing query parameter" });
   }
 
-  const formattedName = searchQuery.charAt(0).toUpperCase() + searchQuery.slice(1);
-
+  // Важливо: передаємо Name як є, без форматування
   const queryParams = {
     CurrencyCode: "USD",
     PageSize: 100,
     PageIndex: 0,
-    Name: formattedName
+    Name: searchQuery
   };
 
   const catalogUrl = `${BAMBOO_BASE_URL}/api/integration/v2.0/catalog`;
@@ -91,4 +91,3 @@ router.get("/api/search", async (req, res) => {
 });
 
 module.exports = router;
-
