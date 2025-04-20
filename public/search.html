@@ -3,33 +3,34 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Search Products</title>
+  <title>Search Results</title>
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
   <header>
     <div class="container header-flex">
-      <a href="/" class="logo">DigiGames</a>
-      <input type="text" id="searchInput" placeholder="Search for products..." />
-      <button id="searchBtn">Search</button>
+      <a href="/" class="logo">🎮 DigiGames</a>
+      <form id="searchForm" class="search-form">
+        <input type="text" id="searchInput" placeholder="Search games..." />
+        <button type="submit">🔍</button>
+      </form>
     </div>
   </header>
 
   <main class="container">
     <h1 class="section-title">Search Results</h1>
-    <div id="searchResults" class="category-grid"></div>
+    <div id="search-results" class="category-grid"></div>
   </main>
 
   <footer>
     <div class="footer-links">
       <a href="/about.html">About Us</a>
-      <a href="/contacts.html">Contacts</a>
+      <a href="/contacts.html">Contact</a>
       <a href="/partnership.html">Partnership</a>
     </div>
   </footer>
 
+  <!-- ⬇️ JS логіка для пошуку -->
   <script src="/search.js"></script>
 </body>
 </html>
-
-
