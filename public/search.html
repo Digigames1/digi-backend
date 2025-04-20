@@ -1,19 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Search Results</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Search Products</title>
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
   <header>
     <div class="container header-flex">
-      <a href="/" class="logo">🎮 DigiGames</a>
-      <form id="searchForm" class="header-search">
-        <input type="text" id="searchInput" placeholder="Search games..." />
-        <button type="submit">🔍</button>
-      </form>
+      <a href="/" class="logo">DigiGames</a>
+      <input type="text" id="searchInput" placeholder="Search for products..." />
+      <button id="searchBtn">Search</button>
     </div>
   </header>
 
@@ -23,50 +21,15 @@
   </main>
 
   <footer>
-    <div class="container">
-      <a href="/about.html">About Us</a> |
-      <a href="/contacts.html">Contacts</a> |
+    <div class="footer-links">
+      <a href="/about.html">About Us</a>
+      <a href="/contacts.html">Contacts</a>
       <a href="/partnership.html">Partnership</a>
     </div>
   </footer>
 
-  <script>
-    const form = document.getElementById("searchForm");
-    const input = document.getElementById("searchInput");
-    const resultsContainer = document.getElementById("searchResults");
-
-    const query = new URLSearchParams(window.location.search).get("query");
-    if (query) input.value = query;
-
-    form.addEventListener("submit", function (e) {
-      e.preventDefault();
-      const q = input.value.trim();
-      if (q) {
-        window.location.href = `/search.html?query=${encodeURIComponent(q)}`;
-      }
-    });
-
-    async function searchProducts() {
-      if (!query) return;
-      const res = await fetch(`/api/search?query=${encodeURIComponent(query)}`);
-      const data = await res.json();
-
-      if (!data.length) {
-        resultsContainer.innerHTML = "<p>No results found.</p>";
-        return;
-      }
-
-      data.forEach(item => {
-        const el = document.createElement("a");
-        el.className = "category-card";
-        el.href = `/${item.brand.toLowerCase()}/${item.countryCode.toLowerCase()}`;
-        el.innerHTML = `<img src="/icons/${item.brand.toLowerCase()}.png" /><span>${item.name}</span>`;
-        resultsContainer.appendChild(el);
-      });
-    }
-
-    searchProducts();
-  </script>
+  <script src="/search.js"></script>
 </body>
 </html>
+
 
