@@ -20,19 +20,33 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     data.items.forEach(item => {
-      const logo = item.logoUrl;
-      const title = item.name;
-      const product = item.products?.[0];
-      const price = product?.price?.min?.toFixed(2) || "N/A";
+      const logo = item.logoUrl || "/icons/default.svg";
+      const brandName = item.name;
 
-      const card = document.createElement("div");
-      card.className = "category-card";
-      card.innerHTML = `
-        <img src="${logo}" alt="${title}" />
-        <div>${title}</div>
-        <div style="font-size: 0.9rem; color: #333;">from $${price}</div>
+      const groupDiv = document.createElement("div");
+      groupDiv.className = "category-card";
+      groupDiv.innerHTML = `
+        <img src="${logo}" alt="${brandName}" />
+        <div>${brandName}</div>
       `;
-      searchResults.appendChild(card);
+
+      if (item.products?.length) {
+        const productsList = document.createElement("ul");
+        productsList.style.listStyle = "none";
+        productsList.style.padding = "0";
+        productsList.style.marginTop = "0.5rem";
+
+        item.products.forEach(prod => {
+          const price = prod?.price?.min?.toFixed(2) || "N/A";
+          const li = document.createElement("li");
+          li.textContent = `${prod.name} - $${price}`;
+          productsList.appendChild(li);
+        });
+
+        groupDiv.appendChild(productsList);
+      }
+
+      searchResults.appendChild(groupDiv);
     });
   } catch (err) {
     noResults.textContent = "Failed to load search results.";
@@ -40,3 +54,4 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.error("❌ Search load error:", err.message);
   }
 });
+
