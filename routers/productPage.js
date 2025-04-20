@@ -53,14 +53,13 @@ router.get("/api/:brand/:region?", async (req, res) => {
 
 // 🔍 Пошук товарів
 router.get("/api/search", async (req, res) => {
-  const { query } = req.query;
+  const searchQuery = req.query.query;
 
-  if (!query) {
+  if (!searchQuery) {
     return res.status(400).json({ error: "Missing query parameter" });
   }
 
-  const formattedName = query.charAt(0).toUpperCase() + query.slice(1);
-  const catalogUrl = `${BAMBOO_BASE_URL}/api/integration/v2.0/catalog`;
+  const formattedName = searchQuery.charAt(0).toUpperCase() + searchQuery.slice(1);
 
   const queryParams = {
     CurrencyCode: "USD",
@@ -68,6 +67,8 @@ router.get("/api/search", async (req, res) => {
     PageIndex: 0,
     Name: formattedName
   };
+
+  const catalogUrl = `${BAMBOO_BASE_URL}/api/integration/v2.0/catalog`;
 
   console.log("📦 Fetching Bamboo catalog with params:", queryParams);
 
@@ -80,7 +81,7 @@ router.get("/api/search", async (req, res) => {
       }
     });
 
-    console.log(`✅ Received Bamboo data. Count: ${response.data.count}`);
+    console.log(`🔍 Search query: ${searchQuery}, Results: ${response.data.count}`);
     res.json(response.data);
   } catch (error) {
     const err = error.response?.data || error.message;
@@ -90,3 +91,4 @@ router.get("/api/search", async (req, res) => {
 });
 
 module.exports = router;
+
