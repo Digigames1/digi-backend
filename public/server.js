@@ -22,7 +22,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ==== ROUTES BELOW ====
 // =======================
 
-// Головна сторінка (можеш змінити на index.html)
+// Головна сторінка
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -37,7 +37,7 @@ app.get('/cart', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'cart.html'));
 });
 
-// Додати товар до кошика
+// Додати товар до корзини
 app.post('/add-to-cart', (req, res) => {
   const { product } = req.body;
 
@@ -50,13 +50,37 @@ app.post('/add-to-cart', (req, res) => {
   }
 
   req.session.cart.push(product);
-  res.redirect('/cart');
+  res.status(200).json({ success: true });
 });
 
-// Сторінка оформлення замовлення (можна перенаправити на сторонній сервіс)
+// Відправка форми замовлення
+app.post('/api/order', (req, res) => {
+  const { productId, email, name, price, quantity } = req.body;
+
+  if (!productId || !email || !name || !price) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  console.log("✅ Нове замовлення:", { productId, email, name, price, quantity });
+
+  // Тут можна додати запис у базу, логування або email
+
+  res.status(200).json({ success: true });
+});
+
+// Переадресація на оплату
 app.post('/checkout', (req, res) => {
-  // Ти можеш реалізувати тут інтеграцію з Dundle або іншим платіжним сервісом
   res.redirect('https://www.dundle.com/cart/');
+});
+
+// Checkout page
+app.get('/checkout.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'checkout.html'));
+});
+
+// Видавати product.html для будь-якого /:brand або /:brand/:region
+app.get('/:brand/:region?', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'product.html'));
 });
 
 // Запуск сервера
