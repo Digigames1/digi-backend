@@ -44,18 +44,17 @@
     const form = document.getElementById("searchForm");
     const input = document.getElementById("headerSearchInput");
 
-    input.focus();
-
     form.addEventListener("submit", function (e) {
       e.preventDefault();
-      const query = input.value.trim();
+      const query = input.value.trim().toLowerCase();
       if (query) {
-        window.location.href = `/search.html?query=${encodeURIComponent(query)}`;
+        window.location.href = `/${encodeURIComponent(query)}`;
       }
     });
   </script>
 </body>
 </html>
+
 
 
 
