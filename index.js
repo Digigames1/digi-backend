@@ -8,9 +8,43 @@ const app = express();
 
 app.use(express.json());
 app.use(morgan("dev"));
+const session = require("express-session");
+
+app.use(session({
+  secret: "yourSuperSecretKey",
+  resave: false,
+  saveUninitialized: true
+}));
 
 // 🔽 Статичні файли
 app.use(express.static(path.join(__dirname, "public")));
+
+// 🛒 Додати товар до корзини
+app.post("/add-to-cart", (req, res) => {
+  const { product } = req.body;
+
+  if (!product || !product.id || !product.name || !product.price) {
+    return res.status(400).json({ error: "Invalid product format" });
+  }
+
+  if (!req.session.cart) {
+    req.session.cart = [];
+  }
+
+  req.session.cart.push(product);
+  console.log("🛒 Додано в корзину:", product);
+  res.status(200).json({ success: true });
+});
+
+// 📦 Отримати корзину
+app.get("/get-cart", (req, res) => {
+  res.json(req.session.cart || []);
+});
+
+// 💳 Перейти до оплати
+app.post("/checkout", (req, res) => {
+  res.redirect("https://www.dundle.com/cart/");
+});
 
 // 🔽 Роутери
 const orderRouter = require("./routers/order");
