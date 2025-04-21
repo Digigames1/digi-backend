@@ -3,9 +3,6 @@ body {
   font-family: "Segoe UI", sans-serif;
   background-color: #f7f5ff;
   color: #333;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
 }
 
 .container {
@@ -14,24 +11,32 @@ body {
   padding: 1rem;
 }
 
+/* 🔻 ХЕДЕР */
 header {
-  background-color: #543885; /* колір з логотипу */
+  background-color: #52297b; /* в тон логотипу */
   color: #fff;
   padding: 1rem 0;
 }
 
 .header-flex {
   display: flex;
-  flex-direction: column;
   align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
   gap: 1rem;
+  position: relative;
 }
 
 .logo img {
   height: 60px;
+  vertical-align: middle;
 }
 
+/* 🔍 Пошукове поле */
 .header-search {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   background: #fff;
   border-radius: 5px;
@@ -42,14 +47,14 @@ header {
 
 .header-search input {
   border: none;
-  padding: 0.5rem;
+  padding: 0.6rem;
   font-size: 1rem;
   outline: none;
   flex: 1;
 }
 
 .header-search button {
-  background: #543885;
+  background: #6a0dad;
   color: white;
   border: none;
   padding: 0 1rem;
@@ -57,9 +62,9 @@ header {
   font-size: 1rem;
 }
 
+/* 🔻 ГОЛОВНИЙ КОНТЕНТ */
 main {
   margin-top: 2rem;
-  flex: 1;
 }
 
 .section-title {
@@ -72,23 +77,26 @@ main {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 1rem;
+  justify-items: center;
 }
 
 .category-card {
   background: white;
-  border-radius: 10px;
+  border-radius: 12px;
   text-align: center;
   padding: 1rem;
   font-size: 1rem;
-  color: #543885;
+  color: #6a0dad;
   font-weight: bold;
   text-decoration: none;
-  border: 2px solid #543885;
+  border: 2px solid #6a0dad;
   transition: 0.3s ease;
+  width: 100%;
+  max-width: 130px;
 }
 
 .category-card:hover {
-  background-color: #543885;
+  background-color: #6a0dad;
   color: white;
 }
 
@@ -101,8 +109,9 @@ main {
   margin-right: auto;
 }
 
+/* 🔻 ФУТЕР */
 footer {
-  margin-top: auto;
+  margin-top: 3rem;
   padding: 1rem 0;
   background-color: #eee;
   text-align: center;
@@ -110,7 +119,7 @@ footer {
 
 .footer-links a {
   margin: 0 1rem;
-  color: #543885;
+  color: #6a0dad;
   text-decoration: none;
   font-weight: bold;
 }
@@ -121,18 +130,27 @@ footer {
 
 /* 📱 Мобільна адаптація */
 @media screen and (max-width: 600px) {
-  .header-search {
-    width: 100%;
+  .header-flex {
+    flex-direction: column;
+    align-items: center;
   }
 
-  .category-grid {
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  .header-search {
+    position: static;
+    transform: none;
+    width: 100%;
+    margin-top: 0.5rem;
   }
 
   .logo img {
     height: 50px;
   }
+
+  .category-grid {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  }
 }
+
 
 
 
