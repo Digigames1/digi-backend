@@ -57,36 +57,43 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
     });
 
-    // Відкриття модалки
+    // Обробка кнопок "Buy"
     document.querySelectorAll(".buy-btn").forEach(button => {
-    button.addEventListener("click", (e) => {
-  const productId = e.target.dataset.id;
-  const price = e.target.dataset.price;
+      button.addEventListener("click", async (e) => {
+        const productId = e.target.dataset.id;
+        const price = e.target.dataset.price;
 
-  productIdInput.value = productId;
-  selectedPriceInput.value = price;
-  clientNameInput.value = "";
-  clientEmailInput.value = "";
-  modal.style.display = "block";
+        productIdInput.value = productId;
+        selectedPriceInput.value = price;
+        clientNameInput.value = "";
+        clientEmailInput.value = "";
+        modal.style.display = "block";
 
-  // 🛒 Збереження до localStorage
-  const productName = e.target.parentElement.querySelector(".product-name")?.textContent || "";
-  const productLogo = ""; // Якщо є логотип — можна теж витягнути
+        const productName = e.target.parentElement.querySelector(".product-name")?.textContent || "";
+        const productLogo = ""; // можна витягти з item, якщо буде
 
-  const product = {
-    id: productId,
-    name: productName,
-    price: price,
-    logo: productLogo
-  };
+        const product = {
+          id: productId,
+          name: productName,
+          price: parseFloat(price),
+          image: productLogo
+        };
 
-  const cart = JSON.parse(localStorage.getItem("cart")) || [];
-  cart.push(product);
-  localStorage.setItem("cart", JSON.stringify(cart));
+        try {
+          const res = await fetch('/add-to-cart', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ product })
+          });
 
-  console.log("🛒 Added to cart:", product);
-});
+          if (!res.ok) throw new Error("Не вдалося додати до корзини");
 
+          console.log("🛒 Товар додано до корзини:", product);
+        } catch (err) {
+          console.error("❌ Помилка додавання:", err.message);
+          alert("Помилка додавання до корзини");
+        }
+      });
     });
 
     // Закриття модалки
@@ -123,7 +130,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           alert("Замовлення успішно створено!");
           modal.style.display = "none";
         } else {
-          alert("Помилка: " + result.error || "Спробуйте ще раз");
+          alert("Помилка: " + (result.error || "Спробуйте ще раз"));
         }
       } catch (err) {
         alert("Помилка: " + err.message);
