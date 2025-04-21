@@ -33,17 +33,18 @@
   </main>
 
   <footer>
-    <div class="container footer-links">
+    <div class="container">
       <a href="/about.html">About Us</a> |
       <a href="/contacts.html">Contacts</a> |
       <a href="/partnership.html">Partnership</a>
     </div>
-    <p>&copy; 2025 DigiGames</p>
   </footer>
 
   <script>
     const form = document.getElementById("searchForm");
     const input = document.getElementById("headerSearchInput");
+
+    input.focus();
 
     form.addEventListener("submit", function (e) {
       e.preventDefault();
@@ -55,6 +56,7 @@
   </script>
 </body>
 </html>
+
 
 
 
