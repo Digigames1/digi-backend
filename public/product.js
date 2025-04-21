@@ -1,3 +1,4 @@
+
 document.addEventListener("DOMContentLoaded", async () => {
   const brand = window.location.pathname.split("/")[1];
   const region = window.location.pathname.split("/")[2];
@@ -63,12 +64,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         const productId = e.target.dataset.id;
         const price = e.target.dataset.price;
 
-        productIdInput.value = productId;
-        selectedPriceInput.value = price;
-        clientNameInput.value = "";
-        clientEmailInput.value = "";
-        modal.style.display = "block";
-
         const productName = e.target.parentElement.querySelector(".product-name")?.textContent || "";
         const productLogo = ""; // можна витягти з item, якщо буде
 
@@ -80,31 +75,26 @@ document.addEventListener("DOMContentLoaded", async () => {
         };
 
         try {
-  const res = await fetch('/add-to-cart', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ product })
-  });
+          const res = await fetch('/add-to-cart', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ product })
+          });
 
-  if (!res.ok) throw new Error("Не вдалося додати до корзини");
+          if (!res.ok) throw new Error("Не вдалося додати до корзини");
 
-  console.log("🛒 Товар додано до корзини:", product);
-  window.location.href = '/checkout.html'; // ⬅️ редірект після додавання
-} catch (err) {
-  console.error("❌ Помилка додавання:", err.message);
-  alert("Помилка додавання до корзини");
-}
+          console.log("🛒 Товар додано до корзини:", product);
+
+          // ✅ Переходимо до checkout
+          window.location.href = '/checkout.html';
+        } catch (err) {
+          console.error("❌ Помилка додавання:", err.message);
+          alert("Помилка додавання до корзини");
+        }
       });
     });
 
-    // Закриття модалки
-    window.onclick = function (event) {
-      if (event.target === modal) {
-        modal.style.display = "none";
-      }
-    };
-
-    // Відправка форми
+    // Відправка форми (залишено без змін, якщо ти ще її використовуєш)
     orderForm.addEventListener("submit", async (e) => {
       e.preventDefault();
 
@@ -143,4 +133,3 @@ document.addEventListener("DOMContentLoaded", async () => {
     productsContainer.innerHTML = "<p>Помилка завантаження товарів.</p>";
   }
 });
-
