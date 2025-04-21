@@ -52,7 +52,7 @@ router.get("/api/:brand/:region?", async (req, res) => {
   }
 });
 
-// 🔍 Пошук товарів
+// 🔍 Пошук товарів по точній назві бренду або товару
 router.get("/api/search", async (req, res) => {
   const { query } = req.query;
 
@@ -60,16 +60,14 @@ router.get("/api/search", async (req, res) => {
     return res.status(400).json({ error: "Missing query parameter" });
   }
 
-  const formattedName = query.charAt(0).toUpperCase() + query.slice(1);
+  const catalogUrl = `${BAMBOO_BASE_URL}/api/integration/v2.0/catalog`;
 
   const queryParams = {
     CurrencyCode: "USD",
     PageSize: 100,
     PageIndex: 0,
-    Name: formattedName // ✅ ВАЖЛИВО: це ключ до успішного пошуку
+    Name: query // ❗️Використовуємо query як є, без змін
   };
-
-  const catalogUrl = `${BAMBOO_BASE_URL}/api/integration/v2.0/catalog`;
 
   console.log("📦 Fetching Bamboo catalog with params:", queryParams);
 
@@ -92,3 +90,4 @@ router.get("/api/search", async (req, res) => {
 });
 
 module.exports = router;
+
