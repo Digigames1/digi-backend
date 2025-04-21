@@ -128,6 +128,43 @@ footer {
 .footer-links a:hover {
   text-decoration: underline;
 }
+.cart-button {
+  background: white;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  text-decoration: none;
+  color: #6a0dad;
+  font-weight: bold;
+  border: 2px solid #6a0dad;
+}
+
+.cart-button:hover {
+  background: #6a0dad;
+  color: white;
+}
+
+.cart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.checkout-btn {
+  margin-top: 2rem;
+  padding: 0.8rem 2rem;
+  background: #6a0dad;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.checkout-btn:hover {
+  background: #563092;
+}
+
 
 /* 📱 Mobile */
 @media screen and (max-width: 600px) {
