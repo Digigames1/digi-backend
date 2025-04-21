@@ -12,7 +12,7 @@ body {
 }
 
 header {
-  background-color: #4f2c84; /* 🎨 Колір з логотипу */
+  background-color: #543885; /* 🎨 Колір з логотипу */
   color: #fff;
   padding: 1rem 0;
 }
@@ -33,8 +33,8 @@ header {
 }
 
 .logo img {
-  height: 55px;
-  margin-right: 10px;
+  height: 65px;
+  margin-right: 20px;
 }
 
 .header-search {
