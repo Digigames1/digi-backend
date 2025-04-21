@@ -12,7 +12,7 @@ body {
 }
 
 header {
-  background-color: #6b47a9;
+  background-color: #6b47a9; /* 🔁 Новий фіолетовий */
   color: #fff;
   padding: 1rem 0;
 }
@@ -26,7 +26,7 @@ header {
 }
 
 .logo img {
-  height: 60px;
+  height: 50px;
   vertical-align: middle;
 }
 
@@ -37,7 +37,7 @@ header {
   overflow: hidden;
   max-width: 300px;
   width: 100%;
-  margin-left: auto;
+  margin: 0 auto;
 }
 
 .header-search input {
@@ -79,15 +79,15 @@ main {
   text-align: center;
   padding: 1rem;
   font-size: 1rem;
-  color: #6b47a9;
+  color: #6a0dad;
   font-weight: bold;
   text-decoration: none;
-  border: 2px solid #6b47a9;
+  border: 2px solid #6a0dad;
   transition: 0.3s ease;
 }
 
 .category-card:hover {
-  background-color: #6b47a9;
+  background-color: #6a0dad;
   color: white;
 }
 
@@ -105,14 +105,11 @@ footer {
   padding: 1rem 0;
   background-color: #eee;
   text-align: center;
-  position: relative;
-  bottom: 0;
-  width: 100%;
 }
 
 .footer-links a {
   margin: 0 1rem;
-  color: #6b47a9;
+  color: #6a0dad;
   text-decoration: none;
   font-weight: bold;
 }
@@ -130,7 +127,6 @@ footer {
 
   .header-search {
     width: 100%;
-    justify-content: center;
   }
 
   .category-grid {
@@ -138,9 +134,10 @@ footer {
   }
 
   .logo img {
-    height: 50px;
+    height: 40px;
   }
 }
+
 
 
 
