@@ -12,7 +12,7 @@ body {
 }
 
 header {
-  background-color: #6a0dad;
+  background-color: #6b47a9; /* оновлений колір */
   color: #fff;
   padding: 1rem 0;
 }
@@ -26,10 +26,14 @@ header {
 }
 
 .logo {
-  font-size: 2rem;
-  font-weight: bold;
+  display: flex;
+  align-items: center;
   text-decoration: none;
-  color: #fff;
+}
+
+.logo img {
+  height: 40px;
+  vertical-align: middle;
 }
 
 /* 🔍 Пошукове поле */
@@ -51,7 +55,7 @@ header {
 }
 
 .header-search button {
-  background: #6a0dad;
+  background: #6b47a9;
   color: white;
   border: none;
   padding: 0 1rem;
@@ -138,7 +142,7 @@ footer {
     grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
   }
 
-  .logo {
-    font-size: 1.5rem;
+  .logo img {
+    height: 30px;
   }
 }
