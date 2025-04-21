@@ -1,14 +1,14 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const searchForm = document.getElementById("searchForm");
-  const searchInput = document.getElementById("searchInput");
+  const form = document.getElementById("searchForm");
+  const input = document.getElementById("searchInput");
 
-  if (searchForm) {
-    searchForm.addEventListener("submit", (e) => {
+  if (form) {
+    form.addEventListener("submit", (e) => {
       e.preventDefault();
-      const query = searchInput.value.trim().toLowerCase();
+      const query = input.value.trim().toLowerCase();
 
       if (query) {
-        // 🔁 Замість API — редирект на динамічну сторінку
+        // ⬅️ Редирект на динамічний бренд-роут
         window.location.href = `/${encodeURIComponent(query)}`;
       }
     });
