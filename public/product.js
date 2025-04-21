@@ -59,16 +59,34 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Відкриття модалки
     document.querySelectorAll(".buy-btn").forEach(button => {
-      button.addEventListener("click", (e) => {
-        const productId = e.target.dataset.id;
-        const price = e.target.dataset.price;
+    button.addEventListener("click", (e) => {
+  const productId = e.target.dataset.id;
+  const price = e.target.dataset.price;
 
-        productIdInput.value = productId;
-        selectedPriceInput.value = price;
-        clientNameInput.value = "";
-        clientEmailInput.value = "";
-        modal.style.display = "block";
-      });
+  productIdInput.value = productId;
+  selectedPriceInput.value = price;
+  clientNameInput.value = "";
+  clientEmailInput.value = "";
+  modal.style.display = "block";
+
+  // 🛒 Збереження до localStorage
+  const productName = e.target.parentElement.querySelector(".product-name")?.textContent || "";
+  const productLogo = ""; // Якщо є логотип — можна теж витягнути
+
+  const product = {
+    id: productId,
+    name: productName,
+    price: price,
+    logo: productLogo
+  };
+
+  const cart = JSON.parse(localStorage.getItem("cart")) || [];
+  cart.push(product);
+  localStorage.setItem("cart", JSON.stringify(cart));
+
+  console.log("🛒 Added to cart:", product);
+});
+
     });
 
     // Закриття модалки
