@@ -25,7 +25,7 @@
   </main>
 
   <!-- Модальне вікно -->
-  <div id="buyModal" class="modal">
+  <div id="buyModal" class="modal" style="display: none;">
     <div class="modal-content">
       <form id="orderForm">
         <input type="hidden" id="selectedProductId" />
@@ -35,7 +35,7 @@
         <label>Email:</label>
         <input type="email" id="clientEmail" required />
         <button type="submit">Оплатити</button>
-        <div id="successMessage" class="success-message">✅ Замовлення створено!</div>
+        <div id="successMessage" class="success-message" style="display: none;">✅ Замовлення створено!</div>
       </form>
     </div>
   </div>
@@ -50,6 +50,7 @@
   </footer>
 
   <script>
+    // Пошук
     document.getElementById("searchForm").addEventListener("submit", function(e) {
       e.preventDefault();
       const query = document.getElementById("headerSearchInput").value.trim();
@@ -57,9 +58,34 @@
         window.location.href = `/search.html?query=${encodeURIComponent(query)}`;
       }
     });
+
+    // 🎯 Обробка натискань кнопки Buy
+    document.addEventListener("click", function (e) {
+      if (e.target.classList.contains("buy-btn")) {
+        const productId = e.target.dataset.id;
+        const price = e.target.dataset.price;
+
+        document.getElementById("selectedProductId").value = productId;
+        document.getElementById("selectedPrice").value = price;
+        document.getElementById("clientName").value = "";
+        document.getElementById("clientEmail").value = "";
+
+        document.getElementById("buyModal").style.display = "block";
+      }
+    });
+
+    // ❌ Закриття модалки при кліку поза формою
+    window.addEventListener("click", function (event) {
+      const modal = document.getElementById("buyModal");
+      if (event.target === modal) {
+        modal.style.display = "none";
+      }
+    });
   </script>
+
   <script src="/product.js"></script>
 </body>
 </html>
+
 
 
