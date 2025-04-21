@@ -80,19 +80,20 @@ document.addEventListener("DOMContentLoaded", async () => {
         };
 
         try {
-          const res = await fetch('/add-to-cart', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ product })
-          });
+  const res = await fetch('/add-to-cart', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ product })
+  });
 
-          if (!res.ok) throw new Error("Не вдалося додати до корзини");
+  if (!res.ok) throw new Error("Не вдалося додати до корзини");
 
-          console.log("🛒 Товар додано до корзини:", product);
-        } catch (err) {
-          console.error("❌ Помилка додавання:", err.message);
-          alert("Помилка додавання до корзини");
-        }
+  console.log("🛒 Товар додано до корзини:", product);
+  window.location.href = '/checkout.html'; // ⬅️ редірект після додавання
+} catch (err) {
+  console.error("❌ Помилка додавання:", err.message);
+  alert("Помилка додавання до корзини");
+}
       });
     });
 
