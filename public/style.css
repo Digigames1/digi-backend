@@ -12,7 +12,7 @@ body {
 }
 
 header {
-  background-color: #543885; /* 🟣 новий колір */
+  background-color: #5f2c8c; /* фіолетовий з логотипу */
   color: #fff;
   padding: 1rem 0;
 }
@@ -20,14 +20,13 @@ header {
 .header-flex {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   flex-wrap: wrap;
   gap: 1rem;
 }
 
 .logo img {
   height: 60px;
-  vertical-align: middle;
 }
 
 .header-search {
@@ -37,6 +36,8 @@ header {
   overflow: hidden;
   max-width: 300px;
   width: 100%;
+  margin-left: auto;
+  margin-right: 0;
 }
 
 .header-search input {
@@ -48,7 +49,7 @@ header {
 }
 
 .header-search button {
-  background: #543885;
+  background: #5f2c8c;
   color: white;
   border: none;
   padding: 0 1rem;
@@ -104,6 +105,8 @@ footer {
   padding: 1rem 0;
   background-color: #eee;
   text-align: center;
+  position: relative;
+  bottom: 0;
   width: 100%;
 }
 
@@ -127,6 +130,7 @@ footer {
 
   .header-search {
     width: 100%;
+    justify-content: center;
   }
 
   .category-grid {
@@ -137,6 +141,7 @@ footer {
     height: 50px;
   }
 }
+
 
 
 
