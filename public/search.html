@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Search Results</title>
+  <title>Search</title>
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
   <header>
     <div class="container header-flex">
       <a href="/" class="logo">🎮 DigiGames</a>
-      <form id="searchForm">
+      <form id="searchForm" class="header-search">
         <input type="text" id="searchInput" placeholder="Search..." />
         <button type="submit">🔍</button>
       </form>
@@ -18,13 +18,8 @@
   </header>
 
   <main class="container">
-    <h2 class="section-title">Search Results</h2>
-    <div id="searchResults" class="category-grid"></div>
-    <p id="noResults" style="display:none;">No results found.</p>
-
-    <div style="margin-top: 2rem; text-align: center;">
-      <a href="/" style="text-decoration:none; color:#6a0dad; font-weight:bold;">← Back to Home</a>
-    </div>
+    <h2 class="section-title">Search by brand</h2>
+    <p>Start typing the brand (e.g. Steam, Playstation, Xbox...) and press Enter.</p>
   </main>
 
   <footer>
@@ -39,5 +34,6 @@
   <script src="/search.js"></script>
 </body>
 </html>
+
 
 
