@@ -26,7 +26,7 @@ header {
 }
 
 .logo img {
-  height: 55px;
+  height: 60px;
   vertical-align: middle;
 }
 
@@ -37,7 +37,7 @@ header {
   overflow: hidden;
   max-width: 300px;
   width: 100%;
-  margin: 0 auto;
+  margin-left: auto;
 }
 
 .header-search input {
@@ -79,15 +79,15 @@ main {
   text-align: center;
   padding: 1rem;
   font-size: 1rem;
-  color: #6a0dad;
+  color: #6b47a9;
   font-weight: bold;
   text-decoration: none;
-  border: 2px solid #6a0dad;
+  border: 2px solid #6b47a9;
   transition: 0.3s ease;
 }
 
 .category-card:hover {
-  background-color: #6a0dad;
+  background-color: #6b47a9;
   color: white;
 }
 
@@ -112,7 +112,7 @@ footer {
 
 .footer-links a {
   margin: 0 1rem;
-  color: #6a0dad;
+  color: #6b47a9;
   text-decoration: none;
   font-weight: bold;
 }
@@ -121,6 +121,7 @@ footer {
   text-decoration: underline;
 }
 
+/* 📱 Мобільна адаптація */
 @media screen and (max-width: 600px) {
   .header-flex {
     flex-direction: column;
@@ -129,7 +130,7 @@ footer {
 
   .header-search {
     width: 100%;
-    max-width: 100%;
+    justify-content: center;
   }
 
   .category-grid {
@@ -137,8 +138,9 @@ footer {
   }
 
   .logo img {
-    height: 45px;
+    height: 50px;
   }
 }
+
 
 
