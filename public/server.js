@@ -63,8 +63,6 @@ app.post('/api/order', (req, res) => {
 
   console.log("✅ Нове замовлення:", { productId, email, name, price, quantity });
 
-  // Тут можна додати запис у базу, логування або email
-
   res.status(200).json({ success: true });
 });
 
@@ -76,6 +74,20 @@ app.post('/checkout', (req, res) => {
 // Checkout page
 app.get('/checkout.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'checkout.html'));
+});
+
+// Захист: не перехоплювати API і POST маршрути динамічним рендером
+app.use((req, res, next) => {
+  if (
+    req.path.startsWith('/api/') ||
+    req.path.startsWith('/add-to-cart') ||
+    req.path.startsWith('/get-cart') ||
+    req.path.startsWith('/checkout')
+  ) {
+    return next();
+  }
+  if (req.method !== 'GET') return res.status(404).send("Not found");
+  next();
 });
 
 // Видавати product.html для будь-якого /:brand або /:brand/:region
