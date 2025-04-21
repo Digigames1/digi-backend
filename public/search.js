@@ -11,9 +11,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
+  console.log("🔍 Sending query to backend:", query); // <== новий лог
+
   try {
     const res = await fetch(`/api/search?query=${encodeURIComponent(query)}`);
     const data = await res.json();
+
+    console.log("📦 Received search data:", data); // <== новий лог
 
     if (!data.items || data.items.length === 0) {
       noResults.style.display = "block";
@@ -43,4 +47,5 @@ document.addEventListener("DOMContentLoaded", async () => {
     noResults.style.display = "block";
   }
 });
+
 
