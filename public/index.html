@@ -9,7 +9,9 @@
 <body>
   <header>
     <div class="container header-flex">
-      <a href="/" class="logo">🎮 DigiGames</a>
+      <a href="/" class="logo">
+        <img src="/icons/logo2.png" alt="DigiGames Logo" class="logo-img" />
+      </a>
       <form id="searchForm" class="header-search">
         <input type="text" id="headerSearchInput" placeholder="Search games..." />
         <button type="submit">🔍</button>
@@ -42,17 +44,18 @@
     const form = document.getElementById("searchForm");
     const input = document.getElementById("headerSearchInput");
 
+    input.focus();
+
     form.addEventListener("submit", function (e) {
       e.preventDefault();
-      const query = input.value.trim().toLowerCase();
+      const query = input.value.trim();
       if (query) {
-        window.location.href = `/${encodeURIComponent(query)}`;
+        window.location.href = `/search.html?query=${encodeURIComponent(query)}`;
       }
     });
   </script>
 </body>
 </html>
-
 
 
 
