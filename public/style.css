@@ -11,9 +11,8 @@ body {
   padding: 1rem;
 }
 
-/* 🔻 ХЕДЕР */
 header {
-  background-color: #52297b; /* в тон логотипу */
+  background-color: #4f2c84; /* 🎨 Колір з логотипу */
   color: #fff;
   padding: 1rem 0;
 }
@@ -24,19 +23,23 @@ header {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 1rem;
-  position: relative;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: #fff;
 }
 
 .logo img {
-  height: 60px;
-  vertical-align: middle;
+  height: 55px;
+  margin-right: 10px;
 }
 
-/* 🔍 Пошукове поле */
 .header-search {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+  margin-left: auto;
+  margin-right: auto;
   display: flex;
   background: #fff;
   border-radius: 5px;
@@ -47,7 +50,7 @@ header {
 
 .header-search input {
   border: none;
-  padding: 0.6rem;
+  padding: 0.5rem;
   font-size: 1rem;
   outline: none;
   flex: 1;
@@ -62,7 +65,6 @@ header {
   font-size: 1rem;
 }
 
-/* 🔻 ГОЛОВНИЙ КОНТЕНТ */
 main {
   margin-top: 2rem;
 }
@@ -77,12 +79,11 @@ main {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 1rem;
-  justify-items: center;
 }
 
 .category-card {
   background: white;
-  border-radius: 12px;
+  border-radius: 10px;
   text-align: center;
   padding: 1rem;
   font-size: 1rem;
@@ -91,8 +92,6 @@ main {
   text-decoration: none;
   border: 2px solid #6a0dad;
   transition: 0.3s ease;
-  width: 100%;
-  max-width: 130px;
 }
 
 .category-card:hover {
@@ -109,12 +108,14 @@ main {
   margin-right: auto;
 }
 
-/* 🔻 ФУТЕР */
 footer {
   margin-top: 3rem;
   padding: 1rem 0;
   background-color: #eee;
   text-align: center;
+  position: relative;
+  bottom: 0;
+  width: 100%;
 }
 
 .footer-links a {
@@ -128,7 +129,7 @@ footer {
   text-decoration: underline;
 }
 
-/* 📱 Мобільна адаптація */
+/* 📱 Mobile */
 @media screen and (max-width: 600px) {
   .header-flex {
     flex-direction: column;
@@ -136,20 +137,18 @@ footer {
   }
 
   .header-search {
-    position: static;
-    transform: none;
     width: 100%;
-    margin-top: 0.5rem;
   }
 
   .logo img {
-    height: 50px;
+    height: 45px;
   }
 
-  .category-grid {
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  .logo {
+    justify-content: center;
   }
 }
+
 
 
 
