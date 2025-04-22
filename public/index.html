@@ -1,10 +1,70 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uk">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>DigiGames</title>
+  <title>DigiGames — Home</title>
   <link rel="stylesheet" href="/style.css" />
+  <style>
+    header {
+      position: sticky;
+      top: 0;
+      background-color: #4b2aad;
+      z-index: 1000;
+    }
+    .section {
+      margin: 2rem 0;
+    }
+    .section-title {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .card-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 1rem;
+      flex: 1 1 calc(33.333% - 2rem);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      text-align: center;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .card:hover {
+      transform: translateY(-6px) scale(1.03);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+    }
+    .card img {
+      max-width: 80px;
+      margin-bottom: 0.5rem;
+    }
+    .benefits {
+      display: flex;
+      justify-content: space-around;
+      margin: 2rem 0;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .benefit {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 0.95rem;
+      color: #333;
+    }
+    .benefit img {
+      width: 40px;
+      margin-bottom: 0.5rem;
+    }
+    @media (max-width: 768px) {
+      .card {
+        flex: 1 1 100%;
+      }
+    }
+  </style>
 </head>
 <body>
   <header>
@@ -27,43 +87,70 @@
   <main class="container">
     <h1 class="section-title" data-i18n="title">Gift Card Categories</h1>
     <div class="category-grid">
-      <a href="/playstation" class="category-card"><img src="/icons/playstation.png" /><span>Playstation</span></a>
-      <a href="/steam" class="category-card"><img src="/icons/steam.png" /><span>Steam</span></a>
-      <a href="/xbox" class="category-card"><img src="/icons/xbox.png" /><span>Xbox</span></a>
-      <a href="/netflix" class="category-card"><img src="/icons/netflix.png" /><span>Netflix</span></a>
-      <a href="/roblox" class="category-card"><img src="/icons/roblox.png" /><span>Roblox</span></a>
-      <a href="/apple" class="category-card"><img src="/icons/apple.png" /><span>Apple</span></a>
-      <a href="/nintendo" class="category-card"><img src="/icons/nintendo.png" /><span>Nintendo</span></a>
+      <a href="/playstation" class="category-card card"><img src="/icons/playstation.png" /><span>Playstation</span></a>
+      <a href="/steam" class="category-card card"><img src="/icons/steam.png" /><span>Steam</span></a>
+      <a href="/xbox" class="category-card card"><img src="/icons/xbox.png" /><span>Xbox</span></a>
+      <a href="/netflix" class="category-card card"><img src="/icons/netflix.png" /><span>Netflix</span></a>
+      <a href="/roblox" class="category-card card"><img src="/icons/roblox.png" /><span>Roblox</span></a>
+      <a href="/apple" class="category-card card"><img src="/icons/apple.png" /><span>Apple</span></a>
+      <a href="/nintendo" class="category-card card"><img src="/icons/nintendo.png" /><span>Nintendo</span></a>
     </div>
+
+    <div class="benefits">
+      <div class="benefit">
+        <img src="/icons/flash.png" alt="Instant">
+        <span>Instant delivery</span>
+      </div>
+      <div class="benefit">
+        <img src="/icons/lock.png" alt="Secure">
+        <span>Secure payment</span>
+      </div>
+      <div class="benefit">
+        <img src="/icons/star.png" alt="Trusted">
+        <span>Trusted platform</span>
+      </div>
+    </div>
+
+    <section class="section">
+      <h2 class="section-title">🎮 Gaming Gift Cards</h2>
+      <div class="card-row">
+        <div class="card"><img src="/icons/steam.png" alt=""><div>Steam</div></div>
+        <div class="card"><img src="/icons/xbox.png" alt=""><div>Xbox</div></div>
+        <div class="card"><img src="/icons/playstation.png" alt=""><div>PlayStation</div></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">🔥 Best Sellers</h2>
+      <div class="card-row">
+        <div class="card"><img src="/icons/apple.png" alt=""><div>Apple Gift Card</div></div>
+        <div class="card"><img src="/icons/netflix.png" alt=""><div>Netflix</div></div>
+        <div class="card"><img src="/icons/roblox.png" alt=""><div>Roblox</div></div>
+      </div>
+    </section>
   </main>
 
   <footer>
     <div class="container footer-links">
-      <a href="/about.html" data-i18n="about">About Us</a> |
-      <a href="/contacts.html" data-i18n="contacts">Contacts</a> |
+      <a href="/about.html" data-i18n="about">About Us</a>
+      <a href="/contacts.html" data-i18n="contacts">Contacts</a>
       <a href="/partnership.html" data-i18n="partnership">Partnership</a>
     </div>
+    <p style="text-align:center; margin-top: 1rem;">&copy; 2025 DigiGames</p>
   </footer>
 
+  <script src="/lang/lang.js"></script>
   <script>
-    const form = document.getElementById("searchForm");
-    const input = document.getElementById("headerSearchInput");
-
-    form.addEventListener("submit", function (e) {
+    document.getElementById("searchForm").addEventListener("submit", function(e) {
       e.preventDefault();
-      const query = input.value.trim().toLowerCase();
+      const query = document.getElementById("headerSearchInput").value.trim();
       if (query) {
         window.location.href = `/${encodeURIComponent(query)}`;
       }
     });
   </script>
-
-  <!-- 🔤 Підключення перекладу -->
-  <script src="/lang/lang.js"></script>
 </body>
 </html>
-
-
 
 
 
