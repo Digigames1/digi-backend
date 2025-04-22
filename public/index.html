@@ -34,6 +34,10 @@
       <a href="/roblox" class="category-card card"><img src="/icons/roblox.png" /><span>Roblox</span></a>
       <a href="/apple" class="category-card card"><img src="/icons/apple.png" /><span>Apple</span></a>
       <a href="/nintendo" class="category-card card"><img src="/icons/nintendo.png" /><span>Nintendo</span></a>
+      <!-- додаткові категорії -->
+      <a href="/google" class="category-card card"><img src="/icons/google.png" /><span>Google Play</span></a>
+      <a href="/fortnite" class="category-card card"><img src="/icons/fortnite.png" /><span>Fortnite</span></a>
+      <a href="/pubg" class="category-card card"><img src="/icons/pubg.png" /><span>PUBG</span></a>
     </div>
 
     <div class="benefits">
@@ -50,15 +54,6 @@
         <span>Trusted platform</span>
       </div>
     </div>
-
-    <section class="section">
-      <h2 class="section-title">🎮 Gaming Gift Cards</h2>
-      <div class="card-row">
-        <div class="card"><img src="/icons/steam.png" alt=""><div>Steam</div></div>
-        <div class="card"><img src="/icons/xbox.png" alt=""><div>Xbox</div></div>
-        <div class="card"><img src="/icons/playstation.png" alt=""><div>PlayStation</div></div>
-      </div>
-    </section>
 
     <section class="section">
       <h2 class="section-title">🔥 Best Sellers</h2>
@@ -94,23 +89,29 @@
       }
     });
 
-    const popularData = [
-      { name: "Steam", image: "/icons/steam.png" },
-      { name: "Roblox", image: "/icons/roblox.png" },
-      { name: "PlayStation", image: "/icons/playstation.png" }
-    ];
-    const popularCardsContainer = document.getElementById("popularCards");
-    if (popularCardsContainer) {
-      popularData.forEach(card => {
-        const el = document.createElement("div");
-        el.className = "card";
-        el.innerHTML = `<img src="${card.image}" alt="${card.name}"><div>${card.name}</div>`;
-        popularCardsContainer.appendChild(el);
-      });
-    }
+    // 🎯 Динамічна секція Popular Now (через API)
+    fetch("/api/popular-products")
+      .then(res => res.json())
+      .then(data => {
+        const container = document.getElementById("popularCards");
+        if (!container) return;
+        container.innerHTML = "";
+        data.forEach(item => {
+          const card = document.createElement("a");
+          card.className = "category-card card";
+          card.href = `/${item.id}`;
+          card.innerHTML = `
+            <img src="${item.image}" alt="${item.name}">
+            <span>${item.name}</span>
+          `;
+          container.appendChild(card);
+        });
+      })
+      .catch(err => console.error("❌ Failed to load popular:", err));
   </script>
 </body>
 </html>
+
 
 
 
