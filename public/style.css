@@ -168,6 +168,57 @@ footer {
 .checkout-btn:hover {
   background: #563092;
 }
+.category-card img {
+  max-width: 50px; /* стало менше */
+  margin-bottom: 0.3rem;
+}
+
+.benefits {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+  margin: 2rem 0;
+}
+
+.benefit {
+  text-align: center;
+  color: white;
+  font-size: 0.9rem;
+}
+
+.benefit img {
+  width: 32px;
+  margin-bottom: 0.3rem;
+}
+
+.card-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.card-row .card {
+  background: white;
+  color: black;
+  padding: 0.5rem;
+  border-radius: 10px;
+  text-align: center;
+  flex: 0 1 150px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  transition: transform 0.2s ease;
+}
+
+.card-row .card:hover {
+  transform: translateY(-5px);
+}
+
+.card-row .card img {
+  max-width: 50px;
+  margin-bottom: 0.3rem;
+}
+
 
 
 /* 📱 Mobile */
