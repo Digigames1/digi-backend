@@ -6,8 +6,15 @@ async function loadLang(lang) {
     const res = await fetch(`/lang/${lang}.json`);
     const dict = await res.json();
 
-    document.querySelector(".section-title")?.innerText = dict.title;
-    document.querySelectorAll(".buy-btn").forEach(btn => btn.innerText = dict.buy);
+    // Переклад елементів за data-i18n
+    document.querySelectorAll("[data-i18n]").forEach(el => {
+      const key = el.getAttribute("data-i18n");
+      if (dict[key]) {
+        el.innerText = dict[key];
+      }
+    });
+
+    // Додаткові поля
     document.getElementById("clientName")?.setAttribute("placeholder", dict.name);
     document.getElementById("clientEmail")?.setAttribute("placeholder", dict.email);
     document.getElementById("checkoutBtn")?.innerText = dict.checkout;
@@ -18,6 +25,7 @@ async function loadLang(lang) {
 
 loadLang(userLang);
 
+// Мова в селекторі
 document.getElementById("langSelector")?.addEventListener("change", e => {
   localStorage.setItem("lang", e.target.value);
   location.reload();
