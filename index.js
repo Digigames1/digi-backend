@@ -86,6 +86,12 @@ async function startServer() {
     app.use("/api/admin", (req, res, next) => { req.db = db; next(); }, adminRouter);
     app.use("/api/products", productsRouter);
     app.use("/api/bamboo", bambooRouter);
+    // 🔥 Popular products
+const popularRouter = require("./routers/popular");
+app.use("/api/popular-products", (req, res, next) => {
+  req.db = db;
+  next();
+}, popularRouter);
     app.use("/", productPageRouter); // 🧭 API для динамічних категорій і підкатегорій
 
     // 🏠 Головна сторінка
