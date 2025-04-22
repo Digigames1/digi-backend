@@ -113,6 +113,10 @@
         });
       })
       .catch(err => console.error("❌ Failed to load popular:", err));
+    function toggleGiftMenu() {
+  const menu = document.getElementById("giftMenu");
+  menu.style.display = (menu.style.display === "grid") ? "none" : "grid";
+}
   </script>
 </body>
 </html>
