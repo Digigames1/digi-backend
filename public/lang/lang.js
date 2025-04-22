@@ -25,10 +25,12 @@ async function loadLang(lang) {
 
 loadLang(userLang);
 
-// Мова в селекторі
-document.getElementById("langSelector")?.addEventListener("change", e => {
-  localStorage.setItem("lang", e.target.value);
-  location.reload();
-});
-
-document.getElementById("langSelector")?.value = userLang;
+// 🔄 Встановлення мови в селекторі
+const selector = document.getElementById("langSelector");
+if (selector) {
+  selector.value = userLang;
+  selector.addEventListener("change", e => {
+    localStorage.setItem("lang", e.target.value);
+    location.reload();
+  });
+}
