@@ -12,11 +12,28 @@
       <a href="/" class="logo">
         <img src="/icons/no_padding.png" alt="DigiGames Logo" />
       </a>
+
+      <!-- 🎁 Кнопка Gift Cards -->
+      <div class="dropdown">
+        <button class="dropbtn">🎁 Gift Cards</button>
+        <div class="dropdown-content">
+          <a href="/playstation"><img src="/icons/playstation.png">Playstation</a>
+          <a href="/steam"><img src="/icons/steam.png">Steam</a>
+          <a href="/xbox"><img src="/icons/xbox.png">Xbox</a>
+          <a href="/netflix"><img src="/icons/netflix.png">Netflix</a>
+          <a href="/roblox"><img src="/icons/roblox.png">Roblox</a>
+          <a href="/apple"><img src="/icons/apple.png">Apple</a>
+          <a href="/nintendo"><img src="/icons/nintendo.png">Nintendo</a>
+        </div>
+      </div>
+
       <form id="searchForm" class="header-search">
         <input type="text" id="headerSearchInput" placeholder="Search games..." />
         <button type="submit">🔍</button>
       </form>
+
       <a href="/cart.html" class="cart-button" data-i18n="cart">🛒 Cart</a>
+
       <select id="langSelector" style="margin-left: 1rem;">
         <option value="uk">Українська</option>
         <option value="en">English</option>
@@ -25,16 +42,7 @@
   </header>
 
   <main class="container">
-    <h1 class="section-title" data-i18n="title">Gift Card Categories</h1>
-    <div class="category-grid">
-      <a href="/playstation" class="category-card card"><img src="/icons/playstation.png" /><span>Playstation</span></a>
-      <a href="/steam" class="category-card card"><img src="/icons/steam.png" /><span>Steam</span></a>
-      <a href="/xbox" class="category-card card"><img src="/icons/xbox.png" /><span>Xbox</span></a>
-      <a href="/netflix" class="category-card card"><img src="/icons/netflix.png" /><span>Netflix</span></a>
-      <a href="/roblox" class="category-card card"><img src="/icons/roblox.png" /><span>Roblox</span></a>
-      <a href="/apple" class="category-card card"><img src="/icons/apple.png" /><span>Apple</span></a>
-      <a href="/nintendo" class="category-card card"><img src="/icons/nintendo.png" /><span>Nintendo</span></a>
-    </div>
+
 
     <div class="benefits">
       <div class="benefit">
@@ -85,7 +93,6 @@
       }
     });
 
-    // 🎯 Динамічна секція Popular Now (через API)
     fetch("/api/popular-products")
       .then(res => res.json())
       .then(data => {
