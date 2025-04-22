@@ -1,9 +1,12 @@
 {
-  "title": "Choose a gift card",
-  "title": "Gift Card Categories",
-  "buy": "Buy",
-  "name": "Your Name",
-  "email": "Email",
-  "checkout": "Go to checkout"
+  "cart": "Cart",
+  "your_cart": "Your Cart",
+  "empty_cart": "Your cart is empty.",
+  "total": "Total:",
+  "checkout": "Go to checkout",
+  "about": "About Us",
+  "contacts": "Contacts",
+  "partnership": "Partnership"
 }
+
 
