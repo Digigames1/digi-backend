@@ -1,35 +1,48 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uk">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Your Cart</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DigiGames — Cart</title>
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
   <header>
     <div class="container header-flex">
-      <a href="/" class="logo"><img src="/icons/no_padding.png" alt="DigiGames" /></a>
-      <a href="/cart.html" class="cart-button">🛒 Cart</a>
+      <a href="/" class="logo">
+        <img src="/icons/no_padding.png" alt="DigiGames Logo" />
+      </a>
+      <a href="/cart.html" class="cart-button" data-i18n="cart">🛒 Cart</a>
+      <select id="langSelector" style="margin-left: 1rem;">
+        <option value="uk">Українська</option>
+        <option value="en">English</option>
+      </select>
     </div>
   </header>
 
   <main class="container">
-    <h1 class="section-title">Your Cart</h1>
-    <div id="cartItems" class="cart-grid"></div>
-    <p id="emptyCart">Your cart is empty.</p>
-    <button id="checkoutBtn" class="checkout-btn">Checkout</button>
+    <h1 class="section-title" data-i18n="your_cart">Ваш кошик</h1>
+    <div id="cart-items"></div>
+    <p id="empty-cart-message" data-i18n="empty_cart">Ваш кошик порожній.</p>
+    <div id="cart-summary">
+      <p data-i18n="total">Сума:</p>
+      <strong id="cart-total">$0.00</strong>
+    </div>
+    <button id="checkout-button" data-i18n="checkout">Перейти до оплати</button>
   </main>
 
   <footer>
     <div class="footer-links">
-      <a href="/about.html">About Us</a>
-      <a href="/contacts.html">Contacts</a>
-      <a href="/partnership.html">Partnership</a>
+      <a href="/about.html" data-i18n="about">About Us</a>
+      <a href="/contacts.html" data-i18n="contacts">Contacts</a>
+      <a href="/partnership.html" data-i18n="partnership">Partnership</a>
     </div>
-    <p>&copy; 2025 DigiGames</p>
+    <p style="text-align: center">&copy; 2025 DigiGames</p>
   </footer>
 
+  <!-- 📜 Переклади -->
+  <script src="/lang/lang.js"></script>
   <script src="/cart.js"></script>
 </body>
 </html>
+
