@@ -20,11 +20,11 @@ app.use(session({
     collectionName: "sessions"
   }),
   cookie: {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 1000 * 60 * 60 * 2 // 2 години
-  }
+  httpOnly: true,
+  secure: false, // ⬅️ важливо! тимчасово вимикаємо
+  sameSite: "lax",
+  maxAge: 1000 * 60 * 60 * 2
+}
 }));
 
 app.use(morgan("dev"));
