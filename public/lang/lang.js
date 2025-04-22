@@ -6,7 +6,7 @@ async function loadLang(lang) {
     const res = await fetch(`/lang/${lang}.json`);
     const dict = await res.json();
 
-    // Переклад елементів за data-i18n
+    // Переклад елементів з атрибутом data-i18n
     document.querySelectorAll("[data-i18n]").forEach(el => {
       const key = el.getAttribute("data-i18n");
       if (dict[key]) {
@@ -14,10 +14,11 @@ async function loadLang(lang) {
       }
     });
 
-    // Додаткові поля
+    // Додаткові поля форми (плейсхолдери або кнопки)
     document.getElementById("clientName")?.setAttribute("placeholder", dict.name);
     document.getElementById("clientEmail")?.setAttribute("placeholder", dict.email);
     document.getElementById("checkoutBtn")?.innerText = dict.checkout;
+
   } catch (err) {
     console.error("🌐 Language loading error:", err);
   }
@@ -25,7 +26,7 @@ async function loadLang(lang) {
 
 loadLang(userLang);
 
-// 🔄 Встановлення мови в селекторі
+// 🎯 Обробка зміни мови в селекторі
 const selector = document.getElementById("langSelector");
 if (selector) {
   selector.value = userLang;
@@ -34,3 +35,4 @@ if (selector) {
     location.reload();
   });
 }
+
