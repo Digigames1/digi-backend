@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Оформлення замовлення</title>
+  <title data-i18n="title">Оформлення замовлення</title>
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
@@ -12,21 +12,26 @@
       <a href="/" class="logo">
         <img src="/icons/no_padding.png" alt="DigiGames Logo" />
       </a>
+      <!-- 🔤 Селектор мови -->
+      <select id="langSelector" style="margin-left:auto;">
+        <option value="uk">Українська</option>
+        <option value="en">English</option>
+      </select>
     </div>
   </header>
 
   <main class="container">
-    <h1 class="section-title">Оформлення замовлення</h1>
+    <h1 class="section-title" data-i18n="title">Оформлення замовлення</h1>
     <div id="checkoutProduct" class="product-card"></div>
 
     <form id="checkoutForm" style="margin-top: 1rem;">
-      <label for="name">Ваше ім’я:</label>
-      <input type="text" id="name" required />
+      <label for="name" data-i18n="name">Ваше ім’я:</label>
+      <input type="text" id="name" required placeholder="Ваше ім’я" />
 
-      <label for="email">Email:</label>
-      <input type="email" id="email" required />
+      <label for="email" data-i18n="email">Email:</label>
+      <input type="email" id="email" required placeholder="Email" />
 
-      <button type="submit">Перейти до оплати</button>
+      <button type="submit" id="checkoutBtn" data-i18n="checkout">Перейти до оплати</button>
     </form>
   </main>
 
@@ -39,6 +44,11 @@
     <p>&copy; 2025 DigiGames</p>
   </footer>
 
+  <!-- 🔤 Підключення мультимовності -->
+  <script src="/lang/lang.js"></script>
+
+  <!-- 📦 Основна логіка сторінки -->
   <script src="/checkout.js"></script>
 </body>
 </html>
+
