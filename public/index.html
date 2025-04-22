@@ -5,22 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>DigiGames</title>
   <link rel="stylesheet" href="/style.css" />
-<header>
-  <div class="container header-flex">
-    <a href="/" class="logo">
-       <img src="/icons/no_padding.png" alt="DigiGames Logo" />
-    </a>
-    <form id="searchForm" class="header-search">
-      <input type="text" id="headerSearchInput" placeholder="Search games..." />
-      <button type="submit">🔍</button>
-    </form>
-    <a href="/cart.html" class="cart-button">🛒 Cart</a>
-    <select id="langSelector" style="margin-left: 1rem;">
-  <option value="uk">Українська</option>
-  <option value="en">English</option>
-</select>
-  </div>
-</header>
+</head>
+<body>
+  <header>
+    <div class="container header-flex">
+      <a href="/" class="logo">
+        <img src="/icons/no_padding.png" alt="DigiGames Logo" />
+      </a>
+      <form id="searchForm" class="header-search">
+        <input type="text" id="headerSearchInput" placeholder="Search games..." />
+        <button type="submit">🔍</button>
+      </form>
+      <a href="/cart.html" class="cart-button" data-i18n="cart">🛒 Cart</a>
+      <select id="langSelector" style="margin-left: 1rem;">
+        <option value="uk">Українська</option>
+        <option value="en">English</option>
+      </select>
+    </div>
+  </header>
 
   <main class="container">
     <h1 class="section-title" data-i18n="title">Gift Card Categories</h1>
@@ -35,13 +37,13 @@
     </div>
   </main>
 
- <footer>
-  <div class="container footer-links">
-    <a href="/about.html" data-i18n="about">About Us</a> |
-    <a href="/contacts.html" data-i18n="contacts">Contacts</a> |
-    <a href="/partnership.html" data-i18n="partnership">Partnership</a>
-  </div>
-</footer>
+  <footer>
+    <div class="container footer-links">
+      <a href="/about.html" data-i18n="about">About Us</a> |
+      <a href="/contacts.html" data-i18n="contacts">Contacts</a> |
+      <a href="/partnership.html" data-i18n="partnership">Partnership</a>
+    </div>
+  </footer>
 
   <script>
     const form = document.getElementById("searchForm");
@@ -55,9 +57,12 @@
       }
     });
   </script>
-  <script src="lang/lang.js"></script>
+
+  <!-- 🔤 Підключення перекладу -->
+  <script src="/lang/lang.js"></script>
 </body>
 </html>
+
 
 
 
