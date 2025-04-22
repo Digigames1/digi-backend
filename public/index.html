@@ -6,6 +6,10 @@
   <title>DigiGames — Home</title>
   <link rel="stylesheet" href="/style.css" />
   <style>
+    body {
+      background-color: #543885;
+      color: #fff;
+    }
     header {
       position: sticky;
       top: 0;
@@ -25,7 +29,8 @@
       gap: 1rem;
     }
     .card {
-      background: white;
+      background: #fff;
+      color: #000;
       border-radius: 12px;
       padding: 1rem;
       flex: 1 1 calc(33.333% - 2rem);
@@ -53,11 +58,16 @@
       flex-direction: column;
       align-items: center;
       font-size: 0.95rem;
-      color: #333;
+      color: #fff;
     }
     .benefit img {
       width: 40px;
       margin-bottom: 0.5rem;
+    }
+    .container {
+      max-width: 1200px;
+      margin: auto;
+      padding: 1rem;
     }
     @media (max-width: 768px) {
       .card {
@@ -128,6 +138,11 @@
         <div class="card"><img src="/icons/roblox.png" alt=""><div>Roblox</div></div>
       </div>
     </section>
+
+    <section class="section" id="popular-section">
+      <h2 class="section-title">🌟 Popular Now</h2>
+      <div class="card-row" id="popularCards"></div>
+    </section>
   </main>
 
   <footer>
@@ -148,15 +163,24 @@
         window.location.href = `/${encodeURIComponent(query)}`;
       }
     });
+
+    const popularData = [
+      { name: "Steam", image: "/icons/steam.png" },
+      { name: "Roblox", image: "/icons/roblox.png" },
+      { name: "PlayStation", image: "/icons/playstation.png" }
+    ];
+    const popularCardsContainer = document.getElementById("popularCards");
+    if (popularCardsContainer) {
+      popularData.forEach(card => {
+        const el = document.createElement("div");
+        el.className = "card";
+        el.innerHTML = `<img src="${card.image}" alt="${card.name}"><div>${card.name}</div>`;
+        popularCardsContainer.appendChild(el);
+      });
+    }
   </script>
 </body>
 </html>
-
-
-
-
-
-
 
 
 
