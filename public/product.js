@@ -6,16 +6,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   const productsContainer = document.getElementById("products");
   const brandTitle = document.getElementById("brand-title");
 
-  const modal = document.getElementById("buyModal");
-  const orderForm = document.getElementById("orderForm");
-  const clientNameInput = document.getElementById("clientName");
-  const clientEmailInput = document.getElementById("clientEmail");
-  const productIdInput = document.getElementById("selectedProductId");
-  const selectedPriceInput = document.getElementById("selectedPrice");
+  // 🧼 Видалено модальну логіку
+  // 🧼 Видалено: modal, form, inputs
 
-  const isMainBrandPage = !region;
-
-  // 🟩 🆕 Валюти
+  // 🟩 Валютні курси
   const currencySymbols = {
     USD: "$",
     EUR: "€",
@@ -26,7 +20,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   let rates = { USD: 1 };
-
   const currentCurrency = localStorage.getItem("currency") || "USD";
 
   function convertPrice(usd, toCurrency) {
@@ -46,7 +39,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   try {
-    await loadRates(); // 🟨 🔁 Спочатку завантажити курси
+    await loadRates(); // 🟩 Обов’язково завантажити перед відображенням
 
     const apiUrl = region ? `/api/${brand}/${region}` : `/api/${brand}`;
     const res = await fetch(apiUrl);
@@ -62,7 +55,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    if (isMainBrandPage) {
+    // 🔁 Показ підкатегорій
+    if (!region) {
       items.forEach(item => {
         const countryCode = item.countryCode?.toLowerCase();
         const regionPath = `${brand}/${countryCode}`;
@@ -73,6 +67,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
+    // 🔁 Вивід товарів
     items.forEach(item => {
       item.products?.forEach(product => {
         const el = document.createElement("div");
@@ -80,7 +75,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         el.innerHTML = `
           <div>
             <div class="product-name">${product.name}</div>
-            <div class="product-price">${convertPrice(product.price?.min, currentCurrency)}</div> <!-- 🟨 🔁 -->
+            <div class="product-price">${convertPrice(product.price?.min, currentCurrency)}</div>
           </div>
           <button class="buy-btn" data-id="${product.id}" data-price="${product.price?.min}">Buy</button>
         `;
@@ -88,81 +83,53 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
     });
 
+    // 🔁 Додавання до корзини + redirect
     document.querySelectorAll(".buy-btn").forEach(button => {
-  button.addEventListener("click", async (e) => {
-    const productId = e.target.dataset.id;
-    const price = parseFloat(e.target.dataset.price);
-    const productName = e.target.parentElement.querySelector(".product-name")?.textContent || "";
+      button.addEventListener("click", async (e) => {
+        const productId = e.target.dataset.id;
+        const price = parseFloat(e.target.dataset.price);
+        const productName = e.target.parentElement.querySelector(".product-name")?.textContent || "";
 
-    const product = {
-      id: productId,
-      name: productName,
-      price: price,
-      image: "" // якщо є — додай
-    };
+        const product = {
+          id: productId,
+          name: productName,
+          price: price,
+          image: ""
+        };
 
-    try {
-      const res = await fetch('/add-to-cart', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ product })
-      });
+        try {
+          const res = await fetch('/add-to-cart', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ product })
+          });
 
-      if (!res.ok) throw new Error("Помилка додавання");
+          if (!res.ok) throw new Error("Помилка додавання");
 
-      // ✅ Успішно — перенаправляємо на cart
-      window.location.href = "/cart.html";
-    } catch (err) {
-      alert("❌ Не вдалося додати до кошика: " + err.message);
-    }
-  });
-});
-
-
-    // Закриття модалки
-    window.onclick = function (event) {
-      if (event.target === modal) {
-        modal.style.display = "none";
-      }
-    };
-
-    // Відправка форми
-    orderForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-
-      const payload = {
-        productId: productIdInput.value,
-        email: clientEmailInput.value,
-        quantity: 1,
-        name: clientNameInput.value,
-        price: selectedPriceInput.value
-      };
-
-      try {
-        const res = await fetch("/api/order", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(payload)
-        });
-
-        const result = await res.json();
-
-        if (res.ok) {
-          alert("Замовлення успішно створено!");
-          modal.style.display = "none";
-        } else {
-          alert("Помилка: " + (result.error || "Спробуйте ще раз"));
+          // ✅ Редирект у кошик
+          window.location.href = "/cart.html";
+        } catch (err) {
+          alert("❌ Не вдалося додати до кошика: " + err.message);
         }
-      } catch (err) {
-        alert("Помилка: " + err.message);
-      }
+      });
     });
 
   } catch (err) {
     console.error("❌ Load error:", err.message);
     productsContainer.innerHTML = "<p>Помилка завантаження товарів.</p>";
   }
+
+  // 🟩 Безпечне підключення пошуку
+  const searchForm = document.getElementById("searchForm");
+  if (searchForm) {
+    searchForm.addEventListener("submit", function(e) {
+      e.preventDefault();
+      const query = document.getElementById("headerSearchInput")?.value.trim();
+      if (query) {
+        window.location.href = `/${encodeURIComponent(query)}`;
+      }
+    });
+  }
 });
+
 
