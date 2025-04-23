@@ -133,7 +133,6 @@ footer {
   text-decoration: none;
   color: #6a0dad;
   font-weight: bold;
-  border: 2px solid #6a0dad;
 }
 
 .cart-button:hover {
@@ -273,8 +272,8 @@ footer {
   border-radius: 2px;
 }
 .cart-icon {
-  width: 24px;
-  height: 24px;
+  width: 34px;
+  height: 34px;
   vertical-align: middle;
 }
 
