@@ -267,7 +267,7 @@ footer {
 }
 
 .benefits-image img {
-  width: 120%;
+  width: 50%;
   max-width: 400px; /* 🔽 було 800px — тепер компактніше */
   height: auto;
   border-radius: 2px;
