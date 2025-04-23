@@ -274,7 +274,6 @@ footer {
   max-width: 400px; /* 🔽 було 800px — тепер компактніше */
   height: auto;
   border-radius: 5px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
 }
 .cart-icon {
   width: 24px;
