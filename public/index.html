@@ -26,14 +26,15 @@
         <option value="uk">Українська</option>
         <option value="en">English</option>
       </select>
+     <!-- 🟪 🆕 Валюта -->
       <select id="currencySelector" style="margin-left: 1rem;">
-  <option value="USD">$ USD</option>
-  <option value="EUR">€ EUR</option>
-  <option value="UAH">₴ UAH</option>
-  <option value="PLN">zł PLN</option>
-  <option value="AUD">A$ AUD</option>
-  <option value="CAD">C$ CAD</option>
-</select>
+        <option value="USD">$ USD</option>
+        <option value="EUR">€ EUR</option>
+        <option value="UAH">₴ UAH</option>
+        <option value="PLN">zł PLN</option>
+        <option value="AUD">A$ AUD</option>
+        <option value="CAD">C$ CAD</option>
+      </select>
     </div>
   </header>
 
@@ -151,39 +152,54 @@
         document.querySelectorAll(".dropdown-content").forEach(menu => menu.style.display = "none");
       }
     });
-    const rates = {
-  USD: 1,
-  EUR: 0.93,
-  UAH: 38,
-  PLN: 4.3,
-  AUD: 1.55,
-  CAD: 1.36,
-};
+    // 🟪 🆕 Курси валют через exchangerate.host
+    const currencySymbols = {
+      USD: "$",
+      EUR: "€",
+      UAH: "₴",
+      PLN: "zł",
+      AUD: "A$",
+      CAD: "C$",
+    };
 
-const currencySymbols = {
-  USD: "$",
-  EUR: "€",
-  UAH: "₴",
-  PLN: "zł",
-  AUD: "A$",
-  CAD: "C$",
-};
+    let rates = { USD: 1 };
 
-function convertPrice(usd, toCurrency) {
-  const rate = rates[toCurrency] || 1;
-  const symbol = currencySymbols[toCurrency] || "$";
-  return `${symbol}${(usd * rate).toFixed(2)}`;
-}
+    async function loadRates() {
+      try {
+        const res = await fetch("https://api.exchangerate.host/latest?base=USD&symbols=EUR,UAH,PLN,AUD,CAD");
+        const data = await res.json();
+        rates = { USD: 1, ...data.rates };
+        renderPrices();
+      } catch (err) {
+        console.error("❌ Currency API error:", err);
+      }
+    }
 
-// Установка поточної валюти в селекторі
-const currencySelector = document.getElementById("currencySelector");
-const currentCurrency = localStorage.getItem("currency") || "USD";
-currencySelector.value = currentCurrency;
+    function convertPrice(usd, toCurrency) {
+      const rate = rates[toCurrency] || 1;
+      const symbol = currencySymbols[toCurrency] || "$";
+      return `${symbol}${(usd * rate).toFixed(2)}`;
+    }
 
-currencySelector.addEventListener("change", (e) => {
-  localStorage.setItem("currency", e.target.value);
-  location.reload(); // або перерендер без reload
-});
+    const currencySelector = document.getElementById("currencySelector");
+    const currentCurrency = localStorage.getItem("currency") || "USD";
+    currencySelector.value = currentCurrency;
+
+    currencySelector.addEventListener("change", (e) => {
+      localStorage.setItem("currency", e.target.value);
+      location.reload();
+    });
+
+    loadRates();
+
+    function renderPrices() {
+      document.querySelectorAll("[data-usd-price]").forEach(el => {
+        const usd = parseFloat(el.getAttribute("data-usd-price"));
+        if (!isNaN(usd)) {
+          el.innerText = convertPrice(usd, currentCurrency);
+        }
+      });
+    }
 
   </script>
 </body>
