@@ -132,7 +132,7 @@ footer {
 }
 
 .cart-button {
-  background: white;
+  background: #543885;
   padding: 0.5rem 1rem;
   border-radius: 5px;
   text-decoration: none;
@@ -147,8 +147,8 @@ footer {
 }
 
 .cart-icon {
-  width: 48px;
-  height: 48px;
+  width: 36px;
+  height: 36px;
   vertical-align: middle;
 }
 
