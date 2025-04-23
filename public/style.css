@@ -264,6 +264,18 @@ footer {
   width: 24px;
   height: 24px;
 }
+.benefits-image {
+  text-align: center;
+  margin: 2rem auto;
+  max-width: 100%;
+}
+
+.benefits-image img {
+  width: 100%;
+  max-width: 800px;
+  height: auto;
+  border-radius: 12px;
+}
 
 /* 📱 Mobile */
 @media screen and (max-width: 600px) {
