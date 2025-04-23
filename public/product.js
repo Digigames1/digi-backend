@@ -15,7 +15,39 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const isMainBrandPage = !region;
 
+  // 🟩 🆕 Валюти
+  const currencySymbols = {
+    USD: "$",
+    EUR: "€",
+    UAH: "₴",
+    PLN: "zł",
+    AUD: "A$",
+    CAD: "C$",
+  };
+
+  let rates = { USD: 1 };
+
+  const currentCurrency = localStorage.getItem("currency") || "USD";
+
+  function convertPrice(usd, toCurrency) {
+    const rate = rates[toCurrency] || 1;
+    const symbol = currencySymbols[toCurrency] || "$";
+    return `${symbol}${(usd * rate).toFixed(2)}`;
+  }
+
+  async function loadRates() {
+    try {
+      const res = await fetch("https://api.exchangerate.host/latest?base=USD&symbols=EUR,UAH,PLN,AUD,CAD");
+      const data = await res.json();
+      rates = { USD: 1, ...data.rates };
+    } catch (err) {
+      console.error("❌ Currency API error:", err);
+    }
+  }
+
   try {
+    await loadRates(); // 🟨 🔁 Спочатку завантажити курси
+
     const apiUrl = region ? `/api/${brand}/${region}` : `/api/${brand}`;
     const res = await fetch(apiUrl);
     const data = await res.json();
@@ -30,7 +62,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    // 🔸 Головна сторінка бренду — вивід підкатегорій
     if (isMainBrandPage) {
       items.forEach(item => {
         const countryCode = item.countryCode?.toLowerCase();
@@ -42,7 +73,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    // 🔸 Сторінка конкретної країни — показати товари
     items.forEach(item => {
       item.products?.forEach(product => {
         const el = document.createElement("div");
@@ -50,7 +80,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         el.innerHTML = `
           <div>
             <div class="product-name">${product.name}</div>
-            <div class="product-price">${convertPrice(product.price?.min, currentCurrency)}</div>
+            <div class="product-price">${convertPrice(product.price?.min, currentCurrency)}</div> <!-- 🟨 🔁 -->
           </div>
           <button class="buy-btn" data-id="${product.id}" data-price="${product.price?.min}">Buy</button>
         `;
@@ -64,8 +94,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         const productId = e.target.dataset.id;
         const price = e.target.dataset.price;
 
+        productIdInput.value = productId;
+        selectedPriceInput.value = price;
+        clientNameInput.value = "";
+        clientEmailInput.value = "";
+        modal.style.display = "block";
+
         const productName = e.target.parentElement.querySelector(".product-name")?.textContent || "";
-        const productLogo = ""; // можна витягти з item, якщо буде
+        const productLogo = "";
 
         const product = {
           id: productId,
@@ -84,9 +120,6 @@ document.addEventListener("DOMContentLoaded", async () => {
           if (!res.ok) throw new Error("Не вдалося додати до корзини");
 
           console.log("🛒 Товар додано до корзини:", product);
-
-          // ✅ Переходимо до checkout
-          window.location.href = '/checkout.html';
         } catch (err) {
           console.error("❌ Помилка додавання:", err.message);
           alert("Помилка додавання до корзини");
@@ -94,7 +127,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
     });
 
-    // Відправка форми (залишено без змін, якщо ти ще її використовуєш)
+    // Закриття модалки
+    window.onclick = function (event) {
+      if (event.target === modal) {
+        modal.style.display = "none";
+      }
+    };
+
+    // Відправка форми
     orderForm.addEventListener("submit", async (e) => {
       e.preventDefault();
 
@@ -133,3 +173,4 @@ document.addEventListener("DOMContentLoaded", async () => {
     productsContainer.innerHTML = "<p>Помилка завантаження товарів.</p>";
   }
 });
+
