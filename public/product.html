@@ -12,25 +12,31 @@
       <a href="/" class="logo">
         <img src="/icons/no_padding.png" alt="DigiGames Logo" />
       </a>
+
       <form id="searchForm" class="header-search">
         <input type="text" id="headerSearchInput" placeholder="Search games..." />
         <button type="submit">🔍</button>
       </form>
-      <a href="/cart.html" class="cart-button">🛒 Cart</a>
+
+      <a href="/cart.html" class="cart-button">
+        <img src="/icons/cart-background-header.svg" alt="Cart" class="cart-icon" />
+      </a>
+
       <select id="langSelector" style="margin-left: 1rem;">
-  <option value="uk">Українська</option>
-  <option value="en">English</option>
-</select>
+        <option value="uk">Українська</option>
+        <option value="en">English</option>
+      </select>
+
+      <select id="currencySelector" style="margin-left: 1rem;">
+        <option value="USD">$ USD</option>
+        <option value="EUR">€ EUR</option>
+        <option value="UAH">₴ UAH</option>
+        <option value="PLN">zł PLN</option>
+        <option value="AUD">A$ AUD</option>
+        <option value="CAD">C$ CAD</option>
+      </select>
     </div>
   </header>
-
-  <!-- 🔤 Селектор мови -->
-  <div style="position: fixed; top: 10px; right: 10px; z-index: 999;">
-    <select id="langSelector">
-      <option value="uk">Українська</option>
-      <option value="en">English</option>
-    </select>
-  </div>
 
   <main class="container">
     <h1 class="section-title" id="brand-title">Loading...</h1>
@@ -54,13 +60,17 @@
   </div>
 
   <footer>
-    <div class="footer-links">
+    <div class="container footer-links">
       <a href="/about.html">About Us</a>
       <a href="/contacts.html">Contacts</a>
       <a href="/partnership.html">Partnership</a>
     </div>
-    <p>&copy; 2025 DigiGames</p>
+    <p style="text-align:center; margin-top: 1rem;">&copy; 2025 DigiGames</p>
   </footer>
+
+  <!-- 🔍 JS -->
+  <script src="/lang/lang.js"></script>
+  <script src="/product.js"></script>
 
   <script>
     // Пошук
@@ -72,7 +82,7 @@
       }
     });
 
-    // 🎯 Обробка натискань кнопки Buy
+    // Обробка кнопки Buy
     document.addEventListener("click", function (e) {
       if (e.target.classList.contains("buy-btn")) {
         const productId = e.target.dataset.id;
@@ -87,7 +97,6 @@
       }
     });
 
-    // ❌ Закриття модалки при кліку поза формою
     window.addEventListener("click", function (event) {
       const modal = document.getElementById("buyModal");
       if (event.target === modal) {
@@ -95,10 +104,6 @@
       }
     });
   </script>
-
-  <!-- 📜 Переклади (має бути перед product.js) -->
-  <script src="lang/lang.js"></script>
-  <script src="/product.js"></script>
 </body>
 </html>
 
