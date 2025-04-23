@@ -130,6 +130,22 @@
   const menu = document.getElementById("giftMenu");
   menu.style.display = (menu.style.display === "grid") ? "none" : "grid";
 }
+    function toggleMenu(id) {
+  document.querySelectorAll(".dropdown-content").forEach(menu => {
+    if (menu.id === id) {
+      menu.style.display = (menu.style.display === "block") ? "none" : "block";
+    } else {
+      menu.style.display = "none";
+    }
+  });
+}
+
+window.addEventListener("click", function(e) {
+  if (!e.target.matches(".dropbtn")) {
+    document.querySelectorAll(".dropdown-content").forEach(menu => menu.style.display = "none");
+  }
+});
+
   </script>
 </body>
 </html>
