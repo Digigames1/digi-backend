@@ -50,7 +50,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         el.innerHTML = `
           <div>
             <div class="product-name">${product.name}</div>
-            <div class="product-price">$${product.price?.min?.toFixed(2)}</div>
+            <div class="product-price">${convertPrice(product.price?.min, currentCurrency)}</div>
           </div>
           <button class="buy-btn" data-id="${product.id}" data-price="${product.price?.min}">Buy</button>
         `;
