@@ -88,44 +88,36 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
     });
 
-    // Обробка кнопок "Buy"
     document.querySelectorAll(".buy-btn").forEach(button => {
-      button.addEventListener("click", async (e) => {
-        const productId = e.target.dataset.id;
-        const price = e.target.dataset.price;
+  button.addEventListener("click", async (e) => {
+    const productId = e.target.dataset.id;
+    const price = parseFloat(e.target.dataset.price);
+    const productName = e.target.parentElement.querySelector(".product-name")?.textContent || "";
 
-        productIdInput.value = productId;
-        selectedPriceInput.value = price;
-        clientNameInput.value = "";
-        clientEmailInput.value = "";
-        modal.style.display = "block";
+    const product = {
+      id: productId,
+      name: productName,
+      price: price,
+      image: "" // якщо є — додай
+    };
 
-        const productName = e.target.parentElement.querySelector(".product-name")?.textContent || "";
-        const productLogo = "";
-
-        const product = {
-          id: productId,
-          name: productName,
-          price: parseFloat(price),
-          image: productLogo
-        };
-
-        try {
-          const res = await fetch('/add-to-cart', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ product })
-          });
-
-          if (!res.ok) throw new Error("Не вдалося додати до корзини");
-
-          console.log("🛒 Товар додано до корзини:", product);
-        } catch (err) {
-          console.error("❌ Помилка додавання:", err.message);
-          alert("Помилка додавання до корзини");
-        }
+    try {
+      const res = await fetch('/add-to-cart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ product })
       });
-    });
+
+      if (!res.ok) throw new Error("Помилка додавання");
+
+      // ✅ Успішно — перенаправляємо на cart
+      window.location.href = "/cart.html";
+    } catch (err) {
+      alert("❌ Не вдалося додати до кошика: " + err.message);
+    }
+  });
+});
+
 
     // Закриття модалки
     window.onclick = function (event) {
