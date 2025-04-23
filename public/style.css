@@ -84,7 +84,6 @@ main {
 }
 
 .category-card {
-  background: white;
   border-radius: 10px;
   text-align: center;
   padding: 1rem;
@@ -98,7 +97,6 @@ main {
 
 .category-card:hover {
   background-color: #6a0dad;
-  color: white;
 }
 
 .category-card img {
