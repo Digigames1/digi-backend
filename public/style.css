@@ -294,11 +294,14 @@ footer {
 
 .hero-banner img {
   width: 100%;
-  max-width: 600px; /* 🔽 вужчий */
+  max-width: 1200px;  /* ширина банеру */
   height: auto;
-  aspect-ratio: 4 / 3; /* ⬆️ довший по висоті */
   border-radius: 12px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+.hero-banner img:hover {
+  transform: scale(1.01);
+  transition: transform 0.3s ease;
 }
 
 /* 📱 Mobile */
