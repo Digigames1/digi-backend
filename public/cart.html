@@ -12,37 +12,81 @@
       <a href="/" class="logo">
         <img src="/icons/no_padding.png" alt="DigiGames Logo" />
       </a>
-      <a href="/cart.html" class="cart-button" data-i18n="cart">🛒 Cart</a>
+
+      <form id="searchForm" class="header-search">
+        <input type="text" id="headerSearchInput" placeholder="Search games..." />
+        <button type="submit">🔍</button>
+      </form>
+
+      <a href="/cart.html" class="cart-button">
+        <img src="/icons/cart-background-header.svg" alt="Cart" class="cart-icon" />
+      </a>
+
       <select id="langSelector" style="margin-left: 1rem;">
         <option value="uk">Українська</option>
         <option value="en">English</option>
+      </select>
+
+      <select id="currencySelector" style="margin-left: 1rem;">
+        <option value="USD">$ USD</option>
+        <option value="EUR">€ EUR</option>
+        <option value="UAH">₴ UAH</option>
+        <option value="PLN">zł PLN</option>
+        <option value="AUD">A$ AUD</option>
+        <option value="CAD">C$ CAD</option>
       </select>
     </div>
   </header>
 
   <main class="container">
-    <h1 class="section-title" data-i18n="your_cart">Ваш кошик</h1>
-    <div id="cart-items"></div>
+    <h1 class="section-title" data-i18n="your_cart">🛒 Ваш кошик</h1>
+
+    <div id="cart-items" class="cart-grid"></div>
+
     <p id="empty-cart-message" data-i18n="empty_cart">Ваш кошик порожній.</p>
-    <div id="cart-summary">
+
+    <div id="cart-summary" style="margin-top: 1rem; text-align: center;">
       <p data-i18n="total">Сума:</p>
       <strong id="cart-total">$0.00</strong>
     </div>
-    <button id="checkout-button" data-i18n="checkout">Перейти до оплати</button>
+
+    <div style="text-align: center; margin-top: 1rem;">
+      <button id="checkout-button" class="checkout-btn" data-i18n="checkout">Перейти до оплати</button>
+    </div>
   </main>
 
   <footer>
-    <div class="footer-links">
+    <div class="container footer-links">
       <a href="/about.html" data-i18n="about">About Us</a>
       <a href="/contacts.html" data-i18n="contacts">Contacts</a>
       <a href="/partnership.html" data-i18n="partnership">Partnership</a>
     </div>
-    <p style="text-align: center">&copy; 2025 DigiGames</p>
+    <p style="text-align: center; margin-top: 1rem;">&copy; 2025 DigiGames</p>
   </footer>
 
-  <!-- 📜 Переклади -->
+  <!-- 🧠 JS -->
   <script src="/lang/lang.js"></script>
   <script src="/cart.js"></script>
+  <script>
+    // Пошук
+    document.getElementById("searchForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const query = document.getElementById("headerSearchInput").value.trim();
+      if (query) {
+        window.location.href = `/${encodeURIComponent(query)}`;
+      }
+    });
+
+    // Селектор валюти (для відображення у кошику)
+    const currencySelector = document.getElementById("currencySelector");
+    const currentCurrency = localStorage.getItem("currency") || "USD";
+    currencySelector.value = currentCurrency;
+
+    currencySelector.addEventListener("change", (e) => {
+      localStorage.setItem("currency", e.target.value);
+      location.reload();
+    });
+  </script>
 </body>
 </html>
 
