@@ -142,13 +142,13 @@ footer {
 }
 
 .cart-button:hover {
-  background: #6a0dad;
+  background: #543885;
   color: #543885;
 }
 
 .cart-icon {
-  width: 24px;
-  height: 24px;
+  width: 48px;
+  height: 48px;
   vertical-align: middle;
 }
 
