@@ -13,16 +13,14 @@
         <img src="/icons/no_padding.png" alt="DigiGames Logo" />
       </a>
 
-    
-
       <form id="searchForm" class="header-search">
         <input type="text" id="headerSearchInput" placeholder="Search games..." />
         <button type="submit">🔍</button>
       </form>
 
       <a href="/cart.html" class="cart-button">
-  <img src="/icons/cart-background-header.svg" alt="Cart" class="cart-icon" />
-</a>
+        <img src="/icons/cart-background-header.svg" alt="Cart" class="cart-icon" />
+      </a>
 
       <select id="langSelector" style="margin-left: 1rem;">
         <option value="uk">Українська</option>
@@ -31,48 +29,49 @@
     </div>
   </header>
 
- <!-- 🎁 Gift Cards меню (по центру після хедера) -->
-<div class="giftcards-wrapper">
-  <button class="gift-toggle" onclick="toggleGiftMenu()">🎁 Gift Cards</button>
-  <div class="gift-menu" id="giftMenu">
-    <a href="/playstation"><img src="/icons/playstation.png">Playstation</a>
-    <a href="/steam"><img src="/icons/steam.png">Steam</a>
-    <a href="/xbox"><img src="/icons/xbox.png">Xbox</a>
-    <a href="/netflix"><img src="/icons/netflix.png">Netflix</a>
-    <a href="/roblox"><img src="/icons/roblox.png">Roblox</a>
-    <a href="/apple"><img src="/icons/apple.png">Apple</a>
-    <a href="/nintendo"><img src="/icons/nintendo.png">Nintendo</a>
-  </div>
-</div>
+  <!-- 🔽 Меню навігації по категоріях -->
+  <div class="menu-bar">
+    <!-- Gift Cards -->
+    <div class="dropdown">
+      <button class="dropbtn" onclick="toggleMenu('menu-gift')">🎁 Gift Cards</button>
+      <div class="dropdown-content" id="menu-gift">
+        <a href="/playstation">Playstation</a>
+        <a href="/steam">Steam</a>
+        <a href="/xbox">Xbox</a>
+        <a href="/netflix">Netflix</a>
+        <a href="/roblox">Roblox</a>
+        <a href="/apple">Apple</a>
+        <a href="/nintendo">Nintendo</a>
+      </div>
+    </div>
 
-  <!-- 🎮 Game Cards -->
-  <div class="dropdown">
-    <button class="dropbtn" onclick="toggleMenu('menu-gamecards')">🎮 Game Cards</button>
-    <div class="dropdown-content" id="menu-gamecards">
-      <a href="/fortnite">Fortnite</a>
-      <a href="/pubg">PUBG</a>
-      <a href="/google">Google Play</a>
-      <a href="/nintendo">Nintendo</a>
+    <!-- Game Cards -->
+    <div class="dropdown">
+      <button class="dropbtn" onclick="toggleMenu('menu-gamecards')">🎮 Game Cards</button>
+      <div class="dropdown-content" id="menu-gamecards">
+        <a href="/fortnite">Fortnite</a>
+        <a href="/pubg">PUBG</a>
+        <a href="/google">Google Play</a>
+        <a href="/nintendo">Nintendo</a>
+      </div>
+    </div>
+
+    <!-- Games -->
+    <div class="dropdown">
+      <button class="dropbtn" onclick="toggleMenu('menu-games')">🕹️ Games</button>
+      <div class="dropdown-content" id="menu-games">
+        <a href="/minecraft">Minecraft</a>
+        <a href="/valorant">Valorant</a>
+        <a href="/apex">Apex Legends</a>
+      </div>
     </div>
   </div>
-
-  <!-- 🕹️ Games -->
-  <div class="dropdown">
-    <button class="dropbtn" onclick="toggleMenu('menu-games')">🕹️ Games</button>
-    <div class="dropdown-content" id="menu-games">
-      <a href="/minecraft">Minecraft</a>
-      <a href="/valorant">Valorant</a>
-      <a href="/apex">Apex Legends</a>
-    </div>
-  </div>
-</div>
 
   <main class="container">
-
-
-   <div class="benefits-image">
-  <img src="/icons/benefits.png" alt="Benefits" />
-</div>
+    <!-- Benefits image -->
+    <div class="benefits-image">
+      <img src="/icons/benefits.png" alt="Benefits" />
+    </div>
 
     <section class="section">
       <h2 class="section-title">🔥 Best Sellers</h2>
@@ -126,29 +125,26 @@
         });
       })
       .catch(err => console.error("❌ Failed to load popular:", err));
-    function toggleGiftMenu() {
-  const menu = document.getElementById("giftMenu");
-  menu.style.display = (menu.style.display === "grid") ? "none" : "grid";
-}
+
     function toggleMenu(id) {
-  document.querySelectorAll(".dropdown-content").forEach(menu => {
-    if (menu.id === id) {
-      menu.style.display = (menu.style.display === "block") ? "none" : "block";
-    } else {
-      menu.style.display = "none";
+      document.querySelectorAll(".dropdown-content").forEach(menu => {
+        if (menu.id === id) {
+          menu.style.display = (menu.style.display === "block") ? "none" : "block";
+        } else {
+          menu.style.display = "none";
+        }
+      });
     }
-  });
-}
 
-window.addEventListener("click", function(e) {
-  if (!e.target.matches(".dropbtn")) {
-    document.querySelectorAll(".dropdown-content").forEach(menu => menu.style.display = "none");
-  }
-});
-
+    window.addEventListener("click", function(e) {
+      if (!e.target.matches(".dropbtn")) {
+        document.querySelectorAll(".dropdown-content").forEach(menu => menu.style.display = "none");
+      }
+    });
   </script>
 </body>
 </html>
+
 
 
 
