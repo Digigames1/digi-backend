@@ -296,7 +296,7 @@ footer {
   width: 100%;
   max-width: 1200px;
   height: auto;
-  max-height: 300px; /* ✅ зробить його нижчим */
+  max-height: 250px; /* ✅ зробить його нижчим */
   object-fit: cover;
   border-radius: 12px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.08);
