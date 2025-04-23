@@ -284,6 +284,9 @@ footer {
 .dropdown-content a:hover {
   color: #543885;
 }
+.dropdown-content.show {
+  display: block;
+}
 .hero-banner {
   text-align: center;
   margin: 2rem auto;
