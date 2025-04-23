@@ -12,11 +12,9 @@ body {
 }
 
 header {
-  background-color: #543885; /* 🎨 Колір з логотипу */
+  background-color: #543885;
   color: #fff;
   padding: 1rem 0;
-}
-header {
   position: sticky;
   top: 0;
 }
@@ -106,7 +104,7 @@ main {
 .category-card img {
   max-width: 50px;
   height: 50px;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.3rem;
   display: block;
   margin-left: auto;
   margin-right: auto;
@@ -117,8 +115,6 @@ footer {
   padding: 1rem 0;
   background-color: #eee;
   text-align: center;
-  position: relative;
-  bottom: 0;
   width: 100%;
 }
 
@@ -132,6 +128,7 @@ footer {
 .footer-links a:hover {
   text-decoration: underline;
 }
+
 .cart-button {
   background: white;
   padding: 0.5rem 1rem;
@@ -167,10 +164,6 @@ footer {
 
 .checkout-btn:hover {
   background: #563092;
-}
-.category-card img {
-  max-width: 50px; /* стало менше */
-  margin-bottom: 0.3rem;
 }
 
 .benefits {
@@ -218,69 +211,25 @@ footer {
   max-width: 50px;
   margin-bottom: 0.3rem;
 }
-.dropdown {
-  position: relative;
-  display: inline-block;
-}
 
-.dropbtn {
-  background-color: #fff;
-  color: #543885;
-  padding: 8px 16px;
-  font-weight: bold;
-  border: none;
-  cursor: pointer;
-  border-radius: 6px;
-}
-
-.dropdown-content {
-  display: none;
-  position: absolute;
-  top: 110%;
-  left: 0;
-  background-color: white;
-  min-width: 240px;
-  padding: 1rem;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
-  border-radius: 8px;
-  z-index: 999;
-  flex-wrap: wrap;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-}
-
-.dropdown-content a {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  text-decoration: none;
-  color: #333;
-  font-size: 0.9rem;
-}
-
-.dropdown-content a img {
-  width: 24px;
-  height: 24px;
-}
-
-.dropdown:hover .dropdown-content {
-  display: grid;
-}
 .giftcards-wrapper {
   text-align: center;
   margin: 1rem auto;
 }
 
 .gift-toggle {
-  background-color: #fff;
-  color: #543885;
+  background-color: #543885;
+  color: white;
   padding: 10px 18px;
   font-weight: bold;
   border: none;
   border-radius: 6px;
   cursor: pointer;
   font-size: 1rem;
+}
+
+.gift-toggle:hover {
+  background-color: #6a0dad;
 }
 
 .gift-menu {
@@ -293,9 +242,12 @@ footer {
   max-width: 500px;
   margin-left: auto;
   margin-right: auto;
-  display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 1rem;
+}
+
+.gift-menu.show {
+  display: grid;
 }
 
 .gift-menu a {
@@ -312,10 +264,6 @@ footer {
   width: 24px;
   height: 24px;
 }
-
-
-
-
 
 /* 📱 Mobile */
 @media screen and (max-width: 600px) {
@@ -336,8 +284,6 @@ footer {
     justify-content: center;
   }
 }
-
-
 
 
 
