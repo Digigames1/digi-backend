@@ -26,6 +26,14 @@
         <option value="uk">Українська</option>
         <option value="en">English</option>
       </select>
+      <select id="currencySelector" style="margin-left: 1rem;">
+  <option value="USD">$ USD</option>
+  <option value="EUR">€ EUR</option>
+  <option value="UAH">₴ UAH</option>
+  <option value="PLN">zł PLN</option>
+  <option value="AUD">A$ AUD</option>
+  <option value="CAD">C$ CAD</option>
+</select>
     </div>
   </header>
 
@@ -143,6 +151,40 @@
         document.querySelectorAll(".dropdown-content").forEach(menu => menu.style.display = "none");
       }
     });
+    const rates = {
+  USD: 1,
+  EUR: 0.93,
+  UAH: 38,
+  PLN: 4.3,
+  AUD: 1.55,
+  CAD: 1.36,
+};
+
+const currencySymbols = {
+  USD: "$",
+  EUR: "€",
+  UAH: "₴",
+  PLN: "zł",
+  AUD: "A$",
+  CAD: "C$",
+};
+
+function convertPrice(usd, toCurrency) {
+  const rate = rates[toCurrency] || 1;
+  const symbol = currencySymbols[toCurrency] || "$";
+  return `${symbol}${(usd * rate).toFixed(2)}`;
+}
+
+// Установка поточної валюти в селекторі
+const currencySelector = document.getElementById("currencySelector");
+const currentCurrency = localStorage.getItem("currency") || "USD";
+currencySelector.value = currentCurrency;
+
+currencySelector.addEventListener("change", (e) => {
+  localStorage.setItem("currency", e.target.value);
+  location.reload(); // або перерендер без reload
+});
+
   </script>
 </body>
 </html>
