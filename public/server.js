@@ -12,8 +12,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use(session({
   secret: 'yourSuperSecretKey',
   resave: false,
-  saveUninitialized: true
+  saveUninitialized: true,
+  cookie: {
+    sameSite: 'lax', // або 'none' якщо HTTPS
+    secure: false     // true якщо працюєш через HTTPS (наприклад Render)
+  }
 }));
+
 
 // Serve static files from /public
 app.use(express.static(path.join(__dirname, 'public')));
