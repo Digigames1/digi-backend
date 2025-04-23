@@ -128,14 +128,14 @@
       .catch(err => console.error("❌ Failed to load popular:", err));
 
     function toggleMenu(id) {
-      document.querySelectorAll(".dropdown-content").forEach(menu => {
-        if (menu.id === id) {
-          menu.style.display = (menu.style.display === "block") ? "none" : "block";
-        } else {
-          menu.style.display = "none";
-        }
-      });
+  document.querySelectorAll(".dropdown-content").forEach(menu => {
+    if (menu.id === id) {
+      menu.classList.toggle("show");
+    } else {
+      menu.classList.remove("show");
     }
+  });
+}
 
     window.addEventListener("click", function(e) {
       if (!e.target.matches(".dropbtn")) {
