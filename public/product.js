@@ -99,10 +99,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         try {
           const res = await fetch('/add-to-cart', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ product })
-          });
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ product }),
+  credentials: 'include' // 🟩 Це передає cookie сесії
+});
+
 
           if (!res.ok) throw new Error("Помилка додавання");
 
