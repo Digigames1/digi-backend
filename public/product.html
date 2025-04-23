@@ -43,21 +43,7 @@
     <div id="products" class="category-grid"></div>
   </main>
 
-  <!-- Модальне вікно -->
-  <div id="buyModal" class="modal" style="display: none;">
-    <div class="modal-content">
-      <form id="orderForm">
-        <input type="hidden" id="selectedProductId" />
-        <input type="hidden" id="selectedPrice" />
-        <label for="clientName">Ваше ім’я:</label>
-        <input type="text" id="clientName" required />
-        <label for="clientEmail">Email:</label>
-        <input type="email" id="clientEmail" required />
-        <button type="submit" id="checkoutBtn">Оплатити</button>
-        <div id="successMessage" class="success-message" style="display: none;">✅ Замовлення створено!</div>
-      </form>
-    </div>
-  </div>
+  <!-- 🧼 Видалено модальне вікно оформлення -->
 
   <footer>
     <div class="container footer-links">
@@ -68,12 +54,11 @@
     <p style="text-align:center; margin-top: 1rem;">&copy; 2025 DigiGames</p>
   </footer>
 
-  <!-- 🔍 JS -->
   <script src="/lang/lang.js"></script>
   <script src="/product.js"></script>
 
   <script>
-    // Пошук
+    // 🔍 Пошук
     document.getElementById("searchForm").addEventListener("submit", function(e) {
       e.preventDefault();
       const query = document.getElementById("headerSearchInput").value.trim();
@@ -82,31 +67,16 @@
       }
     });
 
-    // Обробка кнопки Buy
-    document.addEventListener("click", function (e) {
-      if (e.target.classList.contains("buy-btn")) {
-        const productId = e.target.dataset.id;
-        const price = e.target.dataset.price;
-
-        document.getElementById("selectedProductId").value = productId;
-        document.getElementById("selectedPrice").value = price;
-        document.getElementById("clientName").value = "";
-        document.getElementById("clientEmail").value = "";
-
-        document.getElementById("buyModal").style.display = "block";
-      }
-    });
-
-    window.addEventListener("click", function (event) {
-      const modal = document.getElementById("buyModal");
-      if (event.target === modal) {
-        modal.style.display = "none";
-      }
-    });
+    // 🧼 Закоментовано стару модальну логіку (не використовується)
+    // window.addEventListener("click", function (event) {
+    //   const modal = document.getElementById("buyModal");
+    //   if (event.target === modal) {
+    //     modal.style.display = "none";
+    //   }
+    // });
   </script>
 </body>
 </html>
-
 
 
 
