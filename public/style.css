@@ -61,7 +61,7 @@ body {
 }
 
 .header-search button {
-  background: #6a0dad;
+  background: #543885;
   color: white;
   border: none;
   padding: 0 1rem;
@@ -136,14 +136,14 @@ footer {
   padding: 0.5rem 1rem;
   border-radius: 5px;
   text-decoration: none;
-  color: #6a0dad;
+  color: #543885;
   font-weight: bold;
-  border: 2px solid #6a0dad;
+  border: 2px solid #543885;
 }
 
 .cart-button:hover {
   background: #6a0dad;
-  color: white;
+  color: #543885;
 }
 
 .cart-icon {
