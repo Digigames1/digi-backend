@@ -79,14 +79,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       checkoutBtn.addEventListener("click", () => {
         if (total <= 0) return;
 
-        fetch("/checkout", {
-          method: "POST",
-          credentials: 'include'
-        }).then(res => {
-          if (res.redirected) {
-            window.location.href = res.url;
-          }
-        });
+        window.location.href = "/checkout.html";
       });
     }
 
