@@ -21,7 +21,6 @@
 
   <main class="container" style="text-align:center;">
     <h1 class="section-title">Оформлення замовлення</h1>
-    <div id="checkoutProduct" class="product-card"></div>
 
     <div style="margin-top: 1rem;">
       <p><strong>Загальна сума:</strong> <span id="order-total">$0.00</span></p>
@@ -34,7 +33,7 @@
       <label for="email">Email:</label>
       <input type="email" id="email" placeholder="Email" required />
 
-      <button type="submit">Go to payment</button>
+      <button type="submit">Go to checkout</button>
     </form>
   </main>
 
@@ -48,23 +47,62 @@
   </footer>
 
   <script>
-    // 🟩 Вивід суми з sessionStorage
+    // 🟩 Показуємо total з sessionStorage
     const totalFromCart = sessionStorage.getItem("cartTotal") || "$0.00";
     document.getElementById("order-total").innerText = totalFromCart;
 
-    // 🟩 Пошук
-    document.getElementById("checkoutForm").addEventListener("submit", function(e) {
+    document.getElementById("checkoutForm").addEventListener("submit", async function(e) {
       e.preventDefault();
-      alert("Дякуємо за замовлення!"); // 🧪 Можеш тут інтегрувати свій /api/order
+
+      const name = document.getElementById("name").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const price = parseFloat(totalFromCart.replace(/[^\d.]/g, "") || "0");
+
+      if (!name || !email || !price) {
+        alert("Будь ласка, заповніть всі поля");
+        return;
+      }
+
+      const payload = {
+        productId: "manual",
+        email,
+        name,
+        quantity: 1,
+        price
+      };
+
+      try {
+        const res = await fetch("/api/order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await res.json();
+
+        if (res.ok && result.orderId) {
+          document.querySelector("main").innerHTML = `
+            <h1>✅ Дякуємо!</h1>
+            <p>Ваше замовлення прийнято.</p>
+            <p><strong>Order ID:</strong> ${result.orderId}</p>
+          `;
+          sessionStorage.removeItem("cartTotal");
+        } else {
+          alert("❌ Помилка створення замовлення");
+        }
+      } catch (err) {
+        alert("❌ Помилка з’єднання з сервером: " + err.message);
+      }
     });
 
-    // 🟩 Зберегти мову в localStorage
     document.getElementById("langSelector").addEventListener("change", function(e) {
       localStorage.setItem("lang", e.target.value);
       location.reload();
     });
+
     document.getElementById("langSelector").value = localStorage.getItem("lang") || "uk";
   </script>
 </body>
 </html>
+
 
