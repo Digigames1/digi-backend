@@ -84,7 +84,7 @@
 
         const result = await res.json();
 
-        if (res.ok && result.orderId) {
+        if ((res.status === 200 || res.status === 201) && result.orderId) {
           document.querySelector("main").innerHTML = `
             <h1>✅ Дякуємо!</h1>
             <p>Ваше замовлення прийнято.</p>
