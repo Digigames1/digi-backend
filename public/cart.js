@@ -74,16 +74,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     if (checkoutBtn) {
-      checkoutBtn.style.display = "inline-block";
-      checkoutBtn.disabled = total <= 0;
+  checkoutBtn.style.display = "inline-block";
+  checkoutBtn.disabled = total <= 0;
 
-      checkoutBtn.addEventListener("click", () => {
-        if (total <= 0) return;
-        // 🟢 Переходимо напряму на checkout
-        window.location.href = "/checkout.html";
-      });
-    }
+  checkoutBtn.addEventListener("click", () => {
+    if (total <= 0) return;
 
+    // 🟩 Зберігаємо значення Total перед переходом
+    sessionStorage.setItem("cartTotal", convertPrice(total, currentCurrency).formatted);
+    window.location.href = "/checkout.html";
+  });
+}
   } catch (err) {
     console.error("❌ Load error:", err.message);
     if (emptyMsg) emptyMsg.style.display = "block";
