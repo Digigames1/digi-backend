@@ -37,9 +37,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
   }
 
-  await loadRates(); // 🟩 Завантажуємо курс перед усім
+  async function renderCart() {
+    cartItemsContainer.innerHTML = "";
+    let total = 0;
 
-  try {
     const response = await fetch("/get-cart", { credentials: 'include' });
     const cart = await response.json();
 
@@ -52,43 +53,61 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (emptyMsg) emptyMsg.style.display = "none";
 
-    let total = 0;
-
-    cart.forEach((item) => {
+    for (const item of cart) {
       const priceUSD = parseFloat(item.price || 0);
       const converted = convertPrice(priceUSD, currentCurrency);
-      total += converted.amount;
+      const quantity = item.quantity || 1;
+      const totalItem = converted.amount * quantity;
+      total += totalItem;
 
       const el = document.createElement("div");
       el.className = "category-card card";
       el.innerHTML = `
         <img src="${item.image || '/icons/default.png'}" alt="${item.name}" />
         <div>${item.name}</div>
-        <div style="font-size: 0.9rem;">${converted.formatted}</div>
+        <div style="font-size: 0.9rem;">${converted.formatted} × ${quantity}</div>
+        <button class="remove-btn" data-id="${item.id}">🗑️</button>
       `;
       cartItemsContainer.appendChild(el);
-    });
+    }
 
     if (totalDisplay) {
       totalDisplay.innerText = convertPrice(total, currentCurrency).formatted;
     }
 
-    if (checkoutBtn) {
-  checkoutBtn.style.display = "inline-block";
-  checkoutBtn.disabled = total <= 0;
+    // Додати обробники для всіх кнопок видалення
+    document.querySelectorAll(".remove-btn").forEach(button => {
+      button.addEventListener("click", async (e) => {
+        const productId = e.target.dataset.id;
+        try {
+          await fetch("/remove-from-cart", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ productId }),
+            credentials: 'include'
+          });
+          renderCart(); // 🔁 оновити корзину після видалення
+        } catch (err) {
+          alert("❌ Помилка при видаленні товару");
+        }
+      });
+    });
+  }
 
-  checkoutBtn.addEventListener("click", () => {
-    if (total <= 0) return;
+  await loadRates();
+  await renderCart();
 
-    // 🟩 Зберігаємо значення Total перед переходом
-    sessionStorage.setItem("cartTotal", convertPrice(total, currentCurrency).formatted);
-    window.location.href = "/checkout.html";
-  });
-}
-  } catch (err) {
-    console.error("❌ Load error:", err.message);
-    if (emptyMsg) emptyMsg.style.display = "block";
-    if (totalDisplay) totalDisplay.innerText = convertPrice(0, currentCurrency).formatted;
+  if (checkoutBtn) {
+    checkoutBtn.style.display = "inline-block";
+
+    checkoutBtn.addEventListener("click", async () => {
+      const total = totalDisplay.innerText;
+      if (!total || total.includes("$0") || total.includes("₴0")) return;
+
+      sessionStorage.setItem("cartTotal", total);
+      window.location.href = "/checkout.html";
+    });
   }
 });
+
 
