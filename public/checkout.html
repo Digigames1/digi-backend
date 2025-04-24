@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title data-i18n="title">Оформлення замовлення</title>
+  <title>Оформлення замовлення</title>
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
@@ -12,26 +12,29 @@
       <a href="/" class="logo">
         <img src="/icons/no_padding.png" alt="DigiGames Logo" />
       </a>
-      <!-- 🔤 Селектор мови -->
-      <select id="langSelector" style="margin-left:auto;">
+      <select id="langSelector" style="margin-left: auto;">
         <option value="uk">Українська</option>
         <option value="en">English</option>
       </select>
     </div>
   </header>
 
-  <main class="container">
-    <h1 class="section-title" data-i18n="title">Оформлення замовлення</h1>
+  <main class="container" style="text-align:center;">
+    <h1 class="section-title">Оформлення замовлення</h1>
     <div id="checkoutProduct" class="product-card"></div>
 
+    <div style="margin-top: 1rem;">
+      <p><strong>Загальна сума:</strong> <span id="order-total">$0.00</span></p>
+    </div>
+
     <form id="checkoutForm" style="margin-top: 1rem;">
-      <label for="name" data-i18n="name">Ваше ім’я:</label>
-      <input type="text" id="name" required placeholder="Ваше ім’я" />
+      <label for="name">Ваше ім’я:</label>
+      <input type="text" id="name" placeholder="Ваше ім’я" required />
 
-      <label for="email" data-i18n="email">Email:</label>
-      <input type="email" id="email" required placeholder="Email" />
+      <label for="email">Email:</label>
+      <input type="email" id="email" placeholder="Email" required />
 
-      <button type="submit" id="checkoutBtn" data-i18n="checkout">Перейти до оплати</button>
+      <button type="submit">Go to payment</button>
     </form>
   </main>
 
@@ -41,14 +44,27 @@
       <a href="/contacts.html">Contacts</a>
       <a href="/partnership.html">Partnership</a>
     </div>
-    <p>&copy; 2025 DigiGames</p>
+    <p style="text-align:center; margin-top: 0.5rem;">&copy; 2025 DigiGames</p>
   </footer>
 
-  <!-- 🔤 Підключення мультимовності -->
-  <script src="/lang/lang.js"></script>
+  <script>
+    // 🟩 Вивід суми з sessionStorage
+    const totalFromCart = sessionStorage.getItem("cartTotal") || "$0.00";
+    document.getElementById("order-total").innerText = totalFromCart;
 
-  <!-- 📦 Основна логіка сторінки -->
-  <script src="/checkout.js"></script>
+    // 🟩 Пошук
+    document.getElementById("checkoutForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      alert("Дякуємо за замовлення!"); // 🧪 Можеш тут інтегрувати свій /api/order
+    });
+
+    // 🟩 Зберегти мову в localStorage
+    document.getElementById("langSelector").addEventListener("change", function(e) {
+      localStorage.setItem("lang", e.target.value);
+      location.reload();
+    });
+    document.getElementById("langSelector").value = localStorage.getItem("lang") || "uk";
+  </script>
 </body>
 </html>
 
