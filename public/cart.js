@@ -30,17 +30,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   function convertPrice(usd, toCurrency) {
     const rate = rates[toCurrency] || 1;
     const symbol = currencySymbols[toCurrency] || "$";
+    const converted = usd * rate;
     return {
-      amount: usd * rate,
-      formatted: `${symbol}${(usd * rate).toFixed(2)}`
+      amount: converted,
+      formatted: `${symbol}${converted.toFixed(2)}`
     };
   }
 
-  let total = 0;
+  await loadRates(); // 🟩 Завантажуємо курс перед усім
 
   try {
-    await loadRates(); // 🔁 Спочатку завантажити курси
-
     const response = await fetch("/get-cart", { credentials: 'include' });
     const cart = await response.json();
 
@@ -52,6 +51,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     if (emptyMsg) emptyMsg.style.display = "none";
+
+    let total = 0;
 
     cart.forEach((item) => {
       const priceUSD = parseFloat(item.price || 0);
@@ -78,7 +79,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       checkoutBtn.addEventListener("click", () => {
         if (total <= 0) return;
-
+        // 🟢 Переходимо напряму на checkout
         window.location.href = "/checkout.html";
       });
     }
@@ -89,5 +90,4 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (totalDisplay) totalDisplay.innerText = convertPrice(0, currentCurrency).formatted;
   }
 });
-
 
