@@ -34,7 +34,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   let rates = { USD: 1 };
-  const currentCurrency = localStorage.getItem("currency") || "USD";
+  currentCurrency = localStorage.getItem("currency") || "USD";
 
   function convertPrice(usd, toCurrency) {
     const rate = rates[toCurrency] || 1;
