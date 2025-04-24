@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>DigiGames — Cart</title>
   <link rel="stylesheet" href="/style.css" />
 </head>
@@ -64,11 +64,9 @@
     <p style="text-align: center; margin-top: 1rem;">&copy; 2025 DigiGames</p>
   </footer>
 
-  <!-- 🧠 JS -->
   <script src="/lang/lang.js"></script>
   <script src="/cart.js"></script>
   <script>
-    // Пошук
     document.getElementById("searchForm").addEventListener("submit", function(e) {
       e.preventDefault();
       const query = document.getElementById("headerSearchInput").value.trim();
@@ -77,11 +75,10 @@
       }
     });
 
-    // Селектор валюти (для відображення у кошику)
+    // Валюта
     const currencySelector = document.getElementById("currencySelector");
     const currentCurrency = localStorage.getItem("currency") || "USD";
     currencySelector.value = currentCurrency;
-
     currencySelector.addEventListener("change", (e) => {
       localStorage.setItem("currency", e.target.value);
       location.reload();
@@ -89,4 +86,5 @@
   </script>
 </body>
 </html>
+
 
