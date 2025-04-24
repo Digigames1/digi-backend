@@ -34,7 +34,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   let rates = { USD: 1 };
-  currentCurrency = localStorage.getItem("currency") || "USD";
+  const currency = localStorage.getItem("currency") || "USD";
 
   function convertPrice(usd, toCurrency) {
     const rate = rates[toCurrency] || 1;
@@ -89,7 +89,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         el.innerHTML = `
           <div>
             <div class="product-name">${product.name}</div>
-            <div class="product-price">${convertPrice(product.price?.min, currentCurrency)}</div>
+            <div class="product-price">${convertPrice(product.price?.min, Currency)}</div>
           </div>
           <button class="buy-btn" data-id="${product.id}" data-price="${product.price?.min}">Buy</button>
         `;
