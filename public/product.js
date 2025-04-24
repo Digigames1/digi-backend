@@ -6,6 +6,20 @@ document.addEventListener("DOMContentLoaded", async () => {
   const productsContainer = document.getElementById("products");
   const brandTitle = document.getElementById("brand-title");
 
+  // 🟩 Зчитування валюти з localStorage
+  const currentCurrency = localStorage.getItem("currency") || "USD";
+
+  // ✅ Селектор валюти
+  const currencySelect = document.getElementById("currencySelector");
+  if (currencySelect) {
+    currencySelect.value = currentCurrency;
+
+    currencySelect.addEventListener("change", (e) => {
+      localStorage.setItem("currency", e.target.value);
+      location.reload(); // Перерендер
+    });
+  }
+
   // 🧼 Видалено модальну логіку
   // 🧼 Видалено: modal, form, inputs
 
