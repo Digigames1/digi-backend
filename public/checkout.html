@@ -48,8 +48,9 @@
 
   <script>
     // 🟩 Показуємо total з sessionStorage
-    document.addEventListener("DOMContentLoaded", () => {
-  const totalFromCart = sessionStorage.getItem("cartTotal") || "$0.00";
+   const totalFromCart = sessionStorage.getItem("cartTotal") || "$0.00";
+
+document.addEventListener("DOMContentLoaded", () => {
   const totalEl = document.getElementById("order-total");
   if (totalEl) totalEl.innerText = totalFromCart;
 });
