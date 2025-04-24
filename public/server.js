@@ -42,7 +42,8 @@ app.get('/cart', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'cart.html'));
 });
 
-// Додати товар до корзини
+const CART_TIMEOUT_MINUTES = 30;
+
 app.post('/add-to-cart', (req, res) => {
   const { product } = req.body;
 
@@ -52,9 +53,35 @@ app.post('/add-to-cart', (req, res) => {
 
   if (!req.session.cart) {
     req.session.cart = [];
+    req.session.cartCreatedAt = Date.now(); // ⏰ перший запуск
   }
 
-  req.session.cart.push(product);
+  // 🕓 Таймер очищення кошика
+  const now = Date.now();
+  if (now - req.session.cartCreatedAt > CART_TIMEOUT_MINUTES * 60 * 1000) {
+    req.session.cart = [];
+    req.session.cartCreatedAt = now;
+  }
+
+  const existing = req.session.cart.find(p => p.id === product.id);
+  if (existing) {
+    existing.quantity = (existing.quantity || 1) + 1;
+  } else {
+    product.quantity = 1;
+    req.session.cart.push(product);
+  }
+
+  res.status(200).json({ success: true });
+});
+app.post('/remove-from-cart', (req, res) => {
+  const { productId } = req.body;
+
+  if (!productId) return res.status(400).json({ error: 'Missing productId' });
+
+  if (!req.session.cart) req.session.cart = [];
+
+  req.session.cart = req.session.cart.filter(p => p.id !== productId);
+
   res.status(200).json({ success: true });
 });
 
