@@ -19,31 +19,30 @@ app.use(session({
   }
 }));
 
-
-// Serve static files from /public
+// Static
 app.use(express.static(path.join(__dirname, 'public')));
 
 // =======================
 // ==== ROUTES BELOW ====
 // =======================
 
-// Головна сторінка
+// Головна
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Отримати корзину
+// Кошик
 app.get('/get-cart', (req, res) => {
   res.json(req.session.cart || []);
 });
 
-// Відображення кошика
 app.get('/cart', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'cart.html'));
 });
 
 const CART_TIMEOUT_MINUTES = 30;
 
+// Додати в корзину
 app.post('/add-to-cart', (req, res) => {
   const { product } = req.body;
 
@@ -53,10 +52,9 @@ app.post('/add-to-cart', (req, res) => {
 
   if (!req.session.cart) {
     req.session.cart = [];
-    req.session.cartCreatedAt = Date.now(); // ⏰ перший запуск
+    req.session.cartCreatedAt = Date.now();
   }
 
-  // 🕓 Таймер очищення кошика
   const now = Date.now();
   if (now - req.session.cartCreatedAt > CART_TIMEOUT_MINUTES * 60 * 1000) {
     req.session.cart = [];
@@ -73,6 +71,8 @@ app.post('/add-to-cart', (req, res) => {
 
   res.status(200).json({ success: true });
 });
+
+// Видалити з корзини
 app.post('/remove-from-cart', (req, res) => {
   const { productId } = req.body;
 
@@ -85,7 +85,7 @@ app.post('/remove-from-cart', (req, res) => {
   res.status(200).json({ success: true });
 });
 
-// Відправка форми замовлення
+// Замовлення
 app.post('/api/order', (req, res) => {
   const { productId, email, name, price, quantity } = req.body;
 
@@ -95,7 +95,7 @@ app.post('/api/order', (req, res) => {
 
   console.log("✅ Нове замовлення:", { productId, email, name, price, quantity });
 
-  res.status(200).json({ success: true });
+  res.status(200).json({ success: true, orderId: Math.floor(Math.random() * 1000000) });
 });
 
 // Переадресація на оплату
@@ -103,16 +103,17 @@ app.post('/checkout', (req, res) => {
   res.redirect('https://www.dundle.com/cart/');
 });
 
-// Checkout page
+// Checkout сторінка
 app.get('/checkout.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'checkout.html'));
 });
 
-// Захист: не перехоплювати API і POST маршрути динамічним рендером
+// Захист від перехоплення API маршрутів catch-all логікою
 app.use((req, res, next) => {
   if (
     req.path.startsWith('/api/') ||
     req.path.startsWith('/add-to-cart') ||
+    req.path.startsWith('/remove-from-cart') ||
     req.path.startsWith('/get-cart') ||
     req.path.startsWith('/checkout')
   ) {
@@ -122,12 +123,13 @@ app.use((req, res, next) => {
   next();
 });
 
-// Видавати product.html для будь-якого /:brand або /:brand/:region
+// Catch-all для динамічних сторінок
 app.get('/:brand/:region?', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'product.html'));
 });
 
-// Запуск сервера
+// Запуск
 app.listen(PORT, () => {
   console.log(`🚀 Сервер запущено: http://localhost:${PORT}`);
 });
+
