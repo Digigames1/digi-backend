@@ -6,17 +6,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   const brandTitle = document.getElementById("brand-title");
 
   const currencySymbols = {
-    USD: "$",
-    EUR: "€",
-    UAH: "₴",
-    PLN: "zł",
-    AUD: "A$",
-    CAD: "C$",
+    USD: "$", EUR: "€", UAH: "₴", PLN: "zł", AUD: "A$", CAD: "C$",
   };
 
   let rates = { USD: 1 };
   let currentCurrency = localStorage.getItem("currency") || "USD";
-  let flatProducts = []; // 🔁 Збережемо продукти окремо
+  let flatProducts = [];
 
   async function loadRates() {
     try {
@@ -34,10 +29,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     return `${symbol}${(usd * rate).toFixed(2)}`;
   }
 
-  function renderProducts(products) {
+  function renderProducts() {
     productsContainer.innerHTML = "";
 
-    products.forEach(product => {
+    flatProducts.forEach(product => {
       const el = document.createElement("div");
       el.className = "product-item";
       el.innerHTML = `
@@ -50,7 +45,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       productsContainer.appendChild(el);
     });
 
-    // 🔁 Переініціалізуємо кнопки
     document.querySelectorAll(".buy-btn").forEach(button => {
       button.addEventListener("click", async (e) => {
         const productId = e.target.dataset.id;
@@ -73,7 +67,6 @@ document.addEventListener("DOMContentLoaded", async () => {
           });
 
           if (!res.ok) throw new Error("Помилка додавання");
-
           window.location.href = "/cart.html";
         } catch (err) {
           alert("❌ Не вдалося додати до кошика: " + err.message);
@@ -82,63 +75,59 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  try {
-    await loadRates();
+  async function loadProducts() {
+    try {
+      const apiUrl = region ? `/api/${brand}/${region}` : `/api/${brand}`;
+      const res = await fetch(apiUrl);
+      const data = await res.json();
 
-    const apiUrl = region ? `/api/${brand}/${region}` : `/api/${brand}`;
-    const res = await fetch(apiUrl);
-    const data = await res.json();
-    brandTitle.textContent = brand.toUpperCase();
+      brandTitle.textContent = brand.toUpperCase();
+      const items = data?.items || [];
 
-    const items = data?.items || [];
+      if (!items.length) {
+        productsContainer.innerHTML = "<p>Товари не знайдено.</p>";
+        return;
+      }
 
-    if (!items.length) {
-      productsContainer.innerHTML = "<p>Товари не знайдено.</p>";
-      return;
-    }
+      if (!region) {
+        items.forEach(item => {
+          const regionPath = `${brand}/${item.countryCode?.toLowerCase()}`;
+          const el = document.createElement("div");
+          el.innerHTML = `<a href="/${regionPath}" style="display:block; margin: 0.5rem 0; font-weight: bold;">${item.name}</a>`;
+          productsContainer.appendChild(el);
+        });
+        return;
+      }
 
-    if (!region) {
+      flatProducts = []; // 🧹 очистити перед додаванням
       items.forEach(item => {
-        const regionPath = `${brand}/${item.countryCode?.toLowerCase()}`;
-        const el = document.createElement("div");
-        el.innerHTML = `<a href="/${regionPath}" style="display:block; margin: 0.5rem 0; font-weight: bold;">${item.name}</a>`;
-        productsContainer.appendChild(el);
-      });
-      return;
-    }
-
-    // 🔁 Розплющуємо товари
-    items.forEach(item => {
-      item.products?.forEach(product => {
-        flatProducts.push({
-          id: product.id,
-          name: product.name,
-          price: product.price?.min || 0,
-          image: "" // додай якщо є
+        item.products?.forEach(product => {
+          flatProducts.push({
+            id: product.id,
+            name: product.name,
+            price: product.price?.min || 0,
+            image: ""
+          });
         });
       });
-    });
 
-    renderProducts(flatProducts);
-
-  } catch (err) {
-    console.error("❌ Load error:", err.message);
-    productsContainer.innerHTML = "<p>Помилка завантаження товарів.</p>";
+      renderProducts();
+    } catch (err) {
+      console.error("❌ Load error:", err.message);
+      productsContainer.innerHTML = "<p>Помилка завантаження товарів.</p>";
+    }
   }
 
   // 🔍 Пошук
-  const searchForm = document.getElementById("searchForm");
-  if (searchForm) {
-    searchForm.addEventListener("submit", function(e) {
-      e.preventDefault();
-      const query = document.getElementById("headerSearchInput")?.value.trim();
-      if (query) {
-        window.location.href = `/${encodeURIComponent(query)}`;
-      }
-    });
-  }
+  document.getElementById("searchForm")?.addEventListener("submit", function(e) {
+    e.preventDefault();
+    const query = document.getElementById("headerSearchInput")?.value.trim();
+    if (query) {
+      window.location.href = `/${encodeURIComponent(query)}`;
+    }
+  });
 
-  // 💱 Обробка селектора валюти (без reload)
+  // 💱 Селектор валюти
   const currencySelect = document.getElementById("currencySelector");
   if (currencySelect) {
     currencySelect.value = currentCurrency;
@@ -146,9 +135,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       currentCurrency = e.target.value;
       localStorage.setItem("currency", currentCurrency);
       await loadRates();
-      renderProducts(flatProducts); // 🔁 Перерендер з новою валютою
+      renderProducts();
     });
   }
-});
 
+  await loadRates();
+  await loadProducts();
+});
 
