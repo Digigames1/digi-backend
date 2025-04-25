@@ -16,23 +16,28 @@
         <option value="uk">Українська</option>
         <option value="en">English</option>
       </select>
+      <select id="currencySelector" style="margin-left: 1rem;">
+        <option value="USD">$ USD</option>
+        <option value="EUR">€ EUR</option>
+        <option value="UAH">₴ UAH</option>
+        <option value="PLN">zł PLN</option>
+        <option value="AUD">A$ AUD</option>
+        <option value="CAD">C$ CAD</option>
+      </select>
     </div>
   </header>
 
   <main class="container" style="text-align:center;">
     <h1 class="section-title">Оформлення замовлення</h1>
-
     <div style="margin-top: 1rem;">
-      <p><strong>Загальна сума:</strong> <span id="order-total">$0.00</span></p>
+      <p><strong>Сума замовлення:</strong> <span id="order-total">$0.00</span></p>
     </div>
 
     <form id="checkoutForm" style="margin-top: 1rem;">
       <label for="name">Ваше ім’я:</label>
       <input type="text" id="name" placeholder="Ваше ім’я" required />
-
       <label for="email">Email:</label>
       <input type="email" id="email" placeholder="Email" required />
-
       <button type="submit">Go to checkout</button>
     </form>
   </main>
@@ -47,67 +52,78 @@
   </footer>
 
   <script>
-    // 🟩 Показуємо total з sessionStorage
-   const totalFromCart = sessionStorage.getItem("cartTotal") || "$0.00";
+    const currencySymbols = {
+      USD: "$", EUR: "€", UAH: "₴", PLN: "zł", AUD: "A$", CAD: "C$"
+    };
 
-document.addEventListener("DOMContentLoaded", () => {
-  const totalEl = document.getElementById("order-total");
-  if (totalEl) totalEl.innerText = totalFromCart;
-});
+    let currentCurrency = localStorage.getItem("currency") || "USD";
+    let cartTotal = sessionStorage.getItem("cartTotal") || "0.00";
 
+    const totalEl = document.getElementById("order-total");
+    const currencySelect = document.getElementById("currencySelector");
 
-    document.getElementById("checkoutForm").addEventListener("submit", async function(e) {
-      e.preventDefault();
+    document.addEventListener("DOMContentLoaded", () => {
+      // 💱 Показати суму
+      if (totalEl) totalEl.innerText = cartTotal;
 
-      const name = document.getElementById("name").value.trim();
-      const email = document.getElementById("email").value.trim();
-      const price = parseFloat(totalFromCart.replace(/[^\d.]/g, "") || "0");
-
-      if (!name || !email || !price) {
-        alert("Будь ласка, заповніть всі поля");
-        return;
-      }
-
-      const payload = {
-        productId: "manual",
-        email,
-        name,
-        quantity: 1,
-        price
-      };
-
-      try {
-        const res = await fetch("/api/order", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
+      // 💲 Встановити валюту
+      if (currencySelect) {
+        currencySelect.value = currentCurrency;
+        currencySelect.addEventListener("change", (e) => {
+          currentCurrency = e.target.value;
+          localStorage.setItem("currency", currentCurrency);
+          location.reload(); // для простоти
         });
-
-        const result = await res.json();
-
-        if ((res.status === 200 || res.status === 201) && result.orderId) {
-          document.querySelector("main").innerHTML = `
-            <h1>✅ Дякуємо!</h1>
-            <p>Ваше замовлення прийнято.</p>
-            <p><strong>Order ID:</strong> ${result.orderId}</p>
-          `;
-          sessionStorage.removeItem("cartTotal");
-        } else {
-          alert("❌ Помилка створення замовлення");
-        }
-      } catch (err) {
-        alert("❌ Помилка з’єднання з сервером: " + err.message);
       }
-    });
 
-    document.getElementById("langSelector").addEventListener("change", function(e) {
-      localStorage.setItem("lang", e.target.value);
-      location.reload();
-    });
+      // 📨 Відправка замовлення
+      document.getElementById("checkoutForm").addEventListener("submit", async function(e) {
+        e.preventDefault();
 
-    document.getElementById("langSelector").value = localStorage.getItem("lang") || "uk";
+        const name = document.getElementById("name").value.trim();
+        const email = document.getElementById("email").value.trim();
+        const price = parseFloat(cartTotal.replace(/[^\d.]/g, "")) || 0;
+
+        if (!name || !email || price === 0) {
+          alert("Будь ласка, заповніть всі поля.");
+          return;
+        }
+
+        const payload = {
+          productId: "manual",
+          name,
+          email,
+          price,
+          quantity: 1
+        };
+
+        try {
+          const res = await fetch("/api/order", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+
+          const result = await res.json();
+
+          if (res.ok && result.orderId) {
+            document.querySelector("main").innerHTML = `
+              <h1>✅ Дякуємо!</h1>
+              <p>Ваше замовлення прийнято.</p>
+              <p><strong>Order ID:</strong> ${result.orderId}</p>
+            `;
+            sessionStorage.removeItem("cartTotal");
+          } else {
+            alert("❌ Помилка створення замовлення");
+          }
+        } catch (err) {
+          alert("❌ Сервер не відповідає: " + err.message);
+        }
+      });
+    });
   </script>
 </body>
 </html>
+
 
 
