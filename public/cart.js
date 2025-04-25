@@ -17,6 +17,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   let rates = { USD: 1 };
 
+  // 📥 Завантаження курсів валют
   async function loadRates() {
     try {
       const res = await fetch("https://api.exchangerate.host/latest?base=USD&symbols=EUR,UAH,PLN,AUD,CAD");
@@ -27,6 +28,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
+  // 💱 Конвертація
   function convertPrice(usd, toCurrency) {
     const rate = rates[toCurrency] || 1;
     const symbol = currencySymbols[toCurrency] || "$";
@@ -37,6 +39,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
   }
 
+  // 🛒 Рендеринг корзини
   async function renderCart() {
     cartItemsContainer.innerHTML = "";
     let total = 0;
@@ -75,7 +78,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       totalDisplay.innerText = convertPrice(total, currentCurrency).formatted;
     }
 
-    // Додати обробники для всіх кнопок видалення
+    // 🧹 Видалення
     document.querySelectorAll(".remove-btn").forEach(button => {
       button.addEventListener("click", async (e) => {
         const productId = e.target.dataset.id;
@@ -97,6 +100,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   await loadRates();
   await renderCart();
 
+  // 💳 Перехід на checkout
   if (checkoutBtn) {
     checkoutBtn.style.display = "inline-block";
 
