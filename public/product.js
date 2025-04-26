@@ -9,17 +9,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     USD: "$", EUR: "€", UAH: "₴", PLN: "zł", AUD: "A$", CAD: "C$",
   };
 
-  let rates = { USD: 1 };
+  let rates = {}; // 🛠️ виправив: порожній об'єкт для актуальної завантаженої інформації
   let currentCurrency = localStorage.getItem("currency") || "USD";
   let flatProducts = [];
 
   async function loadRates() {
     try {
-      const res = await fetch("https://api.exchangerate.host/latest?base=USD&symbols=EUR,UAH,PLN,AUD,CAD");
+      const res = await fetch(`https://api.exchangerate.host/latest?base=USD&symbols=USD,EUR,UAH,PLN,AUD,CAD`);
       const data = await res.json();
-      rates = { USD: 1, ...data.rates };
+      rates = { ...data.rates }; // 🛠️ перезаписали об'єкт дійсними курсами
+      console.log("📈 Rates loaded:", rates);
     } catch (err) {
       console.error("❌ Currency API error:", err);
+      rates = { USD: 1 }; // fallback
     }
   }
 
@@ -99,7 +101,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
       }
 
-      flatProducts = []; // 🧹 очистити перед додаванням
+      flatProducts = []; // 🧹 очистити перед новим завантаженням
       items.forEach(item => {
         item.products?.forEach(product => {
           flatProducts.push({
@@ -134,12 +136,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     currencySelect.addEventListener("change", async (e) => {
       currentCurrency = e.target.value;
       localStorage.setItem("currency", currentCurrency);
-      await loadRates();
-      renderProducts();
+      await loadRates(); // 🛠️ перезавантажити курси
+      renderProducts();  // 🛠️ перерендерити товари
     });
   }
 
-  await loadRates();
-  await loadProducts();
+  await loadRates();    // 🔥 Першим завантажуємо курси валют
+  await loadProducts(); // 🔥 Потім завантажуємо товари
 });
 
