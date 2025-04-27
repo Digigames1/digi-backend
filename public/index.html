@@ -110,98 +110,64 @@
 
   <script src="/lang/lang.js"></script>
   <script>
-    document.getElementById("searchForm").addEventListener("submit", function(e) {
-      e.preventDefault();
-      const query = document.getElementById("headerSearchInput").value.trim();
-      if (query) {
-        window.location.href = `/${encodeURIComponent(query)}`;
-      }
-    });
-
-    fetch("/api/popular-products")
-      .then(res => res.json())
-      .then(data => {
-        const container = document.getElementById("popularCards");
-        if (!container) return;
-        container.innerHTML = "";
-        data.forEach(item => {
-          const card = document.createElement("a");
-          card.className = "category-card card";
-          card.href = `/${item.id}`;
-          card.innerHTML = `
-            <img src="${item.image}" alt="${item.name}">
-            <span>${item.name}</span>
-          `;
-          container.appendChild(card);
-        });
-      })
-      .catch(err => console.error("❌ Failed to load popular:", err));
-
-    function toggleMenu(id) {
-  document.querySelectorAll(".dropdown-content").forEach(menu => {
-    if (menu.id === id) {
-      menu.classList.toggle("show");
-    } else {
-      menu.classList.remove("show");
+  // 🎯 Пошук по сайту
+  document.getElementById("searchForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    const query = document.getElementById("headerSearchInput").value.trim();
+    if (query) {
+      window.location.href = `/${encodeURIComponent(query)}`;
     }
   });
-}
 
-    window.addEventListener("click", function(e) {
-      if (!e.target.matches(".dropbtn")) {
-        document.querySelectorAll(".dropdown-content").forEach(menu => menu.style.display = "none");
-      }
-    });
-    // 🟪 🆕 Курси валют через exchangerate.host
-    const currencySymbols = {
-      USD: "$",
-      EUR: "€",
-      UAH: "₴",
-      PLN: "zł",
-      AUD: "A$",
-      CAD: "C$",
-    };
-
-    let rates = { USD: 1 };
-
-    async function loadRates() {
-      try {
-        const res = await fetch("https://api.exchangerate.host/latest?base=USD&symbols=EUR,UAH,PLN,AUD,CAD");
-        const data = await res.json();
-        rates = { USD: 1, ...data.rates };
-        renderPrices();
-      } catch (err) {
-        console.error("❌ Currency API error:", err);
-      }
-    }
-
-    function convertPrice(usd, toCurrency) {
-      const rate = rates[toCurrency] || 1;
-      const symbol = currencySymbols[toCurrency] || "$";
-      return `${symbol}${(usd * rate).toFixed(2)}`;
-    }
-
+  // 🎯 Селектор валюти
+  document.addEventListener("DOMContentLoaded", () => {
     const currencySelector = document.getElementById("currencySelector");
-    const currentCurrency = localStorage.getItem("currency") || "USD";
-    currencySelector.value = currentCurrency;
+    const savedCurrency = localStorage.getItem("currency") || "USD";
+    currencySelector.value = savedCurrency;
 
     currencySelector.addEventListener("change", (e) => {
       localStorage.setItem("currency", e.target.value);
       location.reload();
     });
+  });
 
-    loadRates();
-
-    function renderPrices() {
-      document.querySelectorAll("[data-usd-price]").forEach(el => {
-        const usd = parseFloat(el.getAttribute("data-usd-price"));
-        if (!isNaN(usd)) {
-          el.innerText = convertPrice(usd, currentCurrency);
-        }
+  // 🎯 Популярні товари (optional)
+  fetch("/api/popular-products")
+    .then(res => res.json())
+    .then(data => {
+      const container = document.getElementById("popularCards");
+      if (!container) return;
+      container.innerHTML = "";
+      data.forEach(item => {
+        const card = document.createElement("a");
+        card.className = "category-card card";
+        card.href = `/${item.id}`;
+        card.innerHTML = `
+          <img src="${item.image}" alt="${item.name}">
+          <span>${item.name}</span>
+        `;
+        container.appendChild(card);
       });
-    }
+    })
+    .catch(err => console.error("❌ Failed to load popular:", err));
 
-  </script>
+  // 🎯 Дропдаун-меню
+  function toggleMenu(id) {
+    document.querySelectorAll(".dropdown-content").forEach(menu => {
+      if (menu.id === id) {
+        menu.classList.toggle("show");
+      } else {
+        menu.classList.remove("show");
+      }
+    });
+  }
+
+  window.addEventListener("click", function(e) {
+    if (!e.target.matches(".dropbtn")) {
+      document.querySelectorAll(".dropdown-content").forEach(menu => menu.style.display = "none");
+    }
+  });
+</script>
 </body>
 </html>
 
