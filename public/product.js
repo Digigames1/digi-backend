@@ -10,8 +10,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   let rates = { USD: 1 };
-  let currentCurrency = localStorage.getItem("currency") || "USD";
   let flatProducts = [];
+  let currentCurrency = localStorage.getItem("currency") || "USD";
 
   async function loadRates() {
     try {
@@ -45,6 +45,19 @@ document.addEventListener("DOMContentLoaded", async () => {
       productsContainer.appendChild(el);
     });
 
+    attachBuyHandlers();
+  }
+
+  function updatePrices() {
+    document.querySelectorAll(".product-price[data-usd-price]").forEach(el => {
+      const usd = parseFloat(el.getAttribute("data-usd-price"));
+      if (!isNaN(usd)) {
+        el.innerText = convertPrice(usd, currentCurrency);
+      }
+    });
+  }
+
+  function attachBuyHandlers() {
     document.querySelectorAll(".buy-btn").forEach(button => {
       button.addEventListener("click", async (e) => {
         const productId = e.target.dataset.id;
@@ -75,15 +88,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  function updatePrices() {
-    document.querySelectorAll(".product-price[data-usd-price]").forEach(el => {
-      const usd = parseFloat(el.getAttribute("data-usd-price"));
-      if (!isNaN(usd)) {
-        el.innerText = convertPrice(usd, currentCurrency);
-      }
-    });
-  }
-
   async function loadProducts() {
     try {
       const apiUrl = region ? `/api/${brand}/${region}` : `/api/${brand}`;
@@ -108,7 +112,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
       }
 
-      flatProducts = []; // очистити перед завантаженням
+      flatProducts = [];
       items.forEach(item => {
         item.products?.forEach(product => {
           flatProducts.push({
@@ -127,29 +131,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // 🔍 Пошук
-  document.getElementById("searchForm")?.addEventListener("submit", function(e) {
-    e.preventDefault();
-    const query = document.getElementById("headerSearchInput")?.value.trim();
-    if (query) {
-      window.location.href = `/${encodeURIComponent(query)}`;
-    }
-  });
-
-  // 💱 Селектор валюти
   const currencySelect = document.getElementById("currencySelector");
   if (currencySelect) {
     currencySelect.value = currentCurrency;
     currencySelect.addEventListener("change", async (e) => {
       currentCurrency = e.target.value;
       localStorage.setItem("currency", currentCurrency);
-      await loadRates();   // оновити курси
-      updatePrices();      // перерахувати ціни без reload
+      await loadRates();
+      updatePrices();
     });
   }
 
-  await loadRates();    // завантажити курси валют
-  await loadProducts(); // завантажити товари
+  await loadRates();
+  await loadProducts();
 });
-
-
