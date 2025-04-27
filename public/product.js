@@ -132,16 +132,20 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   const currencySelect = document.getElementById("currencySelector");
-  if (currencySelect) {
-    currencySelect.value = currentCurrency;
-    currencySelect.addEventListener("change", async (e) => {
-      currentCurrency = e.target.value;
-      localStorage.setItem("currency", currentCurrency);
-      await loadRates();
-      updatePrices();
-    });
-  }
 
-  await loadRates();
-  await loadProducts();
+if (currencySelect) {
+  currencySelect.value = currentCurrency;
+  currencySelect.addEventListener("change", async (e) => {
+    currentCurrency = e.target.value;
+    localStorage.setItem("currency", currentCurrency);
+    await loadRates();
+    updatePrices(); // 🔥 після зміни валюти перераховуємо ціни
+  });
+}
+
+// Головний порядок завантаження:
+await loadRates();    // 1. Завантажуємо курси валют
+await loadProducts(); // 2. Завантажуємо продукти
+updatePrices();       // 3. Оновлюємо ціни по актуальному курсу
+
 });
