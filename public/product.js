@@ -9,19 +9,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     USD: "$", EUR: "€", UAH: "₴", PLN: "zł", AUD: "A$", CAD: "C$",
   };
 
-  let rates = {}; // 🛠️ виправив: порожній об'єкт для актуальної завантаженої інформації
+  let rates = { USD: 1 };
   let currentCurrency = localStorage.getItem("currency") || "USD";
   let flatProducts = [];
 
   async function loadRates() {
     try {
-      const res = await fetch(`https://api.exchangerate.host/latest?base=USD&symbols=USD,EUR,UAH,PLN,AUD,CAD`);
+      const res = await fetch("https://api.exchangerate.host/latest?base=USD&symbols=EUR,UAH,PLN,AUD,CAD");
       const data = await res.json();
-      rates = { ...data.rates }; // 🛠️ перезаписали об'єкт дійсними курсами
-      console.log("📈 Rates loaded:", rates);
+      rates = { USD: 1, ...data.rates };
     } catch (err) {
       console.error("❌ Currency API error:", err);
-      rates = { USD: 1 }; // fallback
     }
   }
 
@@ -40,7 +38,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       el.innerHTML = `
         <div>
           <div class="product-name">${product.name}</div>
-          <div class="product-price">${convertPrice(product.price, currentCurrency)}</div>
+          <div class="product-price" data-usd-price="${product.price}">${convertPrice(product.price, currentCurrency)}</div>
         </div>
         <button class="buy-btn" data-id="${product.id}" data-price="${product.price}">Buy</button>
       `;
@@ -77,6 +75,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
+  function updatePrices() {
+    document.querySelectorAll(".product-price[data-usd-price]").forEach(el => {
+      const usd = parseFloat(el.getAttribute("data-usd-price"));
+      if (!isNaN(usd)) {
+        el.innerText = convertPrice(usd, currentCurrency);
+      }
+    });
+  }
+
   async function loadProducts() {
     try {
       const apiUrl = region ? `/api/${brand}/${region}` : `/api/${brand}`;
@@ -101,7 +108,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
       }
 
-      flatProducts = []; // 🧹 очистити перед новим завантаженням
+      flatProducts = []; // очистити перед завантаженням
       items.forEach(item => {
         item.products?.forEach(product => {
           flatProducts.push({
@@ -136,12 +143,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     currencySelect.addEventListener("change", async (e) => {
       currentCurrency = e.target.value;
       localStorage.setItem("currency", currentCurrency);
-      await loadRates(); // 🛠️ перезавантажити курси
-      renderProducts();  // 🛠️ перерендерити товари
+      await loadRates();   // оновити курси
+      updatePrices();      // перерахувати ціни без reload
     });
   }
 
-  await loadRates();    // 🔥 Першим завантажуємо курси валют
-  await loadProducts(); // 🔥 Потім завантажуємо товари
+  await loadRates();    // завантажити курси валют
+  await loadProducts(); // завантажити товари
 });
+
 
