@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", async () => {
   const brand = window.location.pathname.split("/")[1];
   const region = window.location.pathname.split("/")[2];
+
   const productsContainer = document.getElementById("products");
   const brandTitle = document.getElementById("brand-title");
 
@@ -9,18 +10,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   let rates = { USD: 1 };
+  let flatProducts = [];
   let currentCurrency = localStorage.getItem("currency") || "USD";
 
-  // Завантаження курсів валют
   async function loadRates() {
     try {
       const res = await fetch("https://api.exchangerate.host/latest?base=USD&symbols=EUR,UAH,PLN,AUD,CAD");
       const data = await res.json();
       rates = { USD: 1, ...data.rates };
-      console.log("Курси валют завантажено:", rates);
-      renderPrices();
     } catch (err) {
-      console.error("Currency rates loading error:", err);
+      console.error("❌ Currency API error:", err);
     }
   }
 
@@ -30,8 +29,27 @@ document.addEventListener("DOMContentLoaded", async () => {
     return `${symbol}${(usd * rate).toFixed(2)}`;
   }
 
-  function renderPrices() {
-    document.querySelectorAll("[data-usd-price]").forEach(el => {
+  function renderProducts() {
+    productsContainer.innerHTML = "";
+
+    flatProducts.forEach(product => {
+      const el = document.createElement("div");
+      el.className = "product-item";
+      el.innerHTML = `
+        <div>
+          <div class="product-name">${product.name}</div>
+          <div class="product-price" data-usd-price="${product.price}">${convertPrice(product.price, currentCurrency)}</div>
+        </div>
+        <button class="buy-btn" data-id="${product.id}" data-price="${product.price}">Buy</button>
+      `;
+      productsContainer.appendChild(el);
+    });
+
+    attachBuyHandlers();
+  }
+
+  function updatePrices() {
+    document.querySelectorAll(".product-price[data-usd-price]").forEach(el => {
       const usd = parseFloat(el.getAttribute("data-usd-price"));
       if (!isNaN(usd)) {
         el.innerText = convertPrice(usd, currentCurrency);
@@ -39,54 +57,91 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // Слухач на зміну валюти
-  const currencySelector = document.getElementById("currencySelector");
-  if (currencySelector) {
-    currencySelector.value = currentCurrency;
+  function attachBuyHandlers() {
+    document.querySelectorAll(".buy-btn").forEach(button => {
+      button.addEventListener("click", async (e) => {
+        const productId = e.target.dataset.id;
+        const price = parseFloat(e.target.dataset.price);
+        const productName = e.target.parentElement.querySelector(".product-name")?.textContent || "";
 
-    currencySelector.addEventListener("change", (e) => {
-      currentCurrency = e.target.value;
-      localStorage.setItem("currency", currentCurrency);
-      renderPrices();
+        const product = {
+          id: productId,
+          name: productName,
+          price: price,
+          image: ""
+        };
+
+        try {
+          const res = await fetch('/add-to-cart', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ product }),
+            credentials: 'include'
+          });
+
+          if (!res.ok) throw new Error("Помилка додавання");
+          window.location.href = "/cart.html";
+        } catch (err) {
+          alert("❌ Не вдалося додати до кошика: " + err.message);
+        }
+      });
     });
   }
 
-  // Завантаження продуктів
   async function loadProducts() {
     try {
-      const res = await fetch(`/api/products/${brand}/${region}`);
+      const apiUrl = region ? `/api/${brand}/${region}` : `/api/${brand}`;
+      const res = await fetch(apiUrl);
       const data = await res.json();
 
-      brandTitle.innerText = brand.toUpperCase();
-      productsContainer.innerHTML = "";
+      brandTitle.textContent = brand.toUpperCase();
+      const items = data?.items || [];
 
-      data.items.forEach(item => {
-        const card = document.createElement("div");
-        card.className = "product-card";
-        card.innerHTML = `
-          <h3>${item.title}</h3>
-          <p data-usd-price="${item.price_usd}">$${item.price_usd}</p>
-          <button onclick="addToCart('${brand}', '${region}', '${item.title}', ${item.price_usd})">Buy</button>
-        `;
-        productsContainer.appendChild(card);
+      if (!items.length) {
+        productsContainer.innerHTML = "<p>Товари не знайдено.</p>";
+        return;
+      }
+
+      if (!region) {
+        items.forEach(item => {
+          const regionPath = `${brand}/${item.countryCode?.toLowerCase()}`;
+          const el = document.createElement("div");
+          el.innerHTML = `<a href="/${regionPath}" style="display:block; margin: 0.5rem 0; font-weight: bold;">${item.name}</a>`;
+          productsContainer.appendChild(el);
+        });
+        return;
+      }
+
+      flatProducts = [];
+      items.forEach(item => {
+        item.products?.forEach(product => {
+          flatProducts.push({
+            id: product.id,
+            name: product.name,
+            price: product.price?.min || 0,
+            image: ""
+          });
+        });
       });
 
-      renderPrices(); // 🔥 Оновити ціни після виводу продуктів
+      renderProducts();
     } catch (err) {
-      console.error("Помилка завантаження товарів:", err);
+      console.error("❌ Load error:", err.message);
       productsContainer.innerHTML = "<p>Помилка завантаження товарів.</p>";
     }
+  }
+
+  const currencySelect = document.getElementById("currencySelector");
+  if (currencySelect) {
+    currencySelect.value = currentCurrency;
+    currencySelect.addEventListener("change", async (e) => {
+      currentCurrency = e.target.value;
+      localStorage.setItem("currency", currentCurrency);
+      await loadRates();
+      updatePrices();
+    });
   }
 
   await loadRates();
   await loadProducts();
 });
-
-// Додавання товару у корзину
-function addToCart(brand, region, title, price) {
-  const cart = JSON.parse(localStorage.getItem("cart")) || [];
-  cart.push({ brand, region, title, price });
-  localStorage.setItem("cart", JSON.stringify(cart));
-  alert("Product added to cart!");
-}
-
