@@ -1,122 +1,82 @@
 document.addEventListener("DOMContentLoaded", async () => {
-  const cartContainer = document.getElementById("cartContainer");
-  const totalAmount = document.getElementById("totalAmount");
-  const emptyMsg = document.getElementById("emptyMsg");
-  const checkoutBtn = document.getElementById("checkoutBtn");
+  const cartItemsContainer = document.getElementById("cartItems");
+  const totalDisplay = document.getElementById("total");
+  const emptyMsg = document.getElementById("emptyCartMsg");
 
   const currencySymbols = {
-    USD: "$", EUR: "€", UAH: "₴", PLN: "zł", AUD: "A$", CAD: "C$"
+    USD: "$", EUR: "€", UAH: "₴", PLN: "zł", AUD: "A$", CAD: "C$",
   };
-
   let rates = { USD: 1 };
-  let currentCurrency = localStorage.getItem("currency") || "USD";
-  let cartData = [];
+
+  const currentCurrency = localStorage.getItem("currency") || "USD";
 
   async function loadRates() {
     try {
-      const res = await fetch("https://api.exchangerate.host/latest?base=USD");
+      const res = await fetch("https://api.exchangerate.host/latest?base=USD&symbols=EUR,UAH,PLN,AUD,CAD");
       const data = await res.json();
       rates = { USD: 1, ...data.rates };
-    } catch (err) {
-      console.error("❌ Failed to fetch rates:", err);
-    }
-  }
-
-  function convertPrice(priceUSD, currency) {
-    const rate = rates[currency] || 1;
-    const symbol = currencySymbols[currency] || "$";
-    const converted = priceUSD * rate;
-    return {
-      raw: converted,
-      formatted: `${symbol}${converted.toFixed(2)}`
-    };
-  }
-
-  async function loadCart() {
-    try {
-      const res = await fetch("/get-cart", { credentials: "include" });
-      const cart = await res.json();
-      cartData = cart;
       renderCart();
     } catch (err) {
-      console.error("❌ Failed to load cart:", err);
+      console.error("❌ Currency API error:", err);
     }
   }
 
-  function renderCart() {
-    cartContainer.innerHTML = "";
-    let total = 0;
+  function convertPrice(usd, toCurrency) {
+    const rate = rates[toCurrency] || 1;
+    const symbol = currencySymbols[toCurrency] || "$";
+    return `${symbol}${(usd * rate).toFixed(2)}`;
+  }
 
-    if (!cartData || cartData.length === 0) {
-      emptyMsg.style.display = "block";
-      checkoutBtn.style.display = "none";
-      totalAmount.textContent = "$0.00";
-      return;
-    }
+  async function renderCart() {
+    try {
+      const res = await fetch("/api/cart");
+      const cart = await res.json();
+      console.log("🛒 Cart loaded:", cart);
 
-    emptyMsg.style.display = "none";
-    checkoutBtn.style.display = "inline-block";
+      if (!cart.items.length) {
+        emptyMsg.style.display = "block";
+        totalDisplay.innerText = "$0.00";
+        return;
+      }
 
-    cartData.forEach(product => {
-      const quantity = product.quantity || 1;
-      const converted = convertPrice(product.price, currentCurrency);
-      const subtotal = converted.raw * quantity;
-      total += subtotal;
+      cartItemsContainer.innerHTML = "";
+      let total = 0;
 
-      const item = document.createElement("div");
-      item.className = "category-card card";
-      item.innerHTML = `
-        <img src="${product.image || "/icons/default.png"}" alt="${product.name}" />
-        <div>${product.name}</div>
-        <div style="font-size: 0.9rem;">${converted.formatted} × ${quantity}</div>
-        <button class="remove-btn" data-id="${product.id}">🗑️</button>
-      `;
-      cartContainer.appendChild(item);
-    });
+      cart.items.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "cart-item";
+        div.innerHTML = `
+          <img src="${item.image}" alt="${item.name}" class="cart-item-img">
+          <div class="cart-item-details">
+            <strong>${item.brand}</strong><br>
+            ${item.name}<br>
+            ${convertPrice(item.price, currentCurrency)} × ${item.quantity}
+          </div>
+          <button class="remove-btn" data-id="${item._id}">🗑️</button>
+        `;
+        cartItemsContainer.appendChild(div);
 
-    totalAmount.textContent = convertPrice(total, currentCurrency).formatted;
-
-    // Обробка видалення
-    document.querySelectorAll(".remove-btn").forEach(button => {
-      button.addEventListener("click", async (e) => {
-        const productId = e.target.dataset.id;
-        try {
-          await fetch("/remove-from-cart", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ productId }),
-            credentials: "include"
-          });
-          await loadCart();
-        } catch (err) {
-          alert("❌ Не вдалося видалити товар.");
-        }
+        total += item.price * item.quantity;
       });
-    });
+
+      totalDisplay.innerText = convertPrice(total, currentCurrency);
+
+      // Видалення товарів
+      document.querySelectorAll(".remove-btn").forEach(btn => {
+        btn.addEventListener("click", async (e) => {
+          const id = e.target.getAttribute("data-id");
+          await fetch(`/remove-from-cart?id=${id}`, { method: "POST" });
+          window.location.reload();
+        });
+      });
+    } catch (err) {
+      console.error("❌ Load cart error:", err.message);
+      if (emptyMsg) emptyMsg.style.display = "block";
+      if (totalDisplay) totalDisplay.innerText = "$0.00";
+    }
   }
 
-  // 🎯 Селектор валюти (live)
-  const currencySelector = document.getElementById("currencySelector");
-  if (currencySelector) {
-    currencySelector.value = currentCurrency;
-    currencySelector.addEventListener("change", async (e) => {
-      currentCurrency = e.target.value;
-      localStorage.setItem("currency", currentCurrency);
-      await loadRates();
-      renderCart(); // 🔁 перерендер без reload
-    });
-  }
-
-  // 🧾 Checkout
-  if (checkoutBtn) {
-    checkoutBtn.addEventListener("click", () => {
-      sessionStorage.setItem("cartTotal", totalAmount.textContent);
-      window.location.href = "/checkout.html";
-    });
-  }
-
-  await loadRates();
-  await loadCart();
+  loadRates();
 });
 
 
