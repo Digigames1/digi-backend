@@ -1,14 +1,14 @@
 document.addEventListener("DOMContentLoaded", async () => {
-  const cartItemsContainer = document.getElementById("cartItems");
-  const totalDisplay = document.getElementById("total");
-  const emptyMsg = document.getElementById("emptyCartMsg");
+  const cartItemsContainer = document.getElementById("cart-items"); // ✅ правильний ID
+  const totalDisplay = document.getElementById("cart-total");        // ✅ правильний ID
+  const emptyMsg = document.getElementById("empty-cart-message");    // ✅ правильний ID
 
   const currencySymbols = {
     USD: "$", EUR: "€", UAH: "₴", PLN: "zł", AUD: "A$", CAD: "C$",
   };
   let rates = { USD: 1 };
 
-  const currentCurrency = localStorage.getItem("currency") || "USD";
+  let currentCurrency = localStorage.getItem("currency") || "USD";
 
   async function loadRates() {
     try {
@@ -35,6 +35,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       if (!cart.items.length) {
         emptyMsg.style.display = "block";
+        cartItemsContainer.innerHTML = "";
         totalDisplay.innerText = "$0.00";
         return;
       }
@@ -72,11 +73,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     } catch (err) {
       console.error("❌ Load cart error:", err.message);
       if (emptyMsg) emptyMsg.style.display = "block";
+      if (cartItemsContainer) cartItemsContainer.innerHTML = "";
       if (totalDisplay) totalDisplay.innerText = "$0.00";
     }
   }
 
-  loadRates();
-});
+  // Валюта — оновлення
+  const currencySelector = document.getElementById("currencySelector");
+  if (currencySelector) {
+    currencySelector.value = currentCurrency;
+    currencySelector.addEventListener("change", async (e) => {
+      currentCurrency = e.target.value;
+      localStorage.setItem("currency", currentCurrency);
+      await loadRates();    // завантажити нові курси
+    });
+  }
 
+  await loadRates();
+});
 
