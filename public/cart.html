@@ -83,11 +83,11 @@
       const savedCurrency = localStorage.getItem("currency") || "USD";
       currencySelector.value = savedCurrency;
 
-      currencySelector.addEventListener("change", (e) => {
-        localStorage.setItem("currency", e.target.value);
-        // ❗️ НЕ перезавантажуємо — логіка оновлення вже в cart.js
-        window.dispatchEvent(new Event("currencyChanged"));
-      });
+      currencySelector.addEventListener("change", async (e) => {
+  localStorage.setItem("currency", e.target.value);
+  await loadRates();    // завантажити нові курси
+  renderCart();         // 🔁 перерендерити корзину
+});
     });
   </script>
 </body>
