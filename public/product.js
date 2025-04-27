@@ -30,23 +30,25 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function renderProducts() {
-    productsContainer.innerHTML = "";
+  productsContainer.innerHTML = "";
 
-    flatProducts.forEach(product => {
-      const el = document.createElement("div");
-      el.className = "product-item";
-      el.innerHTML = `
-        <div>
-          <div class="product-name">${product.name}</div>
-          <div class="product-price" data-usd-price="${product.price}">${convertPrice(product.price, currentCurrency)}</div>
-        </div>
-        <button class="buy-btn" data-id="${product.id}" data-price="${product.price}">Buy</button>
-      `;
-      productsContainer.appendChild(el);
-    });
+  flatProducts.forEach(product => {
+    const el = document.createElement("div");
+    el.className = "product-item";
+    el.innerHTML = `
+      <div>
+        <div class="product-name">${product.name.replace(/\$/g, '')}</div>
+        <div class="product-price" data-usd-price="${product.price}"></div> <!-- ❗️Тільки data атрибут -->
+      </div>
+      <button class="buy-btn" data-id="${product.id}" data-price="${product.price}">Buy</button>
+    `;
+    productsContainer.appendChild(el);
+  });
 
-    attachBuyHandlers();
-  }
+  attachBuyHandlers();
+  updatePrices(); // 👉 Після рендеру відразу перераховуємо
+}
+
 
   function updatePrices() {
     document.querySelectorAll(".product-price[data-usd-price]").forEach(el => {
