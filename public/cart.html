@@ -82,12 +82,6 @@
       const currencySelector = document.getElementById("currencySelector");
       const savedCurrency = localStorage.getItem("currency") || "USD";
       currencySelector.value = savedCurrency;
-
-      currencySelector.addEventListener("change", async (e) => {
-  localStorage.setItem("currency", e.target.value);
-  await loadRates();    // завантажити нові курси
-  renderCart();         // 🔁 перерендерити корзину
-});
     });
   </script>
 </body>
