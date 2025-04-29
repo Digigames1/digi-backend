@@ -14,17 +14,19 @@ document.addEventListener("DOMContentLoaded", async () => {
   let currentCurrency = localStorage.getItem("currency") || "USD";
 
   async function loadRates() {
-  try {
-    const res = await fetch("https://api.exchangerate.host/latest?base=USD&symbols=EUR,UAH,PLN,AUD,CAD");
-    const data = await res.json();
-    if (data && data.rates) {
+    try {
+      const res = await fetch("https://api.frankfurter.app/latest?from=USD&to=EUR,UAH,PLN,AUD,CAD");
+      const data = await res.json();
+
+      if (!data.rates) throw new Error("❌ Курси не знайдено у відповіді");
+
       rates = { USD: 1, ...data.rates };
-      console.log("✅ Курси оновлено:", rates);
+      console.log("✅ Курси завантажено з Frankfurter:", rates);
+    } catch (err) {
+      console.error("❌ Помилка завантаження курсів:", err);
+      rates = { USD: 1 }; // резервне значення
     }
-  } catch (err) {
-    console.error("❌ Помилка API курсів:", err);
   }
-}
 
   function convertPrice(usd, toCurrency) {
     const rate = rates[toCurrency] || 1;
@@ -53,6 +55,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function updatePrices() {
+    console.log("🔄 Перерахунок цін за курсом:", rates);
     document.querySelectorAll(".product-price[data-usd-price]").forEach(el => {
       const usd = parseFloat(el.getAttribute("data-usd-price"));
       if (!isNaN(usd)) {
@@ -71,7 +74,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         const product = {
           id: productId,
           name: productName,
-          price: price,
+          price: price || 0,
+          quantity: 1,
           image: ""
         };
 
@@ -130,7 +134,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       renderProducts();
     } catch (err) {
-      console.error("❌ Load error:", err.message);
+      console.error("❌ Помилка завантаження товарів:", err.message);
       productsContainer.innerHTML = "<p>Помилка завантаження товарів.</p>";
     }
   }
@@ -142,12 +146,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       currentCurrency = e.target.value;
       localStorage.setItem("currency", currentCurrency);
       await loadRates();
+      updatePrices();
     });
   }
 
-  await loadRates();        // ✅ Завантаж курси
-await loadProducts();     // ✅ Завантаж товари
-updatePrices();           // ✅ Перерахунок після того, як є товари і курси
-console.log("🟢 Ціни перераховані після завантаження:", rates);
+  // 🚀 Старт
+  await loadRates();
+  await loadProducts();
+  updatePrices();
 });
+
 
