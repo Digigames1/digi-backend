@@ -1,3 +1,5 @@
+// server.js — з доданим маршрутом /api/cart
+
 const express = require('express');
 const session = require('express-session');
 const path = require('path');
@@ -14,8 +16,8 @@ app.use(session({
   resave: false,
   saveUninitialized: true,
   cookie: {
-    sameSite: 'lax', // або 'none' якщо HTTPS
-    secure: false     // true якщо працюєш через HTTPS (наприклад Render)
+    sameSite: 'lax',
+    secure: false
   }
 }));
 
@@ -31,18 +33,13 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Кошик
-app.get('/get-cart', (req, res) => {
-  res.json(req.session.cart || []);
-});
-
+// Кошик (HTML)
 app.get('/cart', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'cart.html'));
 });
 
-const CART_TIMEOUT_MINUTES = 30;
-
 // Додати в корзину
+const CART_TIMEOUT_MINUTES = 30;
 app.post('/add-to-cart', (req, res) => {
   const { product } = req.body;
 
@@ -72,16 +69,21 @@ app.post('/add-to-cart', (req, res) => {
   res.status(200).json({ success: true });
 });
 
+// ✅ Повернення кошика (JSON формат)
+app.get('/api/cart', (req, res) => {
+  res.json({
+    items: req.session.cart || []
+  });
+});
+
 // Видалити з корзини
 app.post('/remove-from-cart', (req, res) => {
   const { productId } = req.body;
 
   if (!productId) return res.status(400).json({ error: 'Missing productId' });
-
   if (!req.session.cart) req.session.cart = [];
 
   req.session.cart = req.session.cart.filter(p => p.id !== productId);
-
   res.status(200).json({ success: true });
 });
 
@@ -94,7 +96,6 @@ app.post('/api/order', (req, res) => {
   }
 
   console.log("✅ Нове замовлення:", { productId, email, name, price, quantity });
-
   res.status(200).json({ success: true, orderId: Math.floor(Math.random() * 1000000) });
 });
 
@@ -108,7 +109,7 @@ app.get('/checkout.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'checkout.html'));
 });
 
-// Захист від перехоплення API маршрутів catch-all логікою
+// Захист API маршрутів
 app.use((req, res, next) => {
   if (
     req.path.startsWith('/api/') ||
@@ -128,8 +129,9 @@ app.get('/:brand/:region?', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'product.html'));
 });
 
-// Запуск
+// Запуск сервера
 app.listen(PORT, () => {
   console.log(`🚀 Сервер запущено: http://localhost:${PORT}`);
 });
+
 
