@@ -6,18 +6,21 @@ document.addEventListener("DOMContentLoaded", async () => {
   const currencySymbols = {
     USD: "$", EUR: "€", UAH: "₴", PLN: "zł", AUD: "A$", CAD: "C$",
   };
+
   let rates = { USD: 1 };
   let currentCurrency = localStorage.getItem("currency") || "USD";
 
   async function loadRates() {
     try {
-      const res = await fetch("https://api.exchangerate.host/latest?base=USD&symbols=EUR,UAH,PLN,AUD,CAD");
+      const res = await fetch("https://api.frankfurter.app/latest?from=USD&to=EUR,UAH,PLN,AUD,CAD");
       const data = await res.json();
-      if (data && data.rates) {
-        rates = { USD: 1, ...data.rates };
-      }
+
+      if (!data.rates) throw new Error("❌ Курси не знайдено");
+      rates = { USD: 1, ...data.rates };
+      console.log("✅ Курси з Frankfurter:", rates);
     } catch (err) {
-      console.error("❌ Currency API error:", err);
+      console.error("❌ Помилка отримання курсів:", err);
+      rates = { USD: 1 };
     }
   }
 
@@ -31,7 +34,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
       const res = await fetch("/api/cart");
       const cart = await res.json();
-      console.log("🛒 Cart loaded:", cart);
+      console.log("🛒 Отримано кошик:", cart);
 
       if (!cart.items.length) {
         emptyMsg.style.display = "block";
@@ -44,10 +47,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       let total = 0;
 
       cart.items.forEach(item => {
-        if (typeof item.price !== "number" || typeof item.quantity !== "number") {
-          console.warn("⚠️ Неправильний товар в кошику:", item);
-          return;
-        }
+        const price = typeof item.price === "number" ? item.price : 0;
+        const quantity = typeof item.quantity === "number" ? item.quantity : 1;
 
         const div = document.createElement("div");
         div.className = "cart-item";
@@ -56,13 +57,13 @@ document.addEventListener("DOMContentLoaded", async () => {
           <div class="cart-item-details">
             <strong>${item.brand || ''}</strong><br>
             ${item.name || 'Unnamed Product'}<br>
-            ${convertPrice(item.price, currentCurrency)} × ${item.quantity}
+            ${convertPrice(price, currentCurrency)} × ${quantity}
           </div>
           <button class="remove-btn" data-id="${item._id}">🗑️</button>
         `;
         cartItemsContainer.appendChild(div);
 
-        total += item.price * item.quantity;
+        total += price * quantity;
       });
 
       totalDisplay.innerText = convertPrice(total, currentCurrency);
@@ -77,7 +78,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
       });
     } catch (err) {
-      console.error("❌ Load cart error:", err.message);
+      console.error("❌ Помилка відображення кошика:", err.message);
       if (emptyMsg) emptyMsg.style.display = "block";
       if (cartItemsContainer) cartItemsContainer.innerHTML = "";
       if (totalDisplay) totalDisplay.innerText = "$0.00";
