@@ -1,3 +1,5 @@
+// product.js — оновлений з перезавантаженням товарів при зміні валюти і унікальним _id для кошика
+
 document.addEventListener("DOMContentLoaded", async () => {
   const brand = window.location.pathname.split("/")[1];
   const region = window.location.pathname.split("/")[2];
@@ -17,14 +19,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
       const res = await fetch("https://api.frankfurter.app/latest?from=USD&to=EUR,UAH,PLN,AUD,CAD");
       const data = await res.json();
-
       if (!data.rates) throw new Error("❌ Курси не знайдено у відповіді");
-
       rates = { USD: 1, ...data.rates };
       console.log("✅ Курси завантажено з Frankfurter:", rates);
     } catch (err) {
       console.error("❌ Помилка завантаження курсів:", err);
-      rates = { USD: 1 }; // резервне значення
+      rates = { USD: 1 };
     }
   }
 
@@ -45,7 +45,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           <div class="product-name">${product.name.replace(/\$/g, '')}</div>
           <div class="product-price" data-usd-price="${product.price}"></div>
         </div>
-        <button class="buy-btn" data-id="${product.id}" data-price="${product.price}">Buy</button>
+        <button class="buy-btn" data-id="${product.id}">Buy</button>
       `;
       productsContainer.appendChild(el);
     });
@@ -68,16 +68,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.querySelectorAll(".buy-btn").forEach(button => {
       button.addEventListener("click", async (e) => {
         const productId = e.target.dataset.id;
-        const price = parseFloat(e.target.dataset.price);
-        const productName = e.target.parentElement.querySelector(".product-name")?.textContent || "";
+        const productObj = flatProducts.find(p => p.id === productId);
+
+        if (!productObj) {
+          alert("❌ Товар не знайдено");
+          return;
+        }
 
         const product = {
-          id: productId,
-          name: productName,
-          price: price || 0,
+          ...productObj,
           quantity: 1,
-          currencyCode: currentCurrency, // ← обов’язково!
-          image: ""
+          currencyCode: currentCurrency,
+          _id: `${productId}-${Date.now()}`
         };
 
         try {
@@ -88,10 +90,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             credentials: 'include'
           });
 
-          if (!res.ok) throw new Error("Помилка додавання");
+          if (!res.ok) throw new Error("Помилка додавання в кошик");
           window.location.href = "/cart.html";
         } catch (err) {
-          alert("❌ Не вдалося додати до кошика: " + err.message);
+          alert("❌ Не вдалося додати товар: " + err.message);
         }
       });
     });
@@ -147,14 +149,15 @@ document.addEventListener("DOMContentLoaded", async () => {
       currentCurrency = e.target.value;
       localStorage.setItem("currency", currentCurrency);
       await loadRates();
+      await loadProducts(); // ⬅️ Додано повторне завантаження продуктів
       updatePrices();
     });
   }
 
-  // 🚀 Старт
   await loadRates();
   await loadProducts();
   updatePrices();
 });
+
 
 
