@@ -142,11 +142,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       currentCurrency = e.target.value;
       localStorage.setItem("currency", currentCurrency);
       await loadRates();
-      updatePrices();
     });
   }
 
-  await loadRates();
-  await loadProducts();
+  await loadRates();        // ✅ Завантаж курси
+await loadProducts();     // ✅ Завантаж товари
+updatePrices();           // ✅ Перерахунок після того, як є товари і курси
+console.log("🟢 Ціни перераховані після завантаження:", rates);
 });
 
