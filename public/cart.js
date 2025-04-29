@@ -7,28 +7,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     USD: "$", EUR: "€", UAH: "₴", PLN: "zł", AUD: "A$", CAD: "C$",
   };
 
-  let rates = { USD: 1 };
   let currentCurrency = localStorage.getItem("currency") || "USD";
-
-  async function loadRates() {
-    try {
-      const res = await fetch("https://api.frankfurter.app/latest?from=USD&to=EUR,UAH,PLN,AUD,CAD");
-      const data = await res.json();
-
-      if (!data.rates) throw new Error("❌ Курси не знайдено");
-      rates = { USD: 1, ...data.rates };
-      console.log("✅ Курси з Frankfurter:", rates);
-    } catch (err) {
-      console.error("❌ Помилка отримання курсів:", err);
-      rates = { USD: 1 };
-    }
-  }
-
-  function convertPrice(usd, toCurrency) {
-    const rate = rates[toCurrency] || 1;
-    const symbol = currencySymbols[toCurrency] || "$";
-    return `${symbol}${(usd * rate).toFixed(2)}`;
-  }
 
   async function renderCart() {
     try {
@@ -36,17 +15,19 @@ document.addEventListener("DOMContentLoaded", async () => {
       const cart = await res.json();
       console.log("🛒 Отримано кошик:", cart);
 
-      if (!cart.items.length) {
+      const matchingItems = cart.items.filter(item => item.currencyCode === currentCurrency);
+
+      if (!matchingItems.length) {
         emptyMsg.style.display = "block";
-        totalDisplay.innerText = "$0.00";
         cartItemsContainer.innerHTML = "";
+        totalDisplay.innerText = `${currencySymbols[currentCurrency] || '$'}0.00`;
         return;
       }
 
       cartItemsContainer.innerHTML = "";
       let total = 0;
 
-      cart.items.forEach(item => {
+      matchingItems.forEach(item => {
         const price = typeof item.price === "number" ? item.price : 0;
         const quantity = typeof item.quantity === "number" ? item.quantity : 1;
 
@@ -57,7 +38,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           <div class="cart-item-details">
             <strong>${item.brand || ''}</strong><br>
             ${item.name || 'Unnamed Product'}<br>
-            ${convertPrice(price, currentCurrency)} × ${quantity}
+            ${currencySymbols[item.currencyCode] || '$'}${price.toFixed(2)} × ${quantity}
           </div>
           <button class="remove-btn" data-id="${item._id}">🗑️</button>
         `;
@@ -66,7 +47,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         total += price * quantity;
       });
 
-      totalDisplay.innerText = convertPrice(total, currentCurrency);
+      totalDisplay.innerText = `${currencySymbols[currentCurrency]}${total.toFixed(2)}`;
 
       document.querySelectorAll(".remove-btn").forEach(btn => {
         btn.addEventListener("click", async (e) => {
@@ -91,11 +72,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     currencySelector.addEventListener("change", async (e) => {
       currentCurrency = e.target.value;
       localStorage.setItem("currency", currentCurrency);
-      await loadRates();
       renderCart();
     });
   }
 
-  await loadRates();
   await renderCart();
 });
