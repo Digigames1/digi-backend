@@ -76,6 +76,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           name: productName,
           price: price || 0,
           quantity: 1,
+          currencyCode: currentCurrency, // ← обов’язково!
           image: ""
         };
 
