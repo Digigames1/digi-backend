@@ -14,16 +14,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   let currentCurrency = localStorage.getItem("currency") || "USD";
 
   async function loadRates() {
-    try {
-      const res = await fetch("https://api.exchangerate.host/latest?base=USD&symbols=EUR,UAH,PLN,AUD,CAD");
-      const data = await res.json();
-      if (data && data.rates) {
-        rates = { USD: 1, ...data.rates };
-      }
-    } catch (err) {
-      console.error("❌ Currency API error:", err);
+  try {
+    const res = await fetch("https://api.exchangerate.host/latest?base=USD&symbols=EUR,UAH,PLN,AUD,CAD");
+    const data = await res.json();
+    if (data && data.rates) {
+      rates = { USD: 1, ...data.rates };
+      console.log("✅ Курси оновлено:", rates);
     }
+  } catch (err) {
+    console.error("❌ Помилка API курсів:", err);
   }
+}
 
   function convertPrice(usd, toCurrency) {
     const rate = rates[toCurrency] || 1;
