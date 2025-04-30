@@ -15,7 +15,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       const cart = await res.json();
       console.log("🛒 Отримано кошик:", cart);
 
-      const matchingItems = cart.items.filter(item => item.currencyCode === currentCurrency);
+      const matchingItems = cart.items.filter(item => {
+        return item.currencyCode === currentCurrency && typeof item.price === "number";
+      });
 
       if (!matchingItems.length) {
         emptyMsg.style.display = "block";
@@ -53,7 +55,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         btn.addEventListener("click", async (e) => {
           const id = e.target.getAttribute("data-id");
           if (id) {
-            await fetch(`/remove-from-cart?id=${id}`, { method: "POST" });
+            await fetch(`/remove-from-cart?id=${id}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ productId: id })
+            });
             window.location.reload();
           }
         });
@@ -61,8 +67,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     } catch (err) {
       console.error("❌ Помилка відображення кошика:", err.message);
       if (emptyMsg) emptyMsg.style.display = "block";
-      if (cartItemsContainer) cartItemsContainer.innerHTML = "";
-      if (totalDisplay) totalDisplay.innerText = "$0.00";
+      cartItemsContainer.innerHTML = "";
+      totalDisplay.innerText = "$0.00";
     }
   }
 
@@ -78,3 +84,4 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   await renderCart();
 });
+
