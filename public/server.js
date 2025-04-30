@@ -60,6 +60,7 @@ app.post('/add-to-cart', (req, res) => {
 
   res.status(200).json({ success: true });
 });
+console.log("📥 Отримано товар:", product);
 
 // Повернення кошика (і перевірка таймауту)
 app.get('/api/cart', (req, res) => {
