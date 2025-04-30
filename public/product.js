@@ -1,4 +1,4 @@
-// product.js — оновлений з перезавантаженням товарів при зміні валюти і унікальним _id для кошика
+// product.js — з привʼязкою продукту напряму до кнопки Buy
 
 document.addEventListener("DOMContentLoaded", async () => {
   const brand = window.location.pathname.split("/")[1];
@@ -45,7 +45,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           <div class="product-name">${product.name.replace(/\$/g, '')}</div>
           <div class="product-price" data-usd-price="${product.price}"></div>
         </div>
-        <button class="buy-btn" data-id="${product.id}">Buy</button>
+        <button class="buy-btn" data-product='${JSON.stringify(product)}'>Buy</button>
       `;
       productsContainer.appendChild(el);
     });
@@ -67,19 +67,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   function attachBuyHandlers() {
     document.querySelectorAll(".buy-btn").forEach(button => {
       button.addEventListener("click", async (e) => {
-        const productId = e.target.dataset.id;
-        const productObj = flatProducts.find(p => p.id === productId);
-
-        if (!productObj) {
-          alert("❌ Товар не знайдено");
+        const raw = e.target.dataset.product;
+        if (!raw) {
+          alert("❌ Продукт не знайдено у кнопці");
           return;
         }
 
+        const baseProduct = JSON.parse(raw);
         const product = {
-          ...productObj,
+          ...baseProduct,
           quantity: 1,
           currencyCode: currentCurrency,
-          _id: `${productId}-${Date.now()}`
+          _id: `${baseProduct.id}-${Date.now()}`
         };
 
         try {
@@ -149,7 +148,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       currentCurrency = e.target.value;
       localStorage.setItem("currency", currentCurrency);
       await loadRates();
-      await loadProducts(); // ⬅️ Додано повторне завантаження продуктів
+      await loadProducts();
       updatePrices();
     });
   }
@@ -158,6 +157,4 @@ document.addEventListener("DOMContentLoaded", async () => {
   await loadProducts();
   updatePrices();
 });
-
-
 
