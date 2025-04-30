@@ -1,4 +1,8 @@
+// cart.js — стабільна версія з логами та відображенням ціни без конвертації
+
 document.addEventListener("DOMContentLoaded", async () => {
+  console.log("✅ cart.js завантажився");
+
   const cartItemsContainer = document.getElementById("cart-items");
   const totalDisplay = document.getElementById("cart-total");
   const emptyMsg = document.getElementById("empty-cart-message");
@@ -13,7 +17,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
       const res = await fetch("/api/cart");
       const cart = await res.json();
-      console.log("🛒 Отримано кошик:", cart);
+      console.log("📦 Дані кошика:", cart.items);
+      console.log("🎯 Поточна валюта:", currentCurrency);
 
       const matchingItems = cart.items.filter(item => {
         return item.currencyCode === currentCurrency && typeof item.price === "number";
@@ -30,7 +35,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       let total = 0;
 
       matchingItems.forEach(item => {
-        const price = typeof item.price === "number" ? item.price : 0;
+        const price = Number(item.price) || 0;
         const quantity = typeof item.quantity === "number" ? item.quantity : 1;
 
         const div = document.createElement("div");
@@ -55,7 +60,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         btn.addEventListener("click", async (e) => {
           const id = e.target.getAttribute("data-id");
           if (id) {
-            await fetch(`/remove-from-cart?id=${id}`, {
+            await fetch("/remove-from-cart", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ productId: id })
