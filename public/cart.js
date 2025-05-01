@@ -1,8 +1,4 @@
-// cart.js — стабільна версія з логами та відображенням ціни без конвертації
-
 document.addEventListener("DOMContentLoaded", async () => {
-  console.log("✅ cart.js завантажився");
-
   const cartItemsContainer = document.getElementById("cart-items");
   const totalDisplay = document.getElementById("cart-total");
   const emptyMsg = document.getElementById("empty-cart-message");
@@ -17,17 +13,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
       const res = await fetch("/api/cart");
       const cart = await res.json();
-      console.log("📦 Дані кошика:", cart.items);
-      console.log("🎯 Поточна валюта:", currentCurrency);
+      console.log("🛒 Кошик:", cart.items);
+      console.log("🌐 Валюта:", currentCurrency);
 
-      const matchingItems = cart.items.filter(item => {
-        return item.currencyCode === currentCurrency && typeof item.price === "number";
-      });
+      const matchingItems = cart.items.filter(item =>
+        item.currencyCode === currentCurrency && typeof item.price === "number"
+      );
 
       if (!matchingItems.length) {
+        if (cart.items.length && cart.items.some(i => i.currencyCode !== currentCurrency)) {
+          emptyMsg.innerText = "У кошику є товари іншої валюти.";
+        }
         emptyMsg.style.display = "block";
         cartItemsContainer.innerHTML = "";
-        totalDisplay.innerText = `${currencySymbols[currentCurrency] || '$'}0.00`;
+        totalDisplay.innerText = `${currencySymbols[currentCurrency] || "$"}0.00`;
         return;
       }
 
@@ -36,16 +35,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       matchingItems.forEach(item => {
         const price = Number(item.price) || 0;
-        const quantity = typeof item.quantity === "number" ? item.quantity : 1;
+        const quantity = item.quantity || 1;
 
         const div = document.createElement("div");
         div.className = "cart-item";
         div.innerHTML = `
-          <img src="${item.image || '/default-image.png'}" alt="${item.name || 'No Name'}" class="cart-item-img">
+          <img src="${item.image || '/default-image.png'}" alt="${item.name}" class="cart-item-img">
           <div class="cart-item-details">
-            <strong>${item.brand || ''}</strong><br>
-            ${item.name || 'Unnamed Product'}<br>
-            ${currencySymbols[item.currencyCode] || '$'}${price.toFixed(2)} × ${quantity}
+            <strong>${item.name}</strong><br>
+            ${currencySymbols[item.currencyCode]}${price.toFixed(2)} × ${quantity}
           </div>
           <button class="remove-btn" data-id="${item._id}">🗑️</button>
         `;
@@ -59,32 +57,17 @@ document.addEventListener("DOMContentLoaded", async () => {
       document.querySelectorAll(".remove-btn").forEach(btn => {
         btn.addEventListener("click", async (e) => {
           const id = e.target.getAttribute("data-id");
-          if (id) {
-            await fetch("/remove-from-cart", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ productId: id })
-            });
-            window.location.reload();
-          }
+          await fetch("/remove-from-cart", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ productId: id })
+          });
+          window.location.reload();
         });
       });
     } catch (err) {
-      console.error("❌ Помилка відображення кошика:", err.message);
-      if (emptyMsg) emptyMsg.style.display = "block";
-      cartItemsContainer.innerHTML = "";
-      totalDisplay.innerText = "$0.00";
+      console.error("❌ Помилка:", err);
     }
-  }
-
-  const currencySelector = document.getElementById("currencySelector");
-  if (currencySelector) {
-    currencySelector.value = currentCurrency;
-    currencySelector.addEventListener("change", async (e) => {
-      currentCurrency = e.target.value;
-      localStorage.setItem("currency", currentCurrency);
-      renderCart();
-    });
   }
 
   await renderCart();
