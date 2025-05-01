@@ -1,5 +1,3 @@
-// product.js — з привʼязкою продукту напряму до кнопки Buy
-
 document.addEventListener("DOMContentLoaded", async () => {
   const brand = window.location.pathname.split("/")[1];
   const region = window.location.pathname.split("/")[2];
@@ -14,16 +12,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   let rates = { USD: 1 };
   let flatProducts = [];
   let currentCurrency = localStorage.getItem("currency") || "USD";
+  let debounceTimer = null;
 
   async function loadRates() {
     try {
       const res = await fetch("https://api.frankfurter.app/latest?from=USD&to=EUR,UAH,PLN,AUD,CAD");
       const data = await res.json();
-      if (!data.rates) throw new Error("❌ Курси не знайдено у відповіді");
+      if (!data.rates) throw new Error("Курси не знайдено у відповіді");
       rates = { USD: 1, ...data.rates };
-      console.log("✅ Курси завантажено з Frankfurter:", rates);
     } catch (err) {
-      console.error("❌ Помилка завантаження курсів:", err);
+      console.error("Помилка завантаження курсів:", err);
       rates = { USD: 1 };
     }
   }
@@ -36,26 +34,23 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function renderProducts() {
     productsContainer.innerHTML = "";
-
     flatProducts.forEach(product => {
       const el = document.createElement("div");
       el.className = "product-item";
       el.innerHTML = `
         <div>
-          <div class="product-name">${product.name.replace(/\$/g, '')}</div>
+          <div class="product-name">${product.name}</div>
           <div class="product-price" data-usd-price="${product.price}"></div>
         </div>
         <button class="buy-btn" data-product='${JSON.stringify(product)}'>Buy</button>
       `;
       productsContainer.appendChild(el);
     });
-
     attachBuyHandlers();
     updatePrices();
   }
 
   function updatePrices() {
-    console.log("🔄 Перерахунок цін за курсом:", rates);
     document.querySelectorAll(".product-price[data-usd-price]").forEach(el => {
       const usd = parseFloat(el.getAttribute("data-usd-price"));
       if (!isNaN(usd)) {
@@ -68,10 +63,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.querySelectorAll(".buy-btn").forEach(button => {
       button.addEventListener("click", async (e) => {
         const raw = e.target.dataset.product;
-        if (!raw) {
-          alert("❌ Продукт не знайдено у кнопці");
-          return;
-        }
+        if (!raw) return alert("Товар не знайдено");
 
         const baseProduct = JSON.parse(raw);
         const product = {
@@ -82,17 +74,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         };
 
         try {
-          const res = await fetch('/add-to-cart', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+          const res = await fetch("/add-to-cart", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ product }),
-            credentials: 'include'
+            credentials: "include"
           });
-
-          if (!res.ok) throw new Error("Помилка додавання в кошик");
+          if (!res.ok) throw new Error("Помилка додавання");
           window.location.href = "/cart.html";
         } catch (err) {
-          alert("❌ Не вдалося додати товар: " + err.message);
+          alert("Не вдалося додати товар: " + err.message);
         }
       });
     });
@@ -102,22 +93,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
       const apiUrl = region ? `/api/${brand}/${region}` : `/api/${brand}`;
       const res = await fetch(apiUrl);
-      const data = await res.json();
-
-      brandTitle.textContent = brand.toUpperCase();
-      const items = data?.items || [];
-
-      if (!items.length) {
-        productsContainer.innerHTML = "<p>Товари не знайдено.</p>";
+      if (res.status === 429) {
+        productsContainer.innerHTML = "<p>⏳ Забагато запитів. Спробуйте пізніше.</p>";
         return;
       }
 
+      const data = await res.json();
+      brandTitle.textContent = brand.toUpperCase();
+      const items = data?.items || [];
+
       if (!region) {
         items.forEach(item => {
-          const regionPath = `${brand}/${item.countryCode?.toLowerCase()}`;
-          const el = document.createElement("div");
-          el.innerHTML = `<a href="/${regionPath}" style="display:block; margin: 0.5rem 0; font-weight: bold;">${item.name}</a>`;
-          productsContainer.appendChild(el);
+          const link = `${brand}/${item.countryCode?.toLowerCase()}`;
+          productsContainer.innerHTML += `<a href="/${link}">${item.name}</a><br>`;
         });
         return;
       }
@@ -136,20 +124,23 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       renderProducts();
     } catch (err) {
-      console.error("❌ Помилка завантаження товарів:", err.message);
-      productsContainer.innerHTML = "<p>Помилка завантаження товарів.</p>";
+      console.error("Помилка завантаження:", err.message);
+      productsContainer.innerHTML = "<p>Помилка при завантаженні товарів.</p>";
     }
   }
 
   const currencySelect = document.getElementById("currencySelector");
   if (currencySelect) {
     currencySelect.value = currentCurrency;
-    currencySelect.addEventListener("change", async (e) => {
-      currentCurrency = e.target.value;
-      localStorage.setItem("currency", currentCurrency);
-      await loadRates();
-      await loadProducts();
-      updatePrices();
+    currencySelect.addEventListener("change", (e) => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(async () => {
+        currentCurrency = e.target.value;
+        localStorage.setItem("currency", currentCurrency);
+        await loadRates();
+        await loadProducts();
+        updatePrices();
+      }, 400);
     });
   }
 
@@ -157,4 +148,5 @@ document.addEventListener("DOMContentLoaded", async () => {
   await loadProducts();
   updatePrices();
 });
+
 
