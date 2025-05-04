@@ -15,16 +15,20 @@ document.addEventListener("DOMContentLoaded", async () => {
   let debounceTimer = null;
 
   async function loadRates() {
-    try {
-      const res = await fetch("https://api.frankfurter.app/latest?from=USD&to=EUR,UAH,PLN,AUD,CAD");
-      const data = await res.json();
-      if (!data.rates) throw new Error("Курси не знайдено у відповіді");
-      rates = { USD: 1, ...data.rates };
-    } catch (err) {
-      console.error("Помилка завантаження курсів:", err);
-      rates = { USD: 1 };
+  try {
+    const res = await fetch("https://api.frankfurter.app/latest?from=USD&to=EUR,UAH,PLN,AUD,CAD");
+    const data = await res.json();
+    if (!data.rates) throw new Error("Курси не знайдено у відповіді");
+    rates = { USD: 1, ...data.rates };
+    if (!rates.UAH) {
+      rates.UAH = 39; // fallback курс
     }
+    console.log("💱 Курси:", rates);
+  } catch (err) {
+    console.error("Помилка завантаження курсів:", err);
+    rates = { USD: 1, UAH: 39 }; // повний fallback
   }
+}
 
   function convertPrice(usd, toCurrency) {
     const rate = rates[toCurrency] || 1;
