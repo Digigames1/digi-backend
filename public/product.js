@@ -14,21 +14,29 @@ document.addEventListener("DOMContentLoaded", async () => {
   let currentCurrency = localStorage.getItem("currency") || "USD";
   let debounceTimer = null;
 
-  async function loadRates() {
-  try {
-    const res = await fetch("https://api.frankfurter.app/latest?from=USD&to=EUR,UAH,PLN,AUD,CAD");
-    const data = await res.json();
-    if (!data.rates) throw new Error("Курси не знайдено у відповіді");
-    rates = { USD: 1, ...data.rates };
-    if (!rates.UAH) {
-      rates.UAH = 39; // fallback курс
-    }
-    console.log("💱 Курси:", rates);
-  } catch (err) {
-    console.error("Помилка завантаження курсів:", err);
-    rates = { USD: 1, UAH: 39 }; // повний fallback
+  // 🧠 Очистити кошик при зміні валюти
+  const lastCurrency = sessionStorage.getItem("lastCurrency");
+  if (lastCurrency && lastCurrency !== currentCurrency) {
+    await fetch("/clear-cart", { method: "POST" });
+    console.log("🧹 Кошик очищено через зміну валюти:", lastCurrency, "→", currentCurrency);
   }
-}
+  sessionStorage.setItem("lastCurrency", currentCurrency);
+
+  async function loadRates() {
+    try {
+      const res = await fetch("https://api.frankfurter.app/latest?from=USD&to=EUR,UAH,PLN,AUD,CAD");
+      const data = await res.json();
+      if (!data.rates) throw new Error("Курси не знайдено у відповіді");
+      rates = { USD: 1, ...data.rates };
+      if (!rates.UAH) {
+        rates.UAH = 39; // fallback курс
+      }
+      console.log("💱 Курси:", rates);
+    } catch (err) {
+      console.error("Помилка завантаження курсів:", err);
+      rates = { USD: 1, UAH: 39 }; // повний fallback
+    }
+  }
 
   function convertPrice(usd, toCurrency) {
     const rate = rates[toCurrency] || 1;
@@ -74,7 +82,8 @@ document.addEventListener("DOMContentLoaded", async () => {
           ...baseProduct,
           quantity: 1,
           currencyCode: currentCurrency,
-          _id: `${baseProduct.id}-${Date.now()}`
+          _id: `${baseProduct.id}-${Date.now()}`,
+          addedAt: Date.now() // 🔁 для очищення за часом
         };
 
         try {
