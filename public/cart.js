@@ -76,7 +76,4 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 
-  await renderCart();
-});
-
 
