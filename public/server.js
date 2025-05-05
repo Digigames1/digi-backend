@@ -25,10 +25,7 @@ app.post('/add-to-cart', (req, res) => {
   if (!product || !product.id || !product.price || !product.currencyCode) {
     return res.status(400).json({ error: "Bad product" });
   }
-  app.post('/clear-cart', (req, res) => {
-  cart = []; // Очищаємо кошик
-  res.json({ success: true, message: "Кошик очищено" });
-});
+
 
   product._id = `${product.id}-${Date.now()}`;
   product.addedAt = Date.now();
