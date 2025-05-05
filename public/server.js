@@ -19,10 +19,15 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const CART_TIMEOUT_MINUTES = 30;
 
-// Додати товар
+// Додати товар до кошика
 app.post('/add-to-cart', (req, res) => {
   const { product } = req.body;
-  if (!product || !product.id || !product.price) return res.status(400).json({ error: "Bad product" });
+  if (!product || !product.id || !product.price || !product.currencyCode) {
+    return res.status(400).json({ error: "Bad product" });
+  }
+
+  product._id = `${product.id}-${Date.now()}`;
+  product.addedAt = Date.now();
 
   if (!req.session.cart) {
     req.session.cart = [];
@@ -39,17 +44,15 @@ app.post('/add-to-cart', (req, res) => {
   res.status(200).json({ success: true });
 });
 
-// Показати корзину
+// Отримати кошик (тільки актуальні товари)
 app.get('/api/cart', (req, res) => {
   const now = Date.now();
-  const timeout = CART_TIMEOUT_MINUTES * 60 * 1000;
+  const maxAge = 1000 * 60 * 60; // 1 година
 
-  if (req.session.cartCreatedAt && now - req.session.cartCreatedAt > timeout) {
-    req.session.cart = [];
-    req.session.cartCreatedAt = now;
-  }
+  const allItems = req.session.cart || [];
+  const validItems = allItems.filter(item => now - (item.addedAt || 0) < maxAge);
 
-  res.json({ items: req.session.cart || [] });
+  res.json({ items: validItems });
 });
 
 // Видалити товар
@@ -61,20 +64,27 @@ app.post('/remove-from-cart', (req, res) => {
   res.status(200).json({ success: true });
 });
 
+// Очистити кошик вручну (наприклад при зміні валюти)
+app.post('/clear-cart', (req, res) => {
+  req.session.cart = [];
+  req.session.cartCreatedAt = Date.now();
+  res.json({ success: true });
+});
+
 // Checkout
 app.post('/checkout', (req, res) => {
   res.redirect("https://www.dundle.com/cart/");
 });
 
-// Маршрути
+// HTML сторінки
 app.get('/cart', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'cart.html'));
 });
+
 app.get('/:brand/:region?', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'product.html'));
 });
 
 app.listen(PORT, () => console.log(`✅ Server running at http://localhost:${PORT}`));
-
 
 
