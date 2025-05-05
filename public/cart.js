@@ -7,30 +7,24 @@ document.addEventListener("DOMContentLoaded", async () => {
     USD: "$", EUR: "€", UAH: "₴", PLN: "zł", AUD: "A$", CAD: "C$",
   };
 
-  const currentCurrency = localStorage.getItem("currency") || "USD";
-  const now = Date.now();
-  const MAX_AGE = 1000 * 60 * 60; // 1 година
+  let currentCurrency = localStorage.getItem("currency") || "USD";
 
   async function renderCart() {
     try {
       const res = await fetch("/api/cart");
       const cart = await res.json();
-      const items = cart.items || [];
+      console.log("🛒 Кошик:", cart.items);
+      console.log("🌐 Валюта:", currentCurrency);
 
-      console.log("🛒 Усі товари в кошику:", items);
-
-      // Фільтрація тільки за валютою + віком
-      const matchingItems = items.filter(item =>
-        item.currencyCode === currentCurrency &&
-        typeof item.price === "number" &&
-        now - (item.addedAt || 0) < MAX_AGE
+      const MAX_AGE = 1000 * 60 * 30;
+      const now = Date.now();
+      const matchingItems = cart.items.filter(item =>
+        item.currencyCode === currentCurrency && typeof item.price === "number" && now - (item.addedAt || 0) < MAX_AGE
       );
 
       if (!matchingItems.length) {
-        if (items.length) {
-          emptyMsg.innerText = "У кошику є товари з іншою валютою або протерміновані.";
-        } else {
-          emptyMsg.innerText = "Кошик порожній.";
+        if (cart.items.length && cart.items.some(i => i.currencyCode !== currentCurrency)) {
+          emptyMsg.innerText = "У кошику є товари іншої валюти.";
         }
         emptyMsg.style.display = "block";
         cartItemsContainer.innerHTML = "";
@@ -77,6 +71,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       console.error("❌ Помилка:", err);
     }
   }
+
+  await renderCart();
+});
+
 
   await renderCart();
 });
