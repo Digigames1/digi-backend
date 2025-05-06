@@ -13,18 +13,23 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
       const res = await fetch("/api/cart");
       const cart = await res.json();
-      console.log("🛒 Кошик:", cart.items);
-      console.log("🌐 Валюта:", currentCurrency);
 
-      const MAX_AGE = 1000 * 60 * 30;
+      console.log("🛒 Усі товари в кошику:", cart.items);
+
       const now = Date.now();
+      const MAX_AGE = 1000 * 60 * 30; // 30 хв
+
       const matchingItems = cart.items.filter(item =>
-        item.currencyCode === currentCurrency && typeof item.price === "number" && now - (item.addedAt || 0) < MAX_AGE
+        item.currencyCode === currentCurrency &&
+        typeof item.price === "number" &&
+        now - (item.addedAt || 0) < MAX_AGE
       );
 
       if (!matchingItems.length) {
-        if (cart.items.length && cart.items.some(i => i.currencyCode !== currentCurrency)) {
-          emptyMsg.innerText = "У кошику є товари іншої валюти.";
+        if (cart.items.length) {
+          emptyMsg.innerText = "У кошику є товари іншої валюти або протерміновані.";
+        } else {
+          emptyMsg.innerText = "Ваш кошик порожній.";
         }
         emptyMsg.style.display = "block";
         cartItemsContainer.innerHTML = "";
@@ -45,7 +50,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           <img src="${item.image || '/default-image.png'}" alt="${item.name}" class="cart-item-img">
           <div class="cart-item-details">
             <strong>${item.name}</strong><br>
-            ${currencySymbols[item.currencyCode]}${price.toFixed(2)} × ${quantity}
+            ${currencySymbols[item.currencyCode] || currentCurrency}${price.toFixed(2)} × ${quantity}
           </div>
           <button class="remove-btn" data-id="${item._id}">🗑️</button>
         `;
@@ -59,21 +64,22 @@ document.addEventListener("DOMContentLoaded", async () => {
       document.querySelectorAll(".remove-btn").forEach(btn => {
         btn.addEventListener("click", async (e) => {
           const id = e.target.getAttribute("data-id");
-          await fetch("/remove-from-cart", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ productId: id })
+          const response = await fetch(`/remove-from-cart?id=${id}`, {
+            method: "POST"
           });
-          window.location.reload();
+          if (response.ok) {
+            location.reload();
+          } else {
+            alert("❌ Не вдалося видалити товар");
+          }
         });
       });
     } catch (err) {
-      console.error("❌ Помилка:", err);
+      console.error("❌ Помилка при відображенні кошика:", err);
     }
   }
 
   await renderCart();
 });
-
 
 
