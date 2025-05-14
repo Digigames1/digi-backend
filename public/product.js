@@ -15,20 +15,20 @@ document.addEventListener("DOMContentLoaded", async () => {
   let debounceTimer = null;
 
   async function loadRates() {
-  try {
-    const res = await fetch("https://api.frankfurter.app/latest?from=USD&to=EUR,UAH,PLN,AUD,CAD");
-    const data = await res.json();
-    if (!data.rates) throw new Error("Курси не знайдено у відповіді");
-    rates = { USD: 1, ...data.rates };
-    if (!rates.UAH) {
-      rates.UAH = 39; // fallback курс
+    try {
+      const res = await fetch("https://api.frankfurter.app/latest?from=USD&to=EUR,UAH,PLN,AUD,CAD");
+      const data = await res.json();
+      if (!data.rates) throw new Error("Курси не знайдено у відповіді");
+      rates = { USD: 1, ...data.rates };
+      if (!rates.UAH) {
+        rates.UAH = 39; // fallback курс
+      }
+      console.log("💱 Курси:", rates);
+    } catch (err) {
+      console.error("Помилка завантаження курсів:", err);
+      rates = { USD: 1, UAH: 39 }; // повний fallback
     }
-    console.log("💱 Курси:", rates);
-  } catch (err) {
-    console.error("Помилка завантаження курсів:", err);
-    rates = { USD: 1, UAH: 39 }; // повний fallback
   }
-}
 
   function convertPrice(usd, toCurrency) {
     const rate = rates[toCurrency] || 1;
@@ -71,14 +71,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const baseProduct = JSON.parse(raw);
         const product = {
-  ...baseProduct,
-  quantity: 1,
-  currencyCode: currentCurrency,
-  price: Number(baseProduct.price) || 0,
-  addedAt: Date.now(),
-  image: baseProduct.image || "/default-image.png",
-  _id: `${baseProduct.id}-${Date.now()}`
-};
+          ...baseProduct,
+          quantity: 1,
+          currencyCode: currentCurrency,
+          price: Number(baseProduct.price) || 0,
+          addedAt: Date.now(),
+          image: baseProduct.image || "/default-image.png",
+          _id: `${baseProduct.id}-${Date.now()}`
+        };
 
         try {
           const res = await fetch("/add-to-cart", {
@@ -120,13 +120,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       flatProducts = [];
       items.forEach(item => {
         item.products?.forEach(product => {
-         flatProducts.push({
-  id: product.id,
-  name: product.name,
-  price: product.price?.min || 0,
-  image: "",
-  addedAt: Date.now() // 👈 додати
-});
+          flatProducts.push({
+            id: product.id,
+            name: product.name,
+            price: product.price?.min || 0,
+            image: product.image || "/default-image.png",
+            addedAt: Date.now()
+          });
         });
       });
 
@@ -156,5 +156,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   await loadProducts();
   updatePrices();
 });
+
 
 
