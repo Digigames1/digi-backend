@@ -19,11 +19,30 @@ document.addEventListener("DOMContentLoaded", async () => {
       const now = Date.now();
       const MAX_AGE = 1000 * 60 * 30; // 30 хв
 
-      const matchingItems = cart.items.filter(item =>
-        item.currencyCode === currentCurrency &&
-        typeof item.price === "number" &&
-        now - (item.addedAt || 0) < MAX_AGE
-      );
+      console.log("🎯 Перевірка умов:");
+
+      const matchingItems = cart.items.filter(item => {
+        const isCurrencyOk = item.currencyCode === currentCurrency;
+        const isPriceOk = typeof item.price === "number";
+        const isRecent = now - (item.addedAt || 0) < MAX_AGE;
+
+        if (!isCurrencyOk || !isPriceOk || !isRecent) {
+          console.warn("⛔ Відфільтровано товар:", {
+            name: item.name,
+            currencyCode: item.currencyCode,
+            expectedCurrency: currentCurrency,
+            price: item.price,
+            addedAt: item.addedAt,
+            reasons: {
+              currencyMatch: isCurrencyOk,
+              priceValid: isPriceOk,
+              timeValid: isRecent
+            }
+          });
+        }
+
+        return isCurrencyOk && isPriceOk && isRecent;
+      });
 
       if (!matchingItems.length) {
         if (cart.items.length) {
@@ -61,7 +80,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       totalDisplay.innerText = `${currencySymbols[currentCurrency]}${total.toFixed(2)}`;
 
-      // ⚠️ Замість reload — оновлюємо тільки DOM
       document.querySelectorAll(".remove-btn").forEach(btn => {
         btn.addEventListener("click", async (e) => {
           const id = e.target.getAttribute("data-id");
@@ -69,7 +87,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             method: "POST"
           });
           if (response.ok) {
-            await renderCart(); // оновлюємо інтерфейс без reload
+            await renderCart(); // 🔁 Оновлюємо без перезавантаження
           } else {
             alert("❌ Не вдалося видалити товар");
           }
@@ -81,7 +99,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // ✅ Додавання товару (використовується на кнопках додати)
+  // ✅ Додавання товару в кошик
   window.addToCart = async function ({ id, name, price, currencyCode, image }) {
     try {
       const response = await fetch("/add-to-cart", {
@@ -90,7 +108,11 @@ document.addEventListener("DOMContentLoaded", async () => {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          id, name, price, currencyCode, image,
+          id,
+          name,
+          price,
+          currencyCode: currencyCode || localStorage.getItem("currency") || "USD",
+          image,
           quantity: 1,
           addedAt: Date.now()
         })
