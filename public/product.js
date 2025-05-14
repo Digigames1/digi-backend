@@ -71,11 +71,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const baseProduct = JSON.parse(raw);
         const product = {
-          ...baseProduct,
-          quantity: 1,
-          currencyCode: currentCurrency,
-          _id: `${baseProduct.id}-${Date.now()}`
-        };
+  ...baseProduct,
+  quantity: 1,
+  currencyCode: currentCurrency,
+  price: Number(baseProduct.price) || 0,
+  addedAt: Date.now(),
+  image: baseProduct.image || "/default-image.png",
+  _id: `${baseProduct.id}-${Date.now()}`
+};
 
         try {
           const res = await fetch("/add-to-cart", {
@@ -117,12 +120,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       flatProducts = [];
       items.forEach(item => {
         item.products?.forEach(product => {
-          flatProducts.push({
-            id: product.id,
-            name: product.name,
-            price: product.price?.min || 0,
-            image: ""
-          });
+         flatProducts.push({
+  id: product.id,
+  name: product.name,
+  price: product.price?.min || 0,
+  image: "",
+  addedAt: Date.now() // 👈 додати
+});
         });
       });
 
