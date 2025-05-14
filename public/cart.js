@@ -61,6 +61,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       totalDisplay.innerText = `${currencySymbols[currentCurrency]}${total.toFixed(2)}`;
 
+      // ⚠️ Замість reload — оновлюємо тільки DOM
       document.querySelectorAll(".remove-btn").forEach(btn => {
         btn.addEventListener("click", async (e) => {
           const id = e.target.getAttribute("data-id");
@@ -68,18 +69,45 @@ document.addEventListener("DOMContentLoaded", async () => {
             method: "POST"
           });
           if (response.ok) {
-            location.reload();
+            await renderCart(); // оновлюємо інтерфейс без reload
           } else {
             alert("❌ Не вдалося видалити товар");
           }
         });
       });
+
     } catch (err) {
       console.error("❌ Помилка при відображенні кошика:", err);
     }
   }
 
+  // ✅ Додавання товару (використовується на кнопках додати)
+  window.addToCart = async function ({ id, name, price, currencyCode, image }) {
+    try {
+      const response = await fetch("/add-to-cart", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          id, name, price, currencyCode, image,
+          quantity: 1,
+          addedAt: Date.now()
+        })
+      });
+
+      if (response.ok) {
+        await renderCart();
+      } else {
+        alert("❌ Не вдалося додати товар");
+      }
+    } catch (err) {
+      console.error("❌ Помилка при додаванні товару:", err);
+    }
+  };
+
   await renderCart();
 });
+
 
 
