@@ -84,7 +84,17 @@ document.addEventListener("DOMContentLoaded", async () => {
           const res = await fetch("/add-to-cart", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(product),
+            body: JSON.stringify({
+  product: {
+    ...baseProduct,
+    quantity: 1,
+    currencyCode: currentCurrency,
+    price: Number(baseProduct.price) || 0,
+    addedAt: Date.now(),
+    image: baseProduct.image || "/default-image.png",
+    _id: `${baseProduct.id}-${Date.now()}`
+  }
+}),
             credentials: "include"
           });
           if (!res.ok) throw new Error("Помилка додавання");
