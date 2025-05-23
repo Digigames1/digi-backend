@@ -64,47 +64,43 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function attachBuyHandlers() {
-    document.querySelectorAll(".buy-btn").forEach(button => {
-      button.addEventListener("click", async (e) => {
-        const raw = e.target.dataset.product;
-        if (!raw) return alert("Товар не знайдено");
+  document.querySelectorAll(".buy-btn").forEach(button => {
+    button.addEventListener("click", async (e) => {
+      const raw = e.target.dataset.product;
+      if (!raw) return alert("Товар не знайдено");
 
-        const baseProduct = JSON.parse(raw);
-        const product = {
-          ...baseProduct,
-          quantity: 1,
-          currencyCode: currentCurrency,
-          price: Number(baseProduct.price) || 0,
-          addedAt: Date.now(),
-          image: baseProduct.image || "/default-image.png",
-          _id: `${baseProduct.id}-${Date.now()}`
-        };
+      const baseProduct = JSON.parse(raw);
 
-        try {
-          const res = await fetch("/add-to-cart", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-  product: {
-    ...baseProduct,
-    quantity: 1,
-    currencyCode: currentCurrency,
-    price: Number(baseProduct.price) || 0,
-    addedAt: Date.now(),
-    image: baseProduct.image || "/default-image.png",
-    _id: `${baseProduct.id}-${Date.now()}`
-  }
-}),
-            credentials: "include"
-          });
-          if (!res.ok) throw new Error("Помилка додавання");
-          window.location.href = "/cart.html";
-        } catch (err) {
-          alert("Не вдалося додати товар: " + err.message);
-        }
-      });
+      const product = {
+        ...baseProduct,
+        quantity: 1,
+        currencyCode: currentCurrency,
+        price: Number(baseProduct.price) || 0,
+        addedAt: Date.now(),
+        image: baseProduct.image || "/default-image.png",
+        _id: `${baseProduct.id}-${Date.now()}`
+      };
+
+      console.log("🛒 Надсилаємо в кошик:", product);
+
+      try {
+        const res = await fetch("/add-to-cart", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ product }), // 👈 обгорнуто та включає все необхідне
+          credentials: "include"
+        });
+
+        if (!res.ok) throw new Error("Помилка додавання");
+
+        window.location.href = "/cart.html"; // або alert("Додано!") — за бажанням
+      } catch (err) {
+        alert("Не вдалося додати товар: " + err.message);
+      }
     });
-  }
+  });
+}
+
 
   async function loadProducts() {
     try {
