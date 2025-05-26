@@ -305,6 +305,19 @@ footer {
   transform: scale(1.01);
   transition: transform 0.3s ease;
 }
+.cart-count-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: red;
+  color: white;
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 999px;
+}
+.cart-button {
+  position: relative;
+}
 
 /* 📱 Mobile */
 @media screen and (max-width: 600px) {
