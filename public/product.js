@@ -72,14 +72,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       const baseProduct = JSON.parse(raw);
 
       const product = {
-        ...baseProduct,
-        quantity: 1,
-        currencyCode: 'USD',
-        price: Number(baseProduct.price) || 0,
-        addedAt: Date.now(),
-        image: baseProduct.image || "/default-image.png",
-        _id: `${baseProduct.id}-${Date.now()}`
-      };
+  quantity: 1,
+  currencyCode: 'USD', // 🟢 ДО `...baseProduct`
+  ...baseProduct,
+  price: Number(baseProduct.price) || 0,
+  addedAt: Date.now(),
+  image: baseProduct.image || "/default-image.png",
+  _id: `${baseProduct.id}-${Date.now()}`
+};
 
       console.log("🛒 Надсилаємо в кошик:", product);
 
