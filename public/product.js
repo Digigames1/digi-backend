@@ -101,7 +101,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 }
 
-
   async function loadProducts() {
     try {
       const apiUrl = region ? `/api/${brand}/${region}` : `/api/${brand}`;
