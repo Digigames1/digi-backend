@@ -24,6 +24,9 @@ app.post('/add-to-cart', (req, res) => {
   console.log("📩 BODY:", req.body); // ← це обов’язково
   const product = req.body;
 
+  console.log("📩 PRODUCT BODY:", req.body);
+console.log("➡ typeof price:", typeof req.body.price);
+
   if (!product || !product.id || product.price === undefined || !product.currencyCode) {
     return res.status(400).json({ error: "Bad product" });
   }
