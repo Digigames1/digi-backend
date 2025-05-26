@@ -134,6 +134,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     sessionStorage.setItem("cartTotal", totalText);
     window.location.href = "/checkout.html";
   });
+  document.getElementById("clear-cart-button")?.addEventListener("click", async () => {
+  const res = await fetch("/clear-cart", { method: "POST" });
+  if (res.ok) {
+    await renderCart(); // перерендер
+  } else {
+    alert("❌ Не вдалося очистити кошик");
+  }
+});
 
   await renderCart();
 });
