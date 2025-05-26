@@ -22,13 +22,20 @@ const CART_TIMEOUT_MINUTES = 30;
 // Додати товар до кошика
 app.post('/add-to-cart', (req, res) => {
   const { product } = req.body;
-  if (!product || !product.id || !product.price || !product.currencyCode) {
+
+  if (!product || !product.id || product.price === undefined || !product.currencyCode) {
     return res.status(400).json({ error: "Bad product" });
   }
 
+  // Гарантуємо числове значення ціни
+  product.price = Number(product.price) || 0;
 
-  product._id = `${product.id}-${Date.now()}`;
-  product.addedAt = Date.now();
+  // Якщо додано вручну — не перезаписуємо
+  if (!product.addedAt) {
+    product.addedAt = Date.now();
+  }
+
+  product._id = product._id || `${product.id}-${Date.now()}`;
 
   if (!req.session.cart) {
     req.session.cart = [];
@@ -44,6 +51,7 @@ app.post('/add-to-cart', (req, res) => {
   req.session.cart.push(product);
   res.status(200).json({ success: true });
 });
+
 
 // Отримати кошик (тільки актуальні товари)
 app.get('/api/cart', (req, res) => {
