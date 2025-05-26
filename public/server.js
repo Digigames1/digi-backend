@@ -21,20 +21,22 @@ const CART_TIMEOUT_MINUTES = 30;
 
 // Додати товар до кошика
 app.post('/add-to-cart', (req, res) => {
-  console.log("📩 BODY:", req.body); // ← це обов’язково
   const product = req.body;
 
-  console.log("📩 PRODUCT BODY:", req.body);
-console.log("➡ typeof price:", typeof req.body.price);
+  console.log("📩 PRODUCT BODY:", product);
+  console.log("➡ typeof price:", typeof product.price);
+  console.log("➡ typeof currencyCode:", typeof product.currencyCode);
 
-  if (!product || !product.id || product.price === undefined || !product.currencyCode) {
+  // Приведення типів
+  product.price = Number(product.price) || 0;
+  product.currencyCode = product.currencyCode || 'USD';
+
+  // Перевірка
+  if (!product || !product.id || product.price === 0 || !product.currencyCode) {
+    console.warn("❌ Bad product payload:", product);
     return res.status(400).json({ error: "Bad product" });
   }
 
-  // Гарантуємо числове значення ціни
-  product.price = Number(product.price) || 0;
-
-  // Якщо додано вручну — не перезаписуємо
   if (!product.addedAt) {
     product.addedAt = Date.now();
   }
@@ -47,6 +49,7 @@ console.log("➡ typeof price:", typeof req.body.price);
   }
 
   const now = Date.now();
+  const CART_TIMEOUT_MINUTES = 30;
   if (now - req.session.cartCreatedAt > CART_TIMEOUT_MINUTES * 60 * 1000) {
     req.session.cart = [];
     req.session.cartCreatedAt = now;
@@ -55,6 +58,7 @@ console.log("➡ typeof price:", typeof req.body.price);
   req.session.cart.push(product);
   res.status(200).json({ success: true });
 });
+
 
 
 // Отримати кошик (тільки актуальні товари)
