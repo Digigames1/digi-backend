@@ -21,6 +21,7 @@ const CART_TIMEOUT_MINUTES = 30;
 
 // Додати товар до кошика
 app.post('/add-to-cart', (req, res) => {
+  console.log("📩 BODY:", req.body); // ← це обов’язково
   const product = req.body;
 
   if (!product || !product.id || product.price === undefined || !product.currencyCode) {
