@@ -128,8 +128,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   };
 
+  // ✅ Збереження суми для checkout
+  document.getElementById("checkout-button")?.addEventListener("click", () => {
+    const totalText = document.getElementById("cart-total")?.innerText || "$0.00";
+    sessionStorage.setItem("cartTotal", totalText);
+    window.location.href = "/checkout.html";
+  });
+
   await renderCart();
 });
+
 
 
 
