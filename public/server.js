@@ -19,19 +19,19 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const CART_TIMEOUT_MINUTES = 30;
 
-// Додати товар до кошика
+// ✅ Додати товар до кошика
 app.post('/add-to-cart', (req, res) => {
   const product = req.body;
 
+  // 🔍 Логи для дебагу
   console.log("📩 PRODUCT BODY:", product);
   console.log("➡ typeof price:", typeof product.price);
   console.log("➡ typeof currencyCode:", typeof product.currencyCode);
 
-  // Приведення типів
+  // 🛠 Гарантії
   product.price = Number(product.price) || 0;
   product.currencyCode = product.currencyCode || 'USD';
 
-  // Перевірка
   if (!product || !product.id || product.price === 0 || !product.currencyCode) {
     console.warn("❌ Bad product payload:", product);
     return res.status(400).json({ error: "Bad product" });
@@ -49,7 +49,6 @@ app.post('/add-to-cart', (req, res) => {
   }
 
   const now = Date.now();
-  const CART_TIMEOUT_MINUTES = 30;
   if (now - req.session.cartCreatedAt > CART_TIMEOUT_MINUTES * 60 * 1000) {
     req.session.cart = [];
     req.session.cartCreatedAt = now;
@@ -59,9 +58,7 @@ app.post('/add-to-cart', (req, res) => {
   res.status(200).json({ success: true });
 });
 
-
-
-// Отримати кошик (тільки актуальні товари)
+// ✅ Отримати кошик
 app.get('/api/cart', (req, res) => {
   const now = Date.now();
   const maxAge = 1000 * 60 * 60; // 1 година
@@ -72,7 +69,7 @@ app.get('/api/cart', (req, res) => {
   res.json({ items: validItems });
 });
 
-// Видалити товар
+// ✅ Видалити товар
 app.post('/remove-from-cart', (req, res) => {
   const { productId } = req.body;
   if (!req.session.cart) return res.status(200).json({ success: true });
@@ -81,19 +78,19 @@ app.post('/remove-from-cart', (req, res) => {
   res.status(200).json({ success: true });
 });
 
-// Очистити кошик вручну (наприклад при зміні валюти)
+// ✅ Очистити кошик
 app.post('/clear-cart', (req, res) => {
   req.session.cart = [];
   req.session.cartCreatedAt = Date.now();
   res.json({ success: true });
 });
 
-// Checkout
+// ✅ Checkout (редирект)
 app.post('/checkout', (req, res) => {
   res.redirect("https://www.dundle.com/cart/");
 });
 
-// HTML сторінки
+// ✅ HTML-сторінки
 app.get('/cart', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'cart.html'));
 });
@@ -102,6 +99,7 @@ app.get('/:brand/:region?', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'product.html'));
 });
 
+// ✅ Запуск сервера
 app.listen(PORT, () => console.log(`✅ Server running at http://localhost:${PORT}`));
 
 
