@@ -103,3 +103,7 @@ app.get('/:brand/:region?', (req, res) => {
 app.listen(PORT, () => console.log(`✅ Server running at http://localhost:${PORT}`));
 
 
+// ✅ Запуск сервера
+app.listen(PORT, () => console.log(`✅ Server running at http://localhost:${PORT}`));
+
+
