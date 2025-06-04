@@ -61,8 +61,18 @@ app.get("/get-cart", (req, res) => {
 });
 
 // 💳 Перейти до оплати
+
+// 🧹 Очистити кошик
+app.post("/clear-cart", (req, res) => {
+  req.session.cart = [];
+  req.session.cartCreatedAt = Date.now();
+  req.session.save(() => {
+    res.json({ success: true });
+  });
+});
+
 app.post("/checkout", (req, res) => {
-  res.redirect("https://www.dundle.com/cart/");
+  res.redirect("/checkout.html");
 });
 
 // 🔽 Роутери
@@ -114,7 +124,3 @@ app.use("/api/popular-products", (req, res, next) => {
 }
 
 startServer();
-
-
-
-
