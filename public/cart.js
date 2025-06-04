@@ -9,7 +9,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   let currentCurrency = localStorage.getItem("currency") || "USD";
 
-  async function renderCart() {
+  
+async function renderCart() {
   try {
     const res = await fetch("/api/cart");
     const cart = await res.json();
@@ -98,7 +99,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           method: "POST"
         });
         if (response.ok) {
-          await renderCart();
+          await renderCart(); // 🔁 Оновлюємо без перезавантаження
         } else {
           alert("❌ Не вдалося видалити товар");
         }
@@ -110,8 +111,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 }
 
-  // ✅ Додавання товару в кошик
-  window.addToCart = async function ({ id, name, price, currencyCode, image }) {
+
+window.addToCart = async function ({ id, name, price, currencyCode, image }) {
     try {
       const response = await fetch("/add-to-cart", {
         method: "POST",
@@ -156,6 +157,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   await renderCart();
 });
+
+
+
 
 
 
