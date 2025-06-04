@@ -10,94 +10,105 @@ document.addEventListener("DOMContentLoaded", async () => {
   let currentCurrency = localStorage.getItem("currency") || "USD";
 
   async function renderCart() {
-    try {
-      const res = await fetch("/api/cart");
-      const cart = await res.json();
+  try {
+    const res = await fetch("/api/cart");
+    const cart = await res.json();
 
-      console.log("🛒 Усі товари в кошику:", cart.items);
+    console.log("🛒 Усі товари в кошику:", cart.items);
 
-      const now = Date.now();
-      const MAX_AGE = 1000 * 60 * 30; // 30 хв
+    const now = Date.now();
+    const MAX_AGE = 1000 * 60 * 30; // 30 хв
 
-      console.log("🎯 Перевірка умов:");
+    // 🧼 Перевірка на невалідні товари
+    const hasInvalidItems = cart.items.some(item =>
+      typeof item.price !== "number" || !item.currencyCode || !item.addedAt
+    );
 
-      const matchingItems = cart.items.filter(item => {
-        const isCurrencyOk = item.currencyCode === currentCurrency;
-        const isPriceOk = typeof item.price === "number";
-        const isRecent = now - (item.addedAt || 0) < MAX_AGE;
+    if (hasInvalidItems) {
+      console.warn("🧹 Виявлено невалідні товари — очищаємо сесію");
+      await fetch("/clear-cart", { method: "POST" });
+      return await renderCart(); // повторний виклик після очищення
+    }
 
-        if (!isCurrencyOk || !isPriceOk || !isRecent) {
-          console.warn("⛔ Відфільтровано товар:", {
-            name: item.name,
-            currencyCode: item.currencyCode,
-            expectedCurrency: currentCurrency,
-            price: item.price,
-            addedAt: item.addedAt,
-            reasons: {
-              currencyMatch: isCurrencyOk,
-              priceValid: isPriceOk,
-              timeValid: isRecent
-            }
-          });
-        }
+    console.log("🎯 Перевірка умов:");
 
-        return isCurrencyOk && isPriceOk && isRecent;
-      });
+    const matchingItems = cart.items.filter(item => {
+      const isCurrencyOk = item.currencyCode === currentCurrency;
+      const isPriceOk = typeof item.price === "number";
+      const isRecent = now - (item.addedAt || 0) < MAX_AGE;
 
-      if (!matchingItems.length) {
-        if (cart.items.length) {
-          emptyMsg.innerText = "У кошику є товари іншої валюти або протерміновані.";
-        } else {
-          emptyMsg.innerText = "Ваш кошик порожній.";
-        }
-        emptyMsg.style.display = "block";
-        cartItemsContainer.innerHTML = "";
-        totalDisplay.innerText = `${currencySymbols[currentCurrency] || "$"}0.00`;
-        return;
-      }
-
-      cartItemsContainer.innerHTML = "";
-      let total = 0;
-
-      matchingItems.forEach(item => {
-        const price = Number(item.price) || 0;
-        const quantity = item.quantity || 1;
-
-        const div = document.createElement("div");
-        div.className = "cart-item";
-        div.innerHTML = `
-          <img src="${item.image || '/default-image.png'}" alt="${item.name}" class="cart-item-img">
-          <div class="cart-item-details">
-            <strong>${item.name}</strong><br>
-            ${currencySymbols[item.currencyCode] || currentCurrency}${price.toFixed(2)} × ${quantity}
-          </div>
-          <button class="remove-btn" data-id="${item._id}">🗑️</button>
-        `;
-        cartItemsContainer.appendChild(div);
-
-        total += price * quantity;
-      });
-
-      totalDisplay.innerText = `${currencySymbols[currentCurrency]}${total.toFixed(2)}`;
-
-      document.querySelectorAll(".remove-btn").forEach(btn => {
-        btn.addEventListener("click", async (e) => {
-          const id = e.target.getAttribute("data-id");
-          const response = await fetch(`/remove-from-cart?id=${id}`, {
-            method: "POST"
-          });
-          if (response.ok) {
-            await renderCart(); // 🔁 Оновлюємо без перезавантаження
-          } else {
-            alert("❌ Не вдалося видалити товар");
+      if (!isCurrencyOk || !isPriceOk || !isRecent) {
+        console.warn("⛔ Відфільтровано товар:", {
+          name: item.name,
+          currencyCode: item.currencyCode,
+          expectedCurrency: currentCurrency,
+          price: item.price,
+          addedAt: item.addedAt,
+          reasons: {
+            currencyMatch: isCurrencyOk,
+            priceValid: isPriceOk,
+            timeValid: isRecent
           }
         });
-      });
+      }
 
-    } catch (err) {
-      console.error("❌ Помилка при відображенні кошика:", err);
+      return isCurrencyOk && isPriceOk && isRecent;
+    });
+
+    if (!matchingItems.length) {
+      if (cart.items.length) {
+        emptyMsg.innerText = "У кошику є товари іншої валюти або протерміновані.";
+      } else {
+        emptyMsg.innerText = "Ваш кошик порожній.";
+      }
+      emptyMsg.style.display = "block";
+      cartItemsContainer.innerHTML = "";
+      totalDisplay.innerText = `${currencySymbols[currentCurrency] || "$"}0.00`;
+      return;
     }
+
+    cartItemsContainer.innerHTML = "";
+    let total = 0;
+
+    matchingItems.forEach(item => {
+      const price = Number(item.price) || 0;
+      const quantity = item.quantity || 1;
+
+      const div = document.createElement("div");
+      div.className = "cart-item";
+      div.innerHTML = `
+        <img src="${item.image || '/default-image.png'}" alt="${item.name}" class="cart-item-img">
+        <div class="cart-item-details">
+          <strong>${item.name}</strong><br>
+          ${currencySymbols[item.currencyCode] || currentCurrency}${price.toFixed(2)} × ${quantity}
+        </div>
+        <button class="remove-btn" data-id="${item._id}">🗑️</button>
+      `;
+      cartItemsContainer.appendChild(div);
+
+      total += price * quantity;
+    });
+
+    totalDisplay.innerText = `${currencySymbols[currentCurrency]}${total.toFixed(2)}`;
+
+    document.querySelectorAll(".remove-btn").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        const id = e.target.getAttribute("data-id");
+        const response = await fetch(`/remove-from-cart?id=${id}`, {
+          method: "POST"
+        });
+        if (response.ok) {
+          await renderCart();
+        } else {
+          alert("❌ Не вдалося видалити товар");
+        }
+      });
+    });
+
+  } catch (err) {
+    console.error("❌ Помилка при відображенні кошика:", err);
   }
+}
 
   // ✅ Додавання товару в кошик
   window.addToCart = async function ({ id, name, price, currencyCode, image }) {
