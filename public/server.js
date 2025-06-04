@@ -8,10 +8,11 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// 🛠 Виправлена конфігурація сесії
 app.use(session({
   secret: 'yourSecretKey',
   resave: false,
-  saveUninitialized: true,
+  saveUninitialized: false,
   cookie: { sameSite: 'lax', secure: false }
 }));
 
@@ -23,12 +24,10 @@ const CART_TIMEOUT_MINUTES = 30;
 app.post('/add-to-cart', (req, res) => {
   const product = req.body;
 
-  // 🔍 Логи для дебагу
   console.log("📩 PRODUCT BODY:", product);
   console.log("➡ typeof price:", typeof product.price);
   console.log("➡ typeof currencyCode:", typeof product.currencyCode);
 
-  // 🛠 Гарантії
   product.price = Number(product.price) || 0;
   product.currencyCode = product.currencyCode || 'USD';
 
@@ -55,7 +54,9 @@ app.post('/add-to-cart', (req, res) => {
   }
 
   req.session.cart.push(product);
-  res.status(200).json({ success: true });
+  req.session.save(() => {
+    res.status(200).json({ success: true });
+  });
 });
 
 // ✅ Отримати кошик
@@ -75,22 +76,26 @@ app.post('/remove-from-cart', (req, res) => {
   if (!req.session.cart) return res.status(200).json({ success: true });
 
   req.session.cart = req.session.cart.filter(p => p._id !== productId);
-  res.status(200).json({ success: true });
+  req.session.save(() => {
+    res.status(200).json({ success: true });
+  });
 });
 
 // ✅ Очистити кошик
 app.post('/clear-cart', (req, res) => {
   req.session.cart = [];
   req.session.cartCreatedAt = Date.now();
-  res.json({ success: true });
+  req.session.save(() => {
+    res.json({ success: true });
+  });
 });
 
-// ✅ Checkout (редирект)
+// ✅ Checkout
 app.post('/checkout', (req, res) => {
   res.redirect("https://www.dundle.com/cart/");
 });
 
-// ✅ HTML-сторінки
+// ✅ HTML сторінки
 app.get('/cart', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'cart.html'));
 });
@@ -99,11 +104,6 @@ app.get('/:brand/:region?', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'product.html'));
 });
 
-// ✅ Запуск сервера
-app.listen(PORT, () => console.log(`✅ Server running at http://localhost:${PORT}`));
-
-
-// ✅ Запуск сервера
 app.listen(PORT, () => console.log(`✅ Server running at http://localhost:${PORT}`));
 
 
