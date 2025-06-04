@@ -103,6 +103,11 @@ app.get('/cart', (req, res) => {
 app.get('/:brand/:region?', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'product.html'));
 });
+app._router.stack.forEach(r => {
+  if (r.route) {
+    console.log("✅ ROUTE:", r.route.path);
+  }
+});
 
 app.listen(PORT, () => console.log(`✅ Server running at http://localhost:${PORT}`));
 
