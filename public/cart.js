@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   let currentCurrency = localStorage.getItem("currency") || "USD";
+  let isClearing = false;
 
   
 async function renderCart() {
@@ -26,15 +27,18 @@ async function renderCart() {
   return;
 }
 
-const hasInvalidItems = cart.items.some(item => ...)
-      typeof item.price !== "number" || !item.currencyCode || !item.addedAt
-    );
+const hasInvalidItems = cart.items.some(item =>
+  typeof item.price !== "number" || !item.currencyCode || !item.addedAt
+);
 
-    if (hasInvalidItems) {
-      console.warn("🧹 Виявлено невалідні товари — очищаємо сесію");
-      await fetch("/clear-cart", { method: "POST" });
-      return await renderCart(); // повторний виклик після очищення
-    }
+if (hasInvalidItems) {
+  if (isClearing) return; // запобігаємо повторному виклику
+  console.warn("🧹 Виявлено невалідні товари — очищаємо сесію");
+  isClearing = true;
+  await fetch("/clear-cart", { method: "POST" });
+  isClearing = false;
+  return await renderCart();
+}
 
     console.log("🎯 Перевірка умов:");
 
