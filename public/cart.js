@@ -21,7 +21,12 @@ async function renderCart() {
     const MAX_AGE = 1000 * 60 * 30; // 30 хв
 
     // 🧼 Перевірка на невалідні товари
-    const hasInvalidItems = cart.items.some(item =>
+   if (!cart.items || !Array.isArray(cart.items)) {
+  console.error("❌ Некоректна відповідь від API /api/cart:", cart);
+  return;
+}
+
+const hasInvalidItems = cart.items.some(item => ...)
       typeof item.price !== "number" || !item.currencyCode || !item.addedAt
     );
 
