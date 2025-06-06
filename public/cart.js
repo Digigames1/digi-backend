@@ -35,8 +35,13 @@ if (hasInvalidItems) {
   if (isClearing) return; // запобігаємо повторному виклику
   console.warn("🧹 Виявлено невалідні товари — очищаємо сесію");
   isClearing = true;
+try {
   await fetch("/clear-cart", { method: "POST" });
+} finally {
   isClearing = false;
+}
+return await renderCart();
+
   return await renderCart();
 }
 
