@@ -15,27 +15,19 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({
-    mongoUrl: process.env.DB_URL, // 🔁 тут замість MONGO_URL
+    mongoUrl: process.env.DB_URL,
     dbName: "digi",
     collectionName: "sessions"
   }),
   cookie: {
-  httpOnly: true,
-  secure: false, // ⬅️ важливо! тимчасово вимикаємо
-  sameSite: "lax",
-  maxAge: 1000 * 60 * 60 * 2
-}
+    httpOnly: true,
+    secure: false,
+    sameSite: "lax",
+    maxAge: 1000 * 60 * 60 * 2
+  }
 }));
 
 app.use(morgan("dev"));
-
-app.use(session({
-  secret: "yourSuperSecretKey",
-  resave: false,
-  saveUninitialized: true
-}));
-
-// 🔽 Статичні файли
 app.use(express.static(path.join(__dirname, "public")));
 
 // 🛒 Додати товар до корзини
@@ -52,7 +44,9 @@ app.post("/add-to-cart", (req, res) => {
 
   req.session.cart.push(product);
   console.log("🛒 Додано в корзину:", product);
-  res.status(200).json({ success: true });
+  req.session.save(() => {
+    res.status(200).json({ success: true });
+  });
 });
 
 // 📦 Отримати корзину
@@ -60,17 +54,20 @@ app.get("/get-cart", (req, res) => {
   res.json(req.session.cart || []);
 });
 
-// 💳 Перейти до оплати
-
 // 🧹 Очистити кошик
 app.post("/clear-cart", (req, res) => {
   req.session.cart = [];
   req.session.cartCreatedAt = Date.now();
-  req.session.save(() => {
+  req.session.save(err => {
+    if (err) {
+      console.error("❌ Помилка збереження сесії:", err);
+      return res.status(500).json({ error: "Session save failed" });
+    }
     res.json({ success: true });
   });
 });
 
+// 💳 Перейти до оплати
 app.post("/checkout", (req, res) => {
   res.redirect("/checkout.html");
 });
@@ -80,7 +77,8 @@ const orderRouter = require("./routers/order");
 const adminRouter = require("./routers/admin");
 const productsRouter = require("./routers/products");
 const bambooRouter = require("./routers/bamboo");
-const productPageRouter = require("./routers/productPage"); // 🆕
+const productPageRouter = require("./routers/productPage");
+const popularRouter = require("./routers/popular");
 
 const client = new MongoClient(process.env.DB_URL);
 let db;
@@ -91,25 +89,17 @@ async function startServer() {
     db = client.db("digi");
     console.log("✅ Connected to MongoDB");
 
-    // 🔽 API
     app.use("/api/order", (req, res, next) => { req.db = db; next(); }, orderRouter);
     app.use("/api/admin", (req, res, next) => { req.db = db; next(); }, adminRouter);
     app.use("/api/products", productsRouter);
     app.use("/api/bamboo", bambooRouter);
-    // 🔥 Popular products
-const popularRouter = require("./routers/popular");
-app.use("/api/popular-products", (req, res, next) => {
-  req.db = db;
-  next();
-}, popularRouter);
-    app.use("/", productPageRouter); // 🧭 API для динамічних категорій і підкатегорій
+    app.use("/api/popular-products", (req, res, next) => { req.db = db; next(); }, popularRouter);
+    app.use("/", productPageRouter);
 
-    // 🏠 Головна сторінка
     app.get("/", (req, res) => {
       res.sendFile(path.join(__dirname, "public", "index.html"));
     });
 
-    // 🧭 Фронт (HTML) — динамічні сторінки
     app.get("/:brand/:region?", (req, res) => {
       res.sendFile(path.join(__dirname, "public", "product.html"));
     });
