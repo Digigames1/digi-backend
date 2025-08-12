@@ -41,8 +41,6 @@ try {
   isClearing = false;
 }
 return await renderCart();
-
-  return await renderCart();
 }
 
     console.log("🎯 Перевірка умов:");
