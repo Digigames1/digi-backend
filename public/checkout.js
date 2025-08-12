@@ -1,15 +1,16 @@
 document.addEventListener("DOMContentLoaded", async () => {
-  const res = await fetch('/get-cart');
-  const cart = await res.json();
+  const res = await fetch('/api/cart');
+  const cartData = await res.json();
+  const items = cartData.items || [];
   const container = document.getElementById("checkoutProduct");
 
-  if (!cart || cart.length === 0) {
+  if (!items.length) {
     container.innerHTML = "<p>Корзина порожня.</p>";
     document.getElementById("checkoutForm").style.display = "none";
     return;
   }
 
-  const product = cart[cart.length - 1];
+  const product = items[items.length - 1];
 
   container.innerHTML = `
     <div style="text-align:center;">
