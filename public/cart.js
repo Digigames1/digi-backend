@@ -109,8 +109,10 @@ return await renderCart();
     document.querySelectorAll(".remove-btn").forEach(btn => {
       btn.addEventListener("click", async (e) => {
         const id = e.target.getAttribute("data-id");
-        const response = await fetch(`/remove-from-cart?id=${id}`, {
-          method: "POST"
+        const response = await fetch('/remove-from-cart', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ productId: id })
         });
         if (response.ok) {
           await renderCart(); // 🔁 Оновлюємо без перезавантаження

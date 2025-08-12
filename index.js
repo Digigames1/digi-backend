@@ -49,6 +49,31 @@ app.post("/add-to-cart", (req, res) => {
   });
 });
 
+// ❌ Видалити товар з корзини
+app.post("/remove-from-cart", (req, res) => {
+  const { productId } = req.body;
+
+  if (!productId) {
+    return res.status(400).json({ error: "Product ID is required" });
+  }
+
+  if (!req.session.cart) {
+    req.session.cart = [];
+  }
+
+  req.session.cart = req.session.cart.filter(
+    item => item.id !== productId && item._id !== productId
+  );
+
+  req.session.save(err => {
+    if (err) {
+      console.error("❌ Помилка збереження сесії:", err);
+      return res.status(500).json({ error: "Session save failed" });
+    }
+    res.json({ success: true });
+  });
+});
+
 // 📦 Отримати корзину
 app.get("/get-cart", (req, res) => {
   res.json(req.session.cart || []);
