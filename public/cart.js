@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   
 async function renderCart() {
   try {
-    const res = await fetch("/api/cart");
+    const res = await fetch("/api/cart", { credentials: "include" });
     const cart = await res.json();
 
     console.log("🛒 Усі товари в кошику:", cart.items);
@@ -110,7 +110,8 @@ return await renderCart();
       btn.addEventListener("click", async (e) => {
         const id = e.target.getAttribute("data-id");
         const response = await fetch(`/remove-from-cart?id=${id}`, {
-          method: "POST"
+          method: "POST",
+          credentials: "include"
         });
         if (response.ok) {
           await renderCart(); // 🔁 Оновлюємо без перезавантаження
@@ -133,6 +134,7 @@ window.addToCart = async function ({ id, name, price, currencyCode, image }) {
         headers: {
           "Content-Type": "application/json"
         },
+        credentials: "include",
         body: JSON.stringify({
           id,
           name,
