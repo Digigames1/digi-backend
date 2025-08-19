@@ -31,15 +31,32 @@ app.use(morgan("dev"));
 app.use(express.static(path.join(__dirname, "public")));
 
 // 🛒 Додати товар до корзини
+const CART_TIMEOUT_MINUTES = 30;
 app.post("/add-to-cart", (req, res) => {
-  const { product } = req.body;
+  const product = req.body.product || req.body;
 
-  if (!product || !product.id || !product.name || !product.price) {
+  product.price = Number(product.price) || 0;
+  product.currencyCode = product.currencyCode || "USD";
+
+  if (!product || !product.id || product.price === 0 || !product.currencyCode) {
     return res.status(400).json({ error: "Invalid product format" });
   }
 
+  if (!product.addedAt) {
+    product.addedAt = Date.now();
+  }
+
+  product._id = product._id || `${product.id}-${Date.now()}`;
+
   if (!req.session.cart) {
     req.session.cart = [];
+    req.session.cartCreatedAt = Date.now();
+  }
+
+  const now = Date.now();
+  if (now - (req.session.cartCreatedAt || 0) > CART_TIMEOUT_MINUTES * 60 * 1000) {
+    req.session.cart = [];
+    req.session.cartCreatedAt = now;
   }
 
   req.session.cart.push(product);
@@ -50,8 +67,32 @@ app.post("/add-to-cart", (req, res) => {
 });
 
 // 📦 Отримати корзину
+function getCartItems(session) {
+  const now = Date.now();
+  const maxAge = 1000 * 60 * 60; // 1 година
+  const allItems = session.cart || [];
+  return allItems.filter(item => now - (item.addedAt || 0) < maxAge);
+}
+
+app.get("/api/cart", (req, res) => {
+  res.json({ items: getCartItems(req.session) });
+});
+
 app.get("/get-cart", (req, res) => {
-  res.json(req.session.cart || []);
+  res.json(getCartItems(req.session));
+});
+
+// ❌ Видалити товар з кошика
+app.post("/remove-from-cart", (req, res) => {
+  const id = req.query.id || req.body.productId || req.body.id;
+  if (!req.session.cart) {
+    return res.json({ success: true });
+  }
+
+  req.session.cart = req.session.cart.filter(p => p._id !== id && p.id !== id);
+  req.session.save(() => {
+    res.json({ success: true });
+  });
 });
 
 // 🧹 Очистити кошик
