@@ -6,9 +6,36 @@ document.addEventListener("DOMContentLoaded", async () => {
   const currencySymbols = {
     USD: "$", EUR: "€", UAH: "₴", PLN: "zł", AUD: "A$", CAD: "C$",
   };
-
+  let rates = { USD: 1 };
   let currentCurrency = localStorage.getItem("currency") || "USD";
   let isClearing = false;
+
+  async function loadRates() {
+    try {
+      const res = await fetch("https://api.frankfurter.app/latest?from=USD&to=EUR,UAH,PLN,AUD,CAD");
+      const data = await res.json();
+      if (!data.rates) throw new Error("Курси не знайдено у відповіді");
+      rates = { USD: 1, ...data.rates };
+      if (!rates.UAH) {
+        rates.UAH = 39; // fallback курс
+      }
+      console.log("💱 Курси:", rates);
+    } catch (err) {
+      console.error("Помилка завантаження курсів:", err);
+      rates = { USD: 1, UAH: 39 }; // повний fallback
+    }
+  }
+
+  function convertPrice(usd, toCurrency) {
+    const rate = rates[toCurrency] || 1;
+    const symbol = currencySymbols[toCurrency] || "$";
+    return `${symbol}${(usd * rate).toFixed(2)}`;
+  }
+
+  function toUSD(amount, fromCurrency) {
+    const rate = rates[fromCurrency] || 1;
+    return amount / rate;
+  }
 
   
 async function renderCart() {
@@ -22,57 +49,50 @@ async function renderCart() {
     const MAX_AGE = 1000 * 60 * 30; // 30 хв
 
     // 🧼 Перевірка на невалідні товари
-   if (!cart.items || !Array.isArray(cart.items)) {
-  console.error("❌ Некоректна відповідь від API /api/cart:", cart);
-  return;
-}
+    if (!cart.items || !Array.isArray(cart.items)) {
+      console.error("❌ Некоректна відповідь від API /api/cart:", cart);
+      return;
+    }
 
-const hasInvalidItems = cart.items.some(item =>
-  typeof item.price !== "number" || !item.currencyCode || !item.addedAt
-);
+    const hasInvalidItems = cart.items.some(item =>
+      typeof item.price !== "number" || !item.currencyCode || !item.addedAt
+    );
 
-if (hasInvalidItems) {
-  if (isClearing) return; // запобігаємо повторному виклику
-  console.warn("🧹 Виявлено невалідні товари — очищаємо сесію");
-  isClearing = true;
-try {
-  await fetch("/clear-cart", { method: "POST" });
-} finally {
-  isClearing = false;
-}
-return await renderCart();
+    if (hasInvalidItems) {
+      if (isClearing) return; // запобігаємо повторному виклику
+      console.warn("🧹 Виявлено невалідні товари — очищаємо сесію");
+      isClearing = true;
+      try {
+        await fetch("/clear-cart", { method: "POST" });
+      } finally {
+        isClearing = false;
+      }
+      return await renderCart();
+    }
 
-  return await renderCart();
-}
-
-    console.log("🎯 Перевірка умов:");
-
-    const matchingItems = cart.items.filter(item => {
-      const isCurrencyOk = item.currencyCode === currentCurrency;
+    const validItems = cart.items.filter(item => {
       const isPriceOk = typeof item.price === "number";
       const isRecent = now - (item.addedAt || 0) < MAX_AGE;
 
-      if (!isCurrencyOk || !isPriceOk || !isRecent) {
+      if (!isPriceOk || !isRecent) {
         console.warn("⛔ Відфільтровано товар:", {
           name: item.name,
           currencyCode: item.currencyCode,
-          expectedCurrency: currentCurrency,
           price: item.price,
           addedAt: item.addedAt,
           reasons: {
-            currencyMatch: isCurrencyOk,
             priceValid: isPriceOk,
             timeValid: isRecent
           }
         });
       }
 
-      return isCurrencyOk && isPriceOk && isRecent;
+      return isPriceOk && isRecent;
     });
 
-    if (!matchingItems.length) {
+    if (!validItems.length) {
       if (cart.items.length) {
-        emptyMsg.innerText = "У кошику є товари іншої валюти або протерміновані.";
+        emptyMsg.innerText = "У кошику є протерміновані або некоректні товари.";
       } else {
         emptyMsg.innerText = "Ваш кошик порожній.";
       }
@@ -83,10 +103,10 @@ return await renderCart();
     }
 
     cartItemsContainer.innerHTML = "";
-    let total = 0;
+    let totalUSD = 0;
 
-    matchingItems.forEach(item => {
-      const price = Number(item.price) || 0;
+    validItems.forEach(item => {
+      const usdPrice = Number(item.price) || 0;
       const quantity = item.quantity || 1;
 
       const div = document.createElement("div");
@@ -95,16 +115,16 @@ return await renderCart();
         <img src="${item.image || '/default-image.png'}" alt="${item.name}" class="cart-item-img">
         <div class="cart-item-details">
           <strong>${item.name}</strong><br>
-          ${currencySymbols[item.currencyCode] || currentCurrency}${price.toFixed(2)} × ${quantity}
+          ${convertPrice(usdPrice, currentCurrency)} × ${quantity}
         </div>
         <button class="remove-btn" data-id="${item._id}">🗑️</button>
       `;
       cartItemsContainer.appendChild(div);
 
-      total += price * quantity;
+      totalUSD += usdPrice * quantity;
     });
 
-    totalDisplay.innerText = `${currencySymbols[currentCurrency]}${total.toFixed(2)}`;
+    totalDisplay.innerText = convertPrice(totalUSD, currentCurrency);
 
     document.querySelectorAll(".remove-btn").forEach(btn => {
       btn.addEventListener("click", async (e) => {
@@ -128,6 +148,8 @@ return await renderCart();
 
 window.addToCart = async function ({ id, name, price, currencyCode, image }) {
     try {
+      const originalCurrency = currencyCode || localStorage.getItem("currency") || "USD";
+      const priceUSD = toUSD(Number(price) || 0, originalCurrency);
       const response = await fetch("/add-to-cart", {
         method: "POST",
         headers: {
@@ -136,8 +158,8 @@ window.addToCart = async function ({ id, name, price, currencyCode, image }) {
         body: JSON.stringify({
           id,
           name,
-          price,
-          currencyCode: currencyCode || localStorage.getItem("currency") || "USD",
+          price: priceUSD,
+          currencyCode: originalCurrency,
           image,
           quantity: 1,
           addedAt: Date.now()
@@ -169,6 +191,7 @@ window.addToCart = async function ({ id, name, price, currencyCode, image }) {
   }
 });
 
+  await loadRates();
   await renderCart();
 });
 
