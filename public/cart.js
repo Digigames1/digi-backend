@@ -2,6 +2,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const cartItemsContainer = document.getElementById("cart-items");
   const totalDisplay = document.getElementById("cart-total");
   const emptyMsg = document.getElementById("empty-cart-message");
+  const checkoutBtn = document.getElementById("checkout-button");
 
   const currencySymbols = {
     USD: "$", EUR: "€", UAH: "₴", PLN: "zł", AUD: "A$", CAD: "C$",
@@ -79,6 +80,9 @@ return await renderCart();
       emptyMsg.style.display = "block";
       cartItemsContainer.innerHTML = "";
       totalDisplay.innerText = `${currencySymbols[currentCurrency] || "$"}0.00`;
+      if (checkoutBtn) {
+        checkoutBtn.disabled = true;
+      }
       return;
     }
 
@@ -105,6 +109,9 @@ return await renderCart();
     });
 
     totalDisplay.innerText = `${currencySymbols[currentCurrency]}${total.toFixed(2)}`;
+    if (checkoutBtn) {
+      checkoutBtn.disabled = false;
+    }
 
     document.querySelectorAll(".remove-btn").forEach(btn => {
       btn.addEventListener("click", async (e) => {
