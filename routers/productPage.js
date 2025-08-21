@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const axios = require("axios");
+const { addMarginToPrices } = require("../utils/priceMargin");
 
 const {
   BAMBOO_CLIENT_ID,
@@ -44,7 +45,8 @@ router.get("/api/:brand/:region?", async (req, res) => {
     });
 
     console.log("✅ Received Bamboo data. Count:", response.data.count);
-    res.json(response.data);
+    const dataWithMargin = addMarginToPrices(response.data);
+    res.json(dataWithMargin);
   } catch (error) {
     const err = error.response?.data || error.message;
     console.error("❌ Dynamic route error:", err);
@@ -81,7 +83,8 @@ router.get("/api/search", async (req, res) => {
     });
 
     console.log(`✅ Received Bamboo data. Count: ${response.data.count}`);
-    res.json(response.data);
+    const dataWithMargin = addMarginToPrices(response.data);
+    res.json(dataWithMargin);
   } catch (error) {
     const err = error.response?.data || error.message;
     console.error("❌ Search route error:", err);

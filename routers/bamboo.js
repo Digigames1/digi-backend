@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const axios = require("axios");
+const { addMarginToPrices } = require("../utils/priceMargin");
 
 const {
   BAMBOO_PROD_CLIENT_ID,
@@ -27,7 +28,8 @@ router.get("/", async (req, res) => {
 
     console.log("✅ Bamboo production catalog items:", response.data?.items?.length || 0);
 
-    res.json(response.data);
+    const dataWithMargin = addMarginToPrices(response.data);
+    res.json(dataWithMargin);
   } catch (error) {
     const err = error.response?.data || error.message;
     console.error("❌ Bamboo PRODUCTION fetch error:", err);
