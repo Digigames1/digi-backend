@@ -1,6 +1,7 @@
 const express = require("express");
 const axios = require("axios");
 const crypto = require("crypto");
+const { addMarginToPrices } = require("../utils/priceMargin");
 
 const router = express.Router();
 
@@ -61,7 +62,8 @@ router.get("/", async (req, res) => {
       }
     );
 
-    res.json(response.data);
+    const dataWithMargin = addMarginToPrices(response.data);
+    res.json(dataWithMargin);
   } catch (error) {
     const errRes = error.response?.data || error.message;
     console.error("❌ Auth or fetch error:", errRes);
