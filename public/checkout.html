@@ -106,13 +106,29 @@
 
           const result = await res.json();
 
-          if (res.ok && result.orderId) {
-            document.querySelector("main").innerHTML = `
-              <h1>✅ Дякуємо!</h1>
-              <p>Ваше замовлення прийнято.</p>
-              <p><strong>Order ID:</strong> ${result.orderId}</p>
-            `;
+          if (res.ok && result.liqpay) {
+            // Видаляємо суму з сесії та переходимо до LiqPay
             sessionStorage.removeItem("cartTotal");
+
+            const form = document.createElement("form");
+            form.method = "POST";
+            form.action = "https://www.liqpay.ua/api/3/checkout";
+            form.acceptCharset = "utf-8";
+
+            const dataInput = document.createElement("input");
+            dataInput.type = "hidden";
+            dataInput.name = "data";
+            dataInput.value = result.liqpay.data;
+            form.appendChild(dataInput);
+
+            const signatureInput = document.createElement("input");
+            signatureInput.type = "hidden";
+            signatureInput.name = "signature";
+            signatureInput.value = result.liqpay.signature;
+            form.appendChild(signatureInput);
+
+            document.body.appendChild(form);
+            form.submit();
           } else {
             alert("❌ Помилка створення замовлення");
           }
