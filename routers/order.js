@@ -95,7 +95,8 @@ router.post("/", async (req, res) => {
       currency: "USD",
       description: `Purchase ${name}`,
       order_id: orderId,
-      server_url: `${serverUrl}/api/order/liqpay-callback`
+      server_url: `${serverUrl}/api/order/liqpay-callback`,
+      result_url: `${serverUrl}/order-success.html`
     };
 
     const liqpay = createLiqPayData(params);
