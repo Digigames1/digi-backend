@@ -208,7 +208,7 @@ footer {
   }
 
   .card-row .card {
-    background: white;
+    background: var(--color-secondary);
     color: black;
     padding: 1rem;
     border-radius: 10px;
