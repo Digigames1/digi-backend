@@ -18,32 +18,32 @@
         <button type="submit">🔍</button>
       </form>
 
+      <div class="locale-selectors">
+        <select id="langSelector">
+          <option value="uk">Українська</option>
+          <option value="en">English</option>
+        </select>
+        <select id="currencySelector">
+          <option value="USD">$ USD</option>
+          <option value="EUR">€ EUR</option>
+          <option value="UAH">₴ UAH</option>
+          <option value="PLN">zł PLN</option>
+          <option value="AUD">A$ AUD</option>
+          <option value="CAD">C$ CAD</option>
+        </select>
+      </div>
+
       <a href="/cart.html" class="cart-button">
         <img src="/icons/cart-background-header.svg" alt="Cart" class="cart-icon" />
       </a>
-
-      <select id="langSelector" style="margin-left: 1rem;">
-        <option value="uk">Українська</option>
-        <option value="en">English</option>
-      </select>
-     <!-- 🟪 🆕 Валюта -->
-      <select id="currencySelector" style="margin-left: 1rem;">
-        <option value="USD">$ USD</option>
-        <option value="EUR">€ EUR</option>
-        <option value="UAH">₴ UAH</option>
-        <option value="PLN">zł PLN</option>
-        <option value="AUD">A$ AUD</option>
-        <option value="CAD">C$ CAD</option>
-      </select>
     </div>
   </header>
 
-  <!-- 🔽 Меню навігації по категоріях -->
-  <div class="menu-bar">
-    <!-- Gift Cards -->
-    <div class="dropdown">
-      <button class="dropbtn" onclick="toggleMenu('menu-gift')">🎁 Gift Cards</button>
-      <div class="dropdown-content" id="menu-gift">
+  <!-- 🔽 Категорії -->
+  <nav class="mega-menu">
+    <div class="menu-item">
+      <span class="menu-title">🎁 Gift Cards</span>
+      <div class="mega-content">
         <a href="/playstation">Playstation</a>
         <a href="/steam">Steam</a>
         <a href="/xbox">Xbox</a>
@@ -53,28 +53,24 @@
         <a href="/nintendo">Nintendo</a>
       </div>
     </div>
-
-    <!-- Game Cards -->
-    <div class="dropdown">
-      <button class="dropbtn" onclick="toggleMenu('menu-gamecards')">🎮 Game Cards</button>
-      <div class="dropdown-content" id="menu-gamecards">
+    <div class="menu-item">
+      <span class="menu-title">🎮 Game Cards</span>
+      <div class="mega-content">
         <a href="/fortnite">Fortnite</a>
         <a href="/pubg">PUBG</a>
         <a href="/google">Google Play</a>
         <a href="/nintendo">Nintendo</a>
       </div>
     </div>
-
-    <!-- Games -->
-    <div class="dropdown">
-      <button class="dropbtn" onclick="toggleMenu('menu-games')">🕹️ Games</button>
-      <div class="dropdown-content" id="menu-games">
+    <div class="menu-item">
+      <span class="menu-title">🕹️ Games</span>
+      <div class="mega-content">
         <a href="/minecraft">Minecraft</a>
         <a href="/valorant">Valorant</a>
         <a href="/apex">Apex Legends</a>
       </div>
     </div>
-  </div>
+  </nav>
 
   <main class="container">
     <!-- Benefits image -->
@@ -150,23 +146,6 @@
       });
     })
     .catch(err => console.error("❌ Failed to load popular:", err));
-
-  // 🎯 Дропдаун-меню
-  function toggleMenu(id) {
-    document.querySelectorAll(".dropdown-content").forEach(menu => {
-      if (menu.id === id) {
-        menu.classList.toggle("show");
-      } else {
-        menu.classList.remove("show");
-      }
-    });
-  }
-
-  window.addEventListener("click", function(e) {
-    if (!e.target.matches(".dropbtn")) {
-      document.querySelectorAll(".dropdown-content").forEach(menu => menu.style.display = "none");
-    }
-  });
 </script>
 </body>
 </html>

@@ -69,6 +69,19 @@ body {
   font-size: 1rem;
 }
 
+.locale-selectors {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-left: 1rem;
+}
+
+.locale-selectors select {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
 main {
   margin-top: 2rem;
 }
@@ -222,22 +235,8 @@ footer {
   transition: transform 0.3s ease;
 }
 
-/* 📦 Анімація для dropdown-content */
-.dropdown-content {
-  transition: all 0.3s ease;
-  opacity: 0;
-  transform: translateY(-10px);
-  pointer-events: none;
-}
-
-.dropdown-content.show {
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
-}
-
-/* Меню бар */
-.menu-bar {
+/* Мега-меню */
+.mega-menu {
   text-align: center;
   margin-top: 1rem;
   display: flex;
@@ -246,11 +245,11 @@ footer {
   flex-wrap: wrap;
 }
 
-.dropdown {
+.menu-item {
   position: relative;
 }
 
-.dropbtn {
+.menu-title {
   background-color: #543885;
   color: white;
   border: none;
@@ -258,9 +257,10 @@ footer {
   border-radius: 6px;
   cursor: pointer;
   font-weight: bold;
+  display: inline-block;
 }
 
-.dropdown-content {
+.mega-content {
   display: none;
   position: absolute;
   top: 100%;
@@ -273,7 +273,11 @@ footer {
   z-index: 1000;
 }
 
-.dropdown-content a {
+.menu-item:hover .mega-content {
+  display: block;
+}
+
+.mega-content a {
   display: block;
   padding: 0.5rem 0;
   text-decoration: none;
@@ -281,11 +285,19 @@ footer {
   font-weight: 500;
 }
 
-.dropdown-content a:hover {
+.mega-content a:hover {
   color: #543885;
 }
-.dropdown-content.show {
-  display: block;
+
+@media (max-width: 600px) {
+  .mega-menu {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .mega-content {
+    position: static;
+  }
 }
 .hero-banner {
   text-align: center;
