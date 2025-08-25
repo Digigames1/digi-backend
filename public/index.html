@@ -85,11 +85,36 @@
     <section class="section">
       <h2 class="section-title">🔥 Best Sellers</h2>
       <div class="card-row">
-        <div class="card"><img src="/icons/apple.png" alt=""><div>Apple Gift Card</div></div>
-        <div class="card"><img src="/icons/netflix.png" alt=""><div>Netflix</div></div>
-        <div class="card"><img src="/icons/roblox.png" alt=""><div>Roblox</div></div>
-         <div class="card"><img src="/icons/steam.png" alt=""><div>Steam</div></div>
-        <div class="card"><img src="/icons/playstation.png" alt=""><div>Playstation</div></div>
+        <a class="card" href="/apple">
+          <img src="/icons/apple.png" alt="" />
+          <div class="card-name">Apple Gift Card</div>
+          <div class="price-badge">$0.00</div>
+          <button class="buy-button" type="button">Buy</button>
+        </a>
+        <a class="card" href="/netflix">
+          <img src="/icons/netflix.png" alt="" />
+          <div class="card-name">Netflix</div>
+          <div class="price-badge">$0.00</div>
+          <button class="buy-button" type="button">Buy</button>
+        </a>
+        <a class="card" href="/roblox">
+          <img src="/icons/roblox.png" alt="" />
+          <div class="card-name">Roblox</div>
+          <div class="price-badge">$0.00</div>
+          <button class="buy-button" type="button">Buy</button>
+        </a>
+        <a class="card" href="/steam">
+          <img src="/icons/steam.png" alt="" />
+          <div class="card-name">Steam</div>
+          <div class="price-badge">$0.00</div>
+          <button class="buy-button" type="button">Buy</button>
+        </a>
+        <a class="card" href="/playstation">
+          <img src="/icons/playstation.png" alt="" />
+          <div class="card-name">Playstation</div>
+          <div class="price-badge">$0.00</div>
+          <button class="buy-button" type="button">Buy</button>
+        </a>
       </div>
     </section>
 
@@ -144,7 +169,9 @@
         card.href = `/${item.id}`;
         card.innerHTML = `
           <img src="${item.image}" alt="${item.name}">
-          <span>${item.name}</span>
+          <div class="card-name">${item.name}</div>
+          <div class="price-badge">$0.00</div>
+          <button class="buy-button" type="button">Buy</button>
         `;
         container.appendChild(card);
       });

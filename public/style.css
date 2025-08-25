@@ -188,39 +188,84 @@ footer {
   box-shadow: 0 2px 10px rgba(0,0,0,0.06);
 }
 
-.card-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  justify-content: center;
-}
+  .card-row {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(2, 1fr);
+    justify-items: center;
+  }
 
-.card-row .card {
-  background: white;
-  color: black;
-  padding: 0.5rem;
-  border-radius: 10px;
-  text-align: center;
-  flex: 0 1 150px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  transition: transform 0.2s ease;
-}
+  @media (min-width: 768px) {
+    .card-row {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
 
-.card-row .card:hover {
-  transform: translateY(-5px);
-}
+  @media (min-width: 1024px) {
+    .card-row {
+      grid-template-columns: repeat(5, 1fr);
+    }
+  }
 
-.card-row .card img {
-  max-width: 50px;
-  margin-bottom: 0.3rem;
-}
+  .card-row .card {
+    background: white;
+    color: black;
+    padding: 1rem;
+    border-radius: 10px;
+    text-align: center;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
 
-/* 🎨 Hover ефект для category-card і card-row карток */
-.category-card:hover img,
-.card-row .card:hover img {
-  transform: scale(1.05);
-  transition: transform 0.3s ease;
-}
+  .card-row .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+  }
+
+  .card-row .card img {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 0.5rem;
+  }
+
+  .price-badge {
+    background: #6a0dad;
+    color: #fff;
+    padding: 0.25rem 0.5rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    margin: 0.4rem 0;
+    display: inline-block;
+  }
+
+  .buy-button {
+    background: #00b894;
+    color: #fff;
+    border: none;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(5px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  .card-row .card:hover .buy-button {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* 🎨 Hover ефект для category-card і card-row карток */
+  .category-card:hover img,
+  .card-row .card:hover img {
+    transform: scale(1.05);
+    transition: transform 0.3s ease;
+  }
 
 /* 📦 Анімація для dropdown-content */
 .dropdown-content {
