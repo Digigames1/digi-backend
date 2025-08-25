@@ -77,10 +77,21 @@
   </div>
 
   <main class="container">
-    <!-- Benefits image -->
-    <div class="hero-banner">
-  <img src="/icons/newbanner.png" alt="Fast, Secure, Trusted" />
-</div>
+    <!-- Promotional slider -->
+    <div class="hero-slider">
+      <div class="slides">
+        <div class="slide active"><img src="/icons/newbanner.png" alt="Fast, Secure, Trusted" /></div>
+        <div class="slide"><img src="/icons/benefits.png" alt="Best Deals" /></div>
+        <div class="slide"><img src="/icons/logo2.png" alt="Great Selection" /></div>
+      </div>
+      <button class="slider-control prev">&#10094;</button>
+      <button class="slider-control next">&#10095;</button>
+      <div class="slider-dots">
+        <span class="dot active" data-slide="0"></span>
+        <span class="dot" data-slide="1"></span>
+        <span class="dot" data-slide="2"></span>
+      </div>
+    </div>
 
     <section class="section">
       <h2 class="section-title">🔥 Best Sellers</h2>
@@ -108,6 +119,7 @@
     <p style="text-align:center; margin-top: 1rem;">&copy; 2025 DigiGames</p>
   </footer>
 
+  <script src="/script.js"></script>
   <script src="/lang/lang.js"></script>
   <script>
   // 🎯 Пошук по сайту
