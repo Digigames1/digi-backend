@@ -1,7 +1,12 @@
 /* 🔁 z-index для header */
+:root {
+  --color-primary: #543885;
+  --color-secondary: #fff;
+}
+
 header {
-  background-color: #543885;
-  color: #fff;
+  background-color: var(--color-primary);
+  color: var(--color-secondary);
   padding: 1rem 0;
   position: sticky;
   top: 0;
@@ -33,7 +38,7 @@ body {
   display: flex;
   align-items: center;
   text-decoration: none;
-  color: #fff;
+  color: var(--color-secondary);
 }
 
 .logo img {
@@ -45,7 +50,7 @@ body {
   margin-left: auto;
   margin-right: auto;
   display: flex;
-  background: #fff;
+  background: var(--color-secondary);
   border-radius: 5px;
   overflow: hidden;
   max-width: 400px;
@@ -61,8 +66,8 @@ body {
 }
 
 .header-search button {
-  background: #543885;
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-secondary);
   border: none;
   padding: 0 1rem;
   cursor: pointer;
@@ -99,7 +104,7 @@ main {
 }
 
 .category-card {
-  background: white;
+  background: var(--color-secondary);
   border-radius: 10px;
   text-align: center;
   padding: 1rem;
@@ -113,7 +118,7 @@ main {
 
 .category-card:hover {
   background-color: #6a0dad;
-  color: white;
+  color: var(--color-secondary);
 }
 
 .category-card img {
@@ -145,18 +150,18 @@ footer {
 }
 
 .cart-button {
-  background: #543885;
+  background: var(--color-primary);
   padding: 0.5rem 1rem;
   border-radius: 5px;
   text-decoration: none;
-  color: #543885;
+  color: var(--color-primary);
   font-weight: bold;
-  border: 2px solid #543885;
+  border: 2px solid var(--color-primary);
 }
 
 .cart-button:hover {
-  background: #543885;
-  color: #543885;
+  background: var(--color-primary);
+  color: var(--color-primary);
 }
 
 .cart-icon {
@@ -176,7 +181,7 @@ footer {
   margin-top: 2rem;
   padding: 0.8rem 2rem;
   background: #6a0dad;
-  color: white;
+  color: var(--color-secondary);
   border: none;
   border-radius: 5px;
   font-size: 1rem;
@@ -209,7 +214,7 @@ footer {
 }
 
 .card-row .card {
-  background: white;
+  background: var(--color-secondary);
   color: black;
   padding: 0.5rem;
   border-radius: 10px;
@@ -250,8 +255,8 @@ footer {
 }
 
 .menu-title {
-  background-color: #543885;
-  color: white;
+  background-color: var(--color-primary);
+  color: var(--color-secondary);
   border: none;
   padding: 10px 16px;
   border-radius: 6px;
@@ -265,7 +270,7 @@ footer {
   position: absolute;
   top: 100%;
   left: 0;
-  background-color: white;
+  background-color: var(--color-secondary);
   min-width: 170px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   border-radius: 8px;
@@ -286,7 +291,7 @@ footer {
 }
 
 .mega-content a:hover {
-  color: #543885;
+  color: var(--color-primary);
 }
 
 @media (max-width: 600px) {
@@ -322,7 +327,7 @@ footer {
   top: -6px;
   right: -6px;
   background: red;
-  color: white;
+  color: var(--color-secondary);
   font-size: 0.7rem;
   padding: 2px 6px;
   border-radius: 999px;
