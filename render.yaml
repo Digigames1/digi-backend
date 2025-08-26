@@ -2,7 +2,9 @@ services:
   - type: web
     name: digi-backend
     env: node
+    plan: free
     buildCommand: npm --prefix frontend install --no-audit --no-fund --registry=https://registry.npmjs.org && npm --prefix frontend run build
     startCommand: node server.mjs
     autoDeploy: true
     healthCheckPath: /healthz
+
