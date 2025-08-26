@@ -5,7 +5,7 @@
   "type": "module",
   "engines": { "node": ">=18" },
   "scripts": {
-    "build:frontend": "cd frontend && npm ci && npm run build && cp -R dist ../dist",
+    "build:frontend": "cd frontend && npm ci && npm run build",
     "build": "npm run build:frontend",
     "start": "node server.mjs"
   },
