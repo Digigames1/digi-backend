@@ -3,9 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
-    "build:frontend": "cd frontend && npm ci && npm run build",
+    "build:frontend": "cd frontend && npm install --no-audit --no-fund --registry=https://registry.npmjs.org && npm run build",
     "postbuild:move": "rm -rf dist && mkdir -p dist && cp -R frontend/dist/* dist/",
     "build": "npm run build:frontend && npm run postbuild:move",
     "start": "node server.mjs"
