@@ -7,9 +7,6 @@
     "node": ">=18"
   },
   "scripts": {
-    "build:frontend": "cd frontend && npm install --no-audit --no-fund --registry=https://registry.npmjs.org && npm run build",
-    "postbuild:move": "rm -rf dist && mkdir -p dist && cp -R frontend/dist/* dist/",
-    "build": "npm run build:frontend && npm run postbuild:move",
     "start": "node server.mjs"
   },
   "dependencies": {
