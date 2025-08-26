@@ -1,9 +1,11 @@
 {
   "name": "digi-backend",
   "version": "1.0.0",
-  "main": "index.js",
+  "type": "module",
+  "main": "server.js",
   "scripts": {
-    "start": "node index.js"
+    "build": "npm run build --prefix frontend",
+    "start": "node server.js"
   },
   "dependencies": {
     "axios": "^1.8.4",
