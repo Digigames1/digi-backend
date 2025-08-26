@@ -14,7 +14,11 @@ export default defineConfig({
     port: 3000
   },
   build: {
-    outDir: '../dist',
+    // Output the production build inside the frontend directory so that the
+    // Express server can serve from `frontend/dist`. Previously the build
+    // generated files one level up ("../dist"), but the server now expects
+    // them in this local directory.
+    outDir: 'dist',
     emptyOutDir: true
   }
 });
