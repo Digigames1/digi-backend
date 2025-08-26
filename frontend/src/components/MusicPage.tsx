@@ -1,4 +1,4 @@
-export default function Music() {
+export default function MusicPage() {
   return (
     <div>
       <h1>Music Cards</h1>

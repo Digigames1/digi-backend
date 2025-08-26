@@ -1,4 +1,4 @@
-export default function FoodDrink() {
+export default function FoodDrinkPage() {
   return (
     <div>
       <h1>Food & Drink Cards</h1>
