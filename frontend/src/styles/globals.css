@@ -1,0 +1,19 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+}
+header, footer {
+  background-color: #111827;
+  color: #fff;
+}
+nav a {
+  color: #fff;
+  margin-right: 1rem;
+  text-decoration: none;
+}
+nav a.active {
+  text-decoration: underline;
+}
+main {
+  padding: 1rem;
+}
