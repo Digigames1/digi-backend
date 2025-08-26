@@ -6,7 +6,8 @@
   "engines": { "node": ">=18" },
   "scripts": {
     "build:frontend": "cd frontend && npm ci && npm run build",
-    "build": "npm run build:frontend",
+    "postbuild:move": "rm -rf dist && mkdir -p dist && cp -R frontend/dist/* dist/",
+    "build": "npm run build:frontend && npm run postbuild:move",
     "start": "node server.mjs"
   },
   "dependencies": {
