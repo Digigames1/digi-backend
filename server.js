@@ -1,15 +1,21 @@
-const express = require("express");
-const { MongoClient } = require("mongodb");
-const morgan = require("morgan");
-const path = require("path");
-require("dotenv").config();
+import express from "express";
+import { MongoClient } from "mongodb";
+import morgan from "morgan";
+import path from "path";
+import { fileURLToPath } from "url";
+import session from "express-session";
+import MongoStore from "connect-mongo";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-const session = require("express-session");
-const MongoStore = require("connect-mongo");
 
 app.use(session({
   secret: process.env.SESSION_SECRET,
@@ -29,7 +35,7 @@ app.use(session({
 }));
 
 app.use(morgan("dev"));
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, "dist")));
 
 // 🛒 Додати товар до корзини
 const CART_TIMEOUT_MINUTES = 30;
@@ -115,12 +121,12 @@ app.post("/checkout", (req, res) => {
 });
 
 // 🔽 Роутери
-const orderRouter = require("./routers/order");
-const adminRouter = require("./routers/admin");
-const productsRouter = require("./routers/products");
-const bambooRouter = require("./routers/bamboo");
-const productPageRouter = require("./routers/productPage");
-const popularRouter = require("./routers/popular");
+import orderRouter from "./routers/order.js";
+import adminRouter from "./routers/admin.js";
+import productsRouter from "./routers/products.js";
+import bambooRouter from "./routers/bamboo.js";
+import productPageRouter from "./routers/productPage.js";
+import popularRouter from "./routers/popular.js";
 
 const client = new MongoClient(process.env.DB_URL);
 let db;
@@ -138,12 +144,9 @@ async function startServer() {
     app.use("/api/popular-products", (req, res, next) => { req.db = db; next(); }, popularRouter);
     app.use("/", productPageRouter);
 
-    app.get("/", (req, res) => {
-      res.sendFile(path.join(__dirname, "public", "index.html"));
-    });
-
-    app.get("/:brand/:region?", (req, res) => {
-      res.sendFile(path.join(__dirname, "public", "product.html"));
+    // Віддавати index.html для всіх інших маршрутів (React Router)
+    app.get("*", (req, res) => {
+      res.sendFile(path.join(__dirname, "dist", "index.html"));
     });
 
     const PORT = process.env.PORT || 10000;
