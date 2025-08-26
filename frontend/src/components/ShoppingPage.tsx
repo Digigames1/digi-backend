@@ -1,4 +1,4 @@
-export default function Shopping() {
+export default function ShoppingPage() {
   return (
     <div>
       <h1>Shopping Cards</h1>

@@ -1,4 +1,4 @@
-export default function Gaming() {
+export default function GamingPage() {
   return (
     <div>
       <h1>Gaming Cards</h1>

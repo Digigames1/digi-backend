@@ -1,36 +1,35 @@
-import { Routes, Route } from 'react-router-dom';
-import Header from './components/Header';
-import Footer from './components/Footer';
-import HomePage from './components/HomePage';
-import Gaming from './pages/Gaming';
-import Streaming from './pages/Streaming';
-import Shopping from './pages/Shopping';
-import Music from './pages/Music';
-import FoodDrink from './pages/FoodDrink';
-import Travel from './pages/Travel';
-import AboutUs from './pages/AboutUs';
-import Contact from './pages/Contact';
-import FAQ from './pages/FAQ';
-
-export default function App() {
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Header from "./components/Header";
+import Footer from "./components/Footer";
+import HomePage from "./components/HomePage"; // Figma Home
+import GamingPage from "./components/GamingPage";
+import StreamingPage from "./components/StreamingPage";
+import ShoppingPage from "./components/ShoppingPage";
+import MusicPage from "./components/MusicPage";
+import FoodDrinkPage from "./components/FoodDrinkPage";
+import TravelPage from "./components/TravelPage";
+import AboutUsPage from "./components/AboutUsPage";
+import ContactPage from "./components/ContactPage";
+import FAQPage from "./components/FAQPage";
+export default function App(){
   return (
-    <div className="app">
-      <Header />
-      <main>
+    <BrowserRouter>
+      <Header/>
+      <main className="container" style={{padding:"32px 0"}}>
         <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/gaming" element={<Gaming />} />
-          <Route path="/streaming" element={<Streaming />} />
-          <Route path="/shopping" element={<Shopping />} />
-          <Route path="/music" element={<Music />} />
-          <Route path="/fooddrink" element={<FoodDrink />} />
-          <Route path="/travel" element={<Travel />} />
-          <Route path="/about" element={<AboutUs />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/faq" element={<FAQ />} />
+          <Route path="/" element={<HomePage/>}/>
+          <Route path="/gaming" element={<GamingPage/>}/>
+          <Route path="/streaming" element={<StreamingPage/>}/>
+          <Route path="/shopping" element={<ShoppingPage/>}/>
+          <Route path="/music" element={<MusicPage/>}/>
+          <Route path="/fooddrink" element={<FoodDrinkPage/>}/>
+          <Route path="/travel" element={<TravelPage/>}/>
+          <Route path="/about" element={<AboutUsPage/>}/>
+          <Route path="/contact" element={<ContactPage/>}/>
+          <Route path="/faq" element={<FAQPage/>}/>
         </Routes>
       </main>
-      <Footer />
-    </div>
+      <Footer/>
+    </BrowserRouter>
   );
 }

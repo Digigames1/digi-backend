@@ -1,4 +1,4 @@
-export default function Travel() {
+export default function TravelPage() {
   return (
     <div>
       <h1>Travel Cards</h1>

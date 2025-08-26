@@ -1,4 +1,4 @@
-export default function AboutUs() {
+export default function AboutUsPage() {
   return (
     <div>
       <h1>About DigiGames</h1>

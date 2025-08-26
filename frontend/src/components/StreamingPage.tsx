@@ -1,4 +1,4 @@
-export default function Streaming() {
+export default function StreamingPage() {
   return (
     <div>
       <h1>Streaming Cards</h1>
