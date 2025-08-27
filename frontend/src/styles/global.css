@@ -2,11 +2,13 @@
 
 *,*::before,*::after{box-sizing:border-box}
 html,body,#root{height:100%}
+/* щоб контент не заїжджав під хедер */
 body{
   margin:0;background:#F7F7FB;color:#111827;
   font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
+  padding-top:96px; /* висота хедера (можна підправити) */
 }
 :root{
   --brand:#6F42C1; --ink:#111827; --muted:#6B7280;
@@ -147,3 +149,37 @@ a:hover{ text-decoration:underline }
 /* hover animations */
 .card, .cat-card { transition: transform .18s ease, box-shadow .18s ease }
 .card:hover { transform: translateY(-4px); box-shadow: 0 18px 46px rgba(17,24,39,.12) }
+
+/* Sticky Header */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+}
+
+/* внутрішня частина */
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+}
+
+.nav {
+  display: flex;
+  gap: 16px;
+  padding: 8px 0;
+}
+
+.nav a {
+  font-weight: 500;
+  color: #111;
+  text-decoration: none;
+}
+.nav a:hover {
+  color: #2563eb;
+}
