@@ -129,3 +129,21 @@ a:hover{ text-decoration:underline }
 .soc{ display:flex; gap:10px; margin-top:8px }
 .f-copy{ color:#9CA3AF; font-size:13px; padding:14px 0; border-top:1px solid #15162b }
 
+/* badges/chips */
+.badge-tag{ position:absolute; left:10px; top:10px; background:#0B0B1C; color:#fff; border-radius:999px; font-size:12px; padding:4px 8px }
+.badge-tag.top-right{ left:auto; right:10px }
+.chip{ background:#EEF2FF; color:#3730A3; border-radius:999px; padding:2px 8px; font-size:12px }
+
+/* filters */
+.f-stack{ display:grid; gap:8px }
+.f-pill{ border:1px solid var(--card-border); background:#fff; border-radius:10px; padding:8px 12px; cursor:pointer; text-align:left }
+.f-pill.active{ background:#0B0B1C; color:#fff; border-color:#0B0B1C }
+.f-check{ display:flex; gap:8px; align-items:center; padding:6px 2px }
+
+/* list view */
+.list .card{ display:flex; gap:12px; align-items:flex-start }
+.list .card img{ width:220px; height:140px }
+
+/* hover animations */
+.card, .cat-card { transition: transform .18s ease, box-shadow .18s ease }
+.card:hover { transform: translateY(-4px); box-shadow: 0 18px 46px rgba(17,24,39,.12) }
