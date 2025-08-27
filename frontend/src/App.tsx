@@ -11,6 +11,7 @@ import TravelPage from "./components/TravelPage";
 import AboutUsPage from "./components/AboutUsPage";
 import ContactPage from "./components/ContactPage";
 import FAQPage from "./components/FAQPage";
+import CartPage from "./components/CartPage";
 export default function App(){
   return (
     <BrowserRouter>
@@ -27,6 +28,7 @@ export default function App(){
           <Route path="/about" element={<AboutUsPage/>}/>
           <Route path="/contact" element={<ContactPage/>}/>
           <Route path="/faq" element={<FAQPage/>}/>
+          <Route path="/cart" element={<CartPage/>}/>
         </Routes>
       </main>
       <Footer/>
