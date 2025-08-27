@@ -1,14 +1,14 @@
-import { NavLink } from 'react-router-dom';
+import { Link, NavLink } from "react-router-dom";
 
-export default function Header() {
+export default function Header(){
   return (
-    <header>
-      <div className="container header-flex">
-        <NavLink to="/" className="logo" end>
-          <img src="/assets/icons/logo.svg" alt="DigiGames" />
-          DigiGames
-        </NavLink>
-        <nav>
+    <header className="topbar">
+      <div className="container topbar-inner">
+        <Link to="/" className="brand">DigiGames</Link>
+        <div className="search">
+          <input placeholder="Search gift cards..." />
+        </div>
+        <nav className="topnav">
           <NavLink to="/" end>Home</NavLink>
           <NavLink to="/gaming">Gaming</NavLink>
           <NavLink to="/streaming">Streaming</NavLink>
