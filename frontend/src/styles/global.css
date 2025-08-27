@@ -76,3 +76,56 @@ body{
 
 a{ color:var(--brand); text-decoration:none }
 a:hover{ text-decoration:underline }
+
+/* dropdowns */
+.dd{ position:relative }
+.dd-menu{
+  position:absolute; top:44px; right:0; background:#fff; border:1px solid var(--card-border);
+  border-radius:12px; box-shadow:var(--shadow); padding:6px; min-width:120px; z-index:20;
+  display:grid; gap:4px;
+}
+.dd-menu button{ background:#fff; border:0; text-align:left; padding:8px 10px; border-radius:8px; cursor:pointer }
+.dd-menu button:hover{ background:#F3F4F6 }
+
+/* cart badge */
+.badge{ position:relative }
+.badge-dot{
+  position:absolute; top:-6px; right:-6px; background:#111; color:#fff; font-size:11px;
+  min-width:18px; height:18px; display:grid; place-items:center; border-radius:999px; padding:0 4px;
+}
+
+/* second row of header categories */
+.topcats{ display:flex; gap:12px; align-items:center; height:44px; }
+.topcats a{ color:#4b5563; text-decoration:none; padding:8px 10px; border-radius:8px }
+.topcats a:hover{ background:#F3F4F6 }
+
+/* buttons */
+.btn{ border:1px solid var(--card-border); background:#fff; border-radius:10px; padding:8px 12px; font-weight:600; cursor:pointer }
+.btn:hover{ background:#F3F4F6 }
+.btn.primary{ background:#0B0B1C; color:#fff; border-color:#0B0B1C }
+.btn.primary:hover{ opacity:.92 }
+.btn.danger{ background:#C0262D; color:#fff; border-color:#C0262D }
+.btn.danger:hover{ filter:brightness(.96) }
+.btn.sm{ padding:6px 10px }
+.qtyrow{ display:flex; align-items:center; gap:8px; margin-top:8px }
+.qty{ min-width:20px; text-align:center }
+
+/* footer */
+.footer{ background:#0B0B1C; color:#E5E7EB; margin-top:48px }
+.nl{ background:#0B0B1C; border-top:1px solid #15162b; border-bottom:1px solid #15162b }
+.nl-inner{ padding:40px 0; display:grid; gap:10px; text-align:center }
+.nl-title{ font-size:22px; font-weight:700 }
+.nl-sub{ color:#9CA3AF; font-size:14px }
+.nl-form{ margin:12px auto 0; display:flex; gap:8px; width:min(520px,100%) }
+.nl-form input{ flex:1; border:1px solid #2b2f52; background:#0f1024; color:#fff; border-radius:12px; padding:12px }
+.nl-form button{ width:44px; border-radius:12px; border:1px solid #2b2f52; background:#111536; color:#fff; cursor:pointer }
+.footer-grid{ padding:36px 0; display:grid; gap:24px; grid-template-columns: repeat(1,1fr) }
+@media(min-width:900px){ .footer-grid{ grid-template-columns: 2fr 1fr 1fr 1fr } }
+.f-brand{ font-weight:700; font-size:18px; margin-bottom:8px }
+.f-title{ font-weight:600; margin-bottom:8px }
+.f-list{ display:grid; gap:6px }
+.f-list a{ color:#D1D5DB; text-decoration:none }
+.f-list a:hover{ text-decoration:underline }
+.soc{ display:flex; gap:10px; margin-top:8px }
+.f-copy{ color:#9CA3AF; font-size:13px; padding:14px 0; border-top:1px solid #15162b }
+

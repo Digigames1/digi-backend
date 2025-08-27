@@ -1,25 +1,37 @@
 import { Link, NavLink } from "react-router-dom";
-import GlobeIcon from "./icons/GlobeIcon";
-import CurrencyIcon from "./icons/CurrencyIcon";
 import CartIcon from "./icons/CartIcon";
+import { LanguageMenu, CurrencyMenu } from "./menus/LanguageCurrencyMenu";
+import { useEffect, useState } from "react";
+import { totalCount } from "../store/cart";
 
 export default function Header(){
+  const [lang,setLang] = useState("EN");
+  const [cur,setCur] = useState("USD");
+  const [count,setCount] = useState(0);
+
+  useEffect(()=>{
+    setCount(totalCount());
+    const i = setInterval(()=>setCount(totalCount()), 800); // simple polling localStorage
+    return ()=> clearInterval(i);
+  },[]);
+
   return (
     <header className="topbar">
       <div className="container topbar-inner">
         <Link to="/" className="brand">DigiGames</Link>
-
-        <div className="search">
-          <input placeholder="Search gift cards..." aria-label="Search gift cards" />
-        </div>
-
-        <nav className="topnav" aria-label="Top">
-          <button className="icon-btn" aria-label="Language"><GlobeIcon/></button>
-          <button className="icon-btn" aria-label="Currency"><CurrencyIcon/></button>
-          <Link to="/cart" className="icon-btn" aria-label="Cart"><CartIcon/></Link>
+        <div className="search"><input placeholder="Search gift cards..." /></div>
+        <nav className="topnav" aria-label="Actions">
+          <LanguageMenu value={lang} onChange={setLang}/>
+          <CurrencyMenu value={cur} onChange={setCur}/>
+          <Link to="/cart" className="icon-btn badge" aria-label="Cart">
+            <CartIcon/>
+            {count>0 && <span className="badge-dot">{count}</span>}
+          </Link>
         </nav>
       </div>
-      <div className="container" style={{display:"flex",gap:12,alignItems:"center",height:44}}>
+
+      {/* lower navigation row only categories */}
+      <div className="container topcats">
         <NavLink to="/" end>Home</NavLink>
         <NavLink to="/gaming">Gaming</NavLink>
         <NavLink to="/streaming">Streaming</NavLink>

@@ -1,5 +1,5 @@
 import CategoryCard from "./CategoryCard";
-import { getCart, setCart } from "../store/cart";
+import { addToCart as add, removeFromCart, inCart, qtyOf, setQty } from "../store/cart";
 
 const categories = [
   { title:"Gaming",      note:"120+ cards", icon:"/assets/icons/gaming.svg",    href:"/gaming" },
@@ -11,14 +11,23 @@ const categories = [
 ];
 
 const featured = [
-  { name:"PlayStation Store Gift Card", price:"$50.00", rating:"4.8", img:"/assets/images/ps.webp" },
-  { name:"Netflix Gift Card",           price:"$25.00", rating:"4.6", img:"/assets/images/netflix.webp" },
-  { name:"Steam Wallet Code",           price:"$20.00", rating:"4.9", img:"/assets/images/steam.webp" },
+  { id:"ps", name:"PlayStation Store Gift Card", price:"$50.00", rating:"4.8", img:"/assets/images/ps.webp" },
+  { id:"netflix", name:"Netflix Gift Card",           price:"$25.00", rating:"4.6", img:"/assets/images/netflix.webp" },
+  { id:"steam", name:"Steam Wallet Code",           price:"$20.00", rating:"4.9", img:"/assets/images/steam.webp" },
 ];
 
-function addToCart(item:any){
-  const cur=getCart(); cur.push({name:item.name,price:item.price,img:item.img}); setCart(cur);
-  alert("Added to cart");
+function ItemControls({id}:{id:string}){
+  const added = inCart(id);
+  const qty = qtyOf(id);
+  if (!added) return <button className="btn primary" onClick={()=>add({id, name:"", price:0})}>Add to cart</button>;
+  return (
+    <div className="qtyrow">
+      <button className="btn sm" onClick={()=> setQty(id, Math.max(1, qty-1))}>–</button>
+      <span className="qty">{qty}</span>
+      <button className="btn sm" onClick={()=> setQty(id, qty+1)}>+</button>
+      <button className="btn danger" onClick={()=> removeFromCart(id)}>Remove from Cart</button>
+    </div>
+  );
 }
 
 export default function HomePage(){
@@ -32,12 +41,12 @@ export default function HomePage(){
       <h2 className="section-title" style={{marginTop:32}}>Featured Gift Cards</h2>
       <div className="grid featured">
         {featured.map(f=>(
-          <div className="card" key={f.name}>
+          <div className="card" key={f.id}>
             <img src={f.img} alt={f.name} loading="lazy"/>
             <div className="name">{f.name}</div>
             <div className="price">{f.price}</div>
             <div className="rating">Rating: {f.rating}</div>
-            <button className="btn" onClick={()=>addToCart(f)}>Add to cart</button>
+            <ItemControls id={f.id} />
           </div>
         ))}
       </div>
