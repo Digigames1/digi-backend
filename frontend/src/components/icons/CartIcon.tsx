@@ -1,0 +1,1 @@
+export default function CartIcon({size=18}:{size?:number}){return(<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 12.39A2 2 0 0 0 9.62 15H19a2 2 0 0 0 2-1.72l1-7H6"/></svg>);}

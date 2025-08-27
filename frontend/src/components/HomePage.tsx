@@ -1,4 +1,5 @@
 import CategoryCard from "./CategoryCard";
+import { getCart, setCart } from "../store/cart";
 
 const categories = [
   { title:"Gaming",      note:"120+ cards", icon:"/assets/icons/gaming.svg",    href:"/gaming" },
@@ -14,6 +15,11 @@ const featured = [
   { name:"Netflix Gift Card",           price:"$25.00", rating:"4.6", img:"/assets/images/netflix.webp" },
   { name:"Steam Wallet Code",           price:"$20.00", rating:"4.9", img:"/assets/images/steam.webp" },
 ];
+
+function addToCart(item:any){
+  const cur=getCart(); cur.push({name:item.name,price:item.price,img:item.img}); setCart(cur);
+  alert("Added to cart");
+}
 
 export default function HomePage(){
   return (
@@ -31,6 +37,7 @@ export default function HomePage(){
             <div className="name">{f.name}</div>
             <div className="price">{f.price}</div>
             <div className="rating">Rating: {f.rating}</div>
+            <button className="btn" onClick={()=>addToCart(f)}>Add to cart</button>
           </div>
         ))}
       </div>
