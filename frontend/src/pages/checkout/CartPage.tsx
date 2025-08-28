@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { getCart, setQty, removeFromCart, subtotal, totalCount } from "../../store/cart";
 import { money, safeMul } from "./cartUtils";
 
@@ -9,9 +10,10 @@ const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function CartPage(){
   const [items, setItems] = useState(getCart());
-  const [email, setEmail] = useState("");
-  const [code, setCode] = useState("");
+  const [email, setEmail] = useState(localStorage.getItem("dg_checkout_email") || "");
+  const [code, setCode] = useState(localStorage.getItem("dg_coupon") || "");
   const [currency, setCurrency] = useState(getCurrency());
+  const navigate = useNavigate();
 
   useEffect(()=>{
     const t = setInterval(()=> setItems(getCart()), 600);
@@ -74,7 +76,7 @@ export default function CartPage(){
               type="email"
               placeholder="your@email.com"
               value={email}
-              onChange={e=>setEmail(e.target.value)}
+              onChange={e=>{ setEmail(e.target.value); localStorage.setItem("dg_checkout_email", e.target.value); }}
             />
           </label>
           <div className="muted">Unlock exclusive deals and insider tips</div>
@@ -91,7 +93,7 @@ export default function CartPage(){
           <details className="discount">
             <summary>Discount Code</summary>
             <div className="discount-inner">
-              <input placeholder="Enter code (e.g. SAVE5)" value={code} onChange={e=>setCode(e.target.value)} />
+              <input placeholder="Enter code (e.g. SAVE5)" value={code} onChange={e=>{ setCode(e.target.value); localStorage.setItem("dg_coupon", e.target.value); }} />
               {!!summary.discount && <div className="applied">− {money(summary.discount, currency)} applied</div>}
             </div>
           </details>
@@ -102,7 +104,7 @@ export default function CartPage(){
             <span>{money(summary.total, currency)}</span>
           </div>
 
-          <button className="btn primary co-cta" disabled={!canPay}>
+          <button className="btn primary co-cta" disabled={!canPay} onClick={()=>{ localStorage.setItem("dg_checkout_email", email); navigate("/checkout/payment"); }}>
             Choose Payment Method
           </button>
           {!canPay && <div className="muted" style={{fontSize:12}}>Enter a valid email to continue</div>}
