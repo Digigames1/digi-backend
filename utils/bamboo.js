@@ -54,12 +54,12 @@ export async function bambooFetch(path, params={}) {
   });
 
   try {
-    const res = await fetch(url, {
-      headers: {
-        "Accept": "application/json",
-        "Authorization": BAMBOO_KEY ? `Bearer ${BAMBOO_KEY}` : undefined,
-      }
-    });
+    const headers = {
+      "Accept": "application/json",
+    };
+    if (BAMBOO_KEY) headers["Authorization"] = `Bearer ${BAMBOO_KEY}`;
+
+    const res = await fetch(url, { headers });
     if (!res.ok) {
       const t = await res.text().catch(()=> "");
       throw new Error(`Bamboo ${res.status}: ${t || res.statusText}`);
