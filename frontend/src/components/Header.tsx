@@ -6,13 +6,14 @@ import { totalCount } from "../store/cart";
 
 export default function Header(){
   const [lang,setLang] = useState("EN");
-  const [cur,setCur] = useState("USD");
+  const [cur,setCur] = useState(localStorage.getItem("dg_currency") || "USD");
   const [count,setCount] = useState(0);
   useEffect(()=>{
     setCount(totalCount());
     const t=setInterval(()=>setCount(totalCount()),800);
     return ()=>clearInterval(t);
   },[]);
+  useEffect(()=>{ localStorage.setItem("dg_currency", cur); }, [cur]);
 
   return (
     <header className="header-wrap"> {/* <-- sticky застосуємо до цього контейнера */}

@@ -6,7 +6,7 @@ import CategoryPage from "./pages/category/CategoryPage";
 import AboutUsPage from "./components/AboutUsPage";
 import ContactPage from "./components/ContactPage";
 import FAQPage from "./components/FAQPage";
-import CartPage from "./components/CartPage";
+import CartPage from "./pages/checkout/CartPage";
 export default function App(){
   return (
     <BrowserRouter>

@@ -152,3 +152,44 @@ a:hover{ text-decoration:underline }
 .card, .cat-card { transition: transform .18s ease, box-shadow .18s ease }
 .card:hover { transform: translateY(-4px); box-shadow: 0 18px 46px rgba(17,24,39,.12) }
 
+/* ===== Checkout ===== */
+.checkout{ display:grid; gap:16px; grid-template-columns: 1fr; }
+@media(min-width: 960px){ .checkout{ grid-template-columns: minmax(0,1fr) 360px; } }
+
+.co-left .card, .co-right .card{ padding:16px; }
+.co-title{ font-weight:700; font-size:18px; margin-bottom:6px; }
+.co-badge{ color:#059669; font-size:13px; margin-bottom:10px; }
+
+.co-item{ display:grid; grid-template-columns: 72px 1fr auto; gap:12px; align-items:center; padding:10px 0; border-top:1px solid var(--card-border); }
+.co-item:first-of-type{ border-top:0; }
+.co-item img{ width:72px; height:48px; object-fit:cover; border-radius:10px; background:#e5e7eb; }
+.co-item .co-name{ font-weight:600; margin-bottom:4px; }
+.co-submeta{ display:flex; gap:10px; align-items:center; color:var(--muted); font-size:13px; }
+.co-submeta .chip{ background:#EEF2FF; color:#3730A3; border-radius:999px; padding:2px 8px; font-size:12px; }
+.co-qty{ display:flex; align-items:center; gap:8px; margin-top:8px; }
+.icon-x{ width:32px; height:32px; border-radius:8px; border:1px solid var(--card-border); background:#fff; cursor:pointer; line-height:0; font-size:18px; }
+.icon-x:hover{ background:#F3F4F6; }
+.co-price{ font-weight:700; }
+
+.co-continue{ margin-top:10px; font-size:14px; }
+.co-continue a{ color:var(--brand); text-decoration:none } .co-continue a:hover{text-decoration:underline}
+
+.co-right-title{ font-weight:600; margin-bottom:8px; }
+.req{ color:#DC2626; }
+.field input{
+  width:100%; border:1px solid var(--card-border); border-radius:12px; padding:10px 12px; outline:none; background:#fff;
+}
+.divider{ height:1px; background:var(--card-border); margin:14px 0; }
+.co-row{ display:flex; align-items:center; justify-content:space-between; padding:6px 0; }
+.co-row.total{ font-weight:700; font-size:18px; }
+
+.discount summary{ cursor:pointer; padding:4px 0; color:var(--brand); }
+.discount-inner{ display:grid; gap:6px; padding:8px 0; }
+.discount-inner input{
+  width:100%; border:1px dashed var(--card-border); border-radius:10px; padding:8px 10px; background:#fff;
+}
+.discount .applied{ color:#059669; font-size:13px; }
+
+.co-cta{ width:100%; margin-top:12px; padding:12px; }
+.btn[disabled]{ opacity:.5; cursor:not-allowed; }
+
