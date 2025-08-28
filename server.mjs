@@ -3,6 +3,7 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import cardsRouter from "./routers/cards.js";
+import searchRouter from "./routers/search.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,6 +31,7 @@ if (found) {
   console.error("❌ dist/index.html not found. Ensure build step creates it in the repo root or set DIST_DIR.");
 }
 
+app.use("/api/search", searchRouter);
 app.use("/api/cards", cardsRouter);
 
 app.get("/healthz", (_req, res) => res.status(200).send("OK"));
