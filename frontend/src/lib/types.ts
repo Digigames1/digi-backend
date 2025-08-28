@@ -11,6 +11,7 @@ export type Product = {
   discount?: number;
   region?: string;
   denomination?: number;
+  currency?: string;
 };
 
 export type Facets = {
@@ -23,4 +24,5 @@ export type ProductsResponse = {
   products: Product[];
   total: number;
   facets?: Facets;
+  currency?: string;
 };

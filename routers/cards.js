@@ -1,6 +1,7 @@
 import express from "express";
 import { bambooFetch } from "../utils/bamboo.js";
 import { applyMarkup } from "../utils/markup.js";
+import { translateText } from "../utils/translate.js";
 
 const router = express.Router();
 
@@ -33,7 +34,7 @@ function categorize(x) {
 /**
  * GET /api/cards
  * query: category, platform, regions, denoms, q, sort (priceAsc|priceDesc|ratingDesc),
- *        inStock (1|0), page, limit
+ *        inStock (1|0), page, limit, currency, lang
  */
 router.get("/", async (req, res) => {
   try {
@@ -47,6 +48,8 @@ router.get("/", async (req, res) => {
       inStock,
       page = "1",
       limit = "24",
+      currency = "USD",
+      lang = "EN",
     } = req.query;
 
     const params = {
@@ -57,7 +60,9 @@ router.get("/", async (req, res) => {
       denoms,
       inStock: inStock ? "true" : undefined,
       page,
-      limit,
+       limit,
+       currency,
+       lang,
     };
 
     const data = await bambooFetch("/products", params);
@@ -86,8 +91,19 @@ router.get("/", async (req, res) => {
         region: x.region || x.country || "US",
         denomination: safeN(x.denomination || x.faceValue, undefined),
         category: categorize(x),
+        currency: String(currency).toUpperCase(),
       };
     });
+
+    const tgt = String(lang).toUpperCase();
+    if (tgt && tgt !== "EN") {
+      products = await Promise.all(
+        products.map(async (p) => ({
+          ...p,
+          name: await translateText(p.name, tgt),
+        }))
+      );
+    }
 
     if (platform) {
       const p = String(platform).toUpperCase();
@@ -112,7 +128,7 @@ router.get("/", async (req, res) => {
       denominations: uniq(products.map((p) => p.denomination)).sort((a, b) => a - b),
     };
 
-    res.json({ products, total: products.length, facets });
+    res.json({ products, total: products.length, facets, currency: String(currency).toUpperCase() });
   } catch (e) {
     console.error("GET /api/cards", e?.message || e);
     res.json({

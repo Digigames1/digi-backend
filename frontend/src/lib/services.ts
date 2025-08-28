@@ -12,6 +12,8 @@ export const Catalog = {
     inStock?: boolean;
     page?: number;
     limit?: number;
+    currency?: string;
+    lang?: string;
   }) => {
     const qs = new URLSearchParams();
     qs.set("category", p.category);
@@ -23,6 +25,8 @@ export const Catalog = {
     if (p.inStock) qs.set("inStock", "1");
     if (p.page) qs.set("page", String(p.page));
     if (p.limit) qs.set("limit", String(p.limit));
+    if (p.currency) qs.set("currency", p.currency);
+    if (p.lang) qs.set("lang", p.lang);
     return api.get<ProductsResponse>(`/cards?${qs.toString()}`);
   },
 };

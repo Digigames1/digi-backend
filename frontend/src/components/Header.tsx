@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { totalCount } from "../store/cart";
 
 export default function Header(){
-  const [lang,setLang] = useState("EN");
+  const [lang,setLang] = useState(localStorage.getItem("dg_language") || "EN");
   const [cur,setCur] = useState(localStorage.getItem("dg_currency") || "USD");
   const [count,setCount] = useState(0);
   const [query,setQuery] = useState("");
@@ -15,7 +15,14 @@ export default function Header(){
     const t=setInterval(()=>setCount(totalCount()),800);
     return ()=>clearInterval(t);
   },[]);
-  useEffect(()=>{ localStorage.setItem("dg_currency", cur); }, [cur]);
+  useEffect(()=>{ 
+    localStorage.setItem("dg_currency", cur); 
+    window.dispatchEvent(new CustomEvent("currencychange",{detail:cur}));
+  }, [cur]);
+  useEffect(()=>{ 
+    localStorage.setItem("dg_language", lang);
+    window.dispatchEvent(new CustomEvent("languagechange",{detail:lang}));
+  }, [lang]);
 
   return (
     <header className="header-wrap"> {/* <-- sticky застосуємо до цього контейнера */}
@@ -29,7 +36,7 @@ export default function Header(){
             onKeyDown={async e=>{
               if(e.key!=="Enter"||!query.trim()) return;
               try{
-                const res=await fetch(`/api/cards?q=${encodeURIComponent(query.trim())}`);
+                const res=await fetch(`/api/cards?q=${encodeURIComponent(query.trim())}&currency=${encodeURIComponent(cur)}&lang=${encodeURIComponent(lang)}`);
                 const data=await res.json();
                 const cat=data.products?.[0]?.category||"gaming";
                 navigate(`/${cat}?q=${encodeURIComponent(query.trim())}`);

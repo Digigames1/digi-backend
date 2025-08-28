@@ -20,16 +20,26 @@ export default function CategoryPage({category}:{category:CategoryKey}){
   const [regions,setRegions] = useState<string[]>([]);
   const [denoms,setDenoms] = useState<number[]>([]);
   const [facets,setFacets] = useState<Facets>({});
+  const [currency,setCurrency] = useState(localStorage.getItem("dg_currency") || "USD");
+  const [lang,setLang] = useState(localStorage.getItem("dg_language") || "EN");
   const loc = useLocation();
   const q = new URLSearchParams(loc.search).get("q") || "";
 
   useEffect(()=>{
+    const curH = () => setCurrency(localStorage.getItem("dg_currency") || "USD");
+    const langH = () => setLang(localStorage.getItem("dg_language") || "EN");
+    window.addEventListener("currencychange", curH);
+    window.addEventListener("languagechange", langH);
+    return () => { window.removeEventListener("currencychange", curH); window.removeEventListener("languagechange", langH); };
+  },[]);
+
+  useEffect(()=>{
     setLoading(true);
-    Catalog.list({ category, platform, regions, denoms, sort, inStock: filters.inStock, q })
+    Catalog.list({ category, platform, regions, denoms, sort, inStock: filters.inStock, q, currency, lang })
       .then(res => { setItems(res.products||[]); setTotal(res.total||0); setFacets(res.facets||{}); })
       .catch(()=>{ setItems([]); setTotal(0); })
       .finally(()=> setLoading(false));
-  }, [category, platform, regions.join(","), denoms.join(","), sort, filters.inStock, q]);
+  }, [category, platform, regions.join(","), denoms.join(","), sort, filters.inStock, q, currency, lang]);
 
   return (
     <div className="container">
