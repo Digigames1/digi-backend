@@ -18,7 +18,13 @@ export default function PaymentPage() {
   const [currency] = useState(getCurrency());
   const [agree, setAgree] = useState(false);
   const [code, setCode] = useState(localStorage.getItem("dg_coupon") || "");
-  const [sums, setSums] = useState({ sub: 0, discount: 0, txn: 0, total: 0 });
+  const [sums, setSums] = useState({
+    lines: [],
+    subtotal: 0,
+    discount: 0,
+    transaction: 0,
+    total: 0,
+  });
   const [creating, setCreating] = useState(false);
   const [pErr, setPErr] = useState<string | null>(null);
 
@@ -36,11 +42,17 @@ export default function PaymentPage() {
     };
     getQuote(payload)
       .then((res) => setSums(res))
-      .catch(() => setSums({ sub: 0, discount: 0, txn: 0, total: 0 }));
+      .catch(() =>
+        setSums({ lines: [], subtotal: 0, discount: 0, transaction: 0, total: 0 })
+      );
   }, [items, code, currency]);
 
   const canProceed =
-    !!email && /\S+@\S+\.\S+/.test(email) && items.length > 0 && agree;
+    !!email &&
+    /\S+@\S+\.\S+/.test(email) &&
+    items.length > 0 &&
+    agree &&
+    sums.total > 0;
 
   async function handlePay() {
     setCreating(true);
@@ -91,7 +103,7 @@ export default function PaymentPage() {
 
           <div className="co-row">
             <span>{totalCount()}× items</span>
-            <span>{money(sums.sub, currency)}</span>
+            <span>{money(sums.subtotal, currency)}</span>
           </div>
 
           <details className="discount" open={!!code}>
@@ -115,11 +127,13 @@ export default function PaymentPage() {
 
           <div className="co-row">
             <span>Subtotal</span>
-            <span>{money(Math.max(0, sums.sub - sums.discount), currency)}</span>
+            <span>
+              {money(Math.max(0, sums.subtotal - sums.discount), currency)}
+            </span>
           </div>
           <div className="co-row">
             <span>Transaction Costs</span>
-            <span>{money(sums.txn, currency)}</span>
+            <span>{money(sums.transaction, currency)}</span>
           </div>
 
           <div className="divider" />
