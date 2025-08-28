@@ -1,0 +1,29 @@
+[
+  {
+    "id": "xbox-us-10",
+    "name": "Xbox Gift Card $10",
+    "price": 10,
+    "platform": "XBOX",
+    "region": "US",
+    "denomination": 10,
+    "image_url": "https://via.placeholder.com/300x180?text=XBOX10"
+  },
+  {
+    "id": "playstation-us-20",
+    "name": "PlayStation Store Card $20",
+    "price": 20,
+    "platform": "PLAYSTATION",
+    "region": "US",
+    "denomination": 20,
+    "image_url": "https://via.placeholder.com/300x180?text=PS20"
+  },
+  {
+    "id": "steam-eu-50",
+    "name": "Steam Wallet €50",
+    "price": 50,
+    "platform": "STEAM",
+    "region": "EU",
+    "denomination": 50,
+    "image_url": "https://via.placeholder.com/300x180?text=STEAM50"
+  }
+]
