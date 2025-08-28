@@ -132,9 +132,28 @@ export async function fetchAllBambooProducts(params = {}) {
 export async function fetchBambooById(id) {
   try {
     const x = await bambooFetch(`/products/${encodeURIComponent(id)}`);
-    return x || null;
+    if (x && !Array.isArray(x) && !x.products && !x.items) return x;
+    const list = Array.isArray(x?.products)
+      ? x.products
+      : Array.isArray(x?.items)
+        ? x.items
+        : Array.isArray(x)
+          ? x
+          : [];
+    const found = list.find(
+      (p) =>
+        String(p.id) === String(id) ||
+        String(p.sku) === String(id) ||
+        String(p.code) === String(id)
+    );
+    if (found) return found;
   } catch (e) {
     console.warn("[bamboo] byId failed:", e?.message || e);
+  }
+  try {
+    const sample = loadSampleProducts();
+    return sample.find((p) => String(p.id) === String(id)) || null;
+  } catch {
     return null;
   }
 }
