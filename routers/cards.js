@@ -13,6 +13,23 @@ function safeN(n, d = 0) {
   return Number.isFinite(n) ? n : d;
 }
 
+function categorize(x) {
+  const raw = String(x.category || x.categories || "").toLowerCase();
+  if (raw.includes("gaming")) return "gaming";
+  if (raw.includes("stream")) return "streaming";
+  if (raw.includes("music")) return "music";
+  if (raw.includes("food") || raw.includes("drink")) return "fooddrink";
+  if (raw.includes("travel")) return "travel";
+  if (raw.includes("shop")) return "shopping";
+  const guess = String(x.platform || x.vendor || x.name || "").toLowerCase();
+  if (/xbox|playstation|steam|nintendo|game/.test(guess)) return "gaming";
+  if (/netflix|hulu|disney|prime|stream/.test(guess)) return "streaming";
+  if (/spotify|itunes|music|apple/.test(guess)) return "music";
+  if (/uber|doordash|food|drink|restaurant/.test(guess)) return "fooddrink";
+  if (/air|hotel|travel|flight/.test(guess)) return "travel";
+  return "shopping";
+}
+
 /**
  * GET /api/cards
  * query: category, platform, regions, denoms, q, sort (priceAsc|priceDesc|ratingDesc),
@@ -68,6 +85,7 @@ router.get("/", async (req, res) => {
         discount: x.discount ? safeN(x.discount, 0) : undefined,
         region: x.region || x.country || "US",
         denomination: safeN(x.denomination || x.faceValue, undefined),
+        category: categorize(x),
       };
     });
 
