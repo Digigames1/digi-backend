@@ -2,11 +2,13 @@ import express from "express";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
+import cardsRouter from "./routers/cards.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+app.use(express.json());
 
 const envDist = process.env.DIST_DIR && path.resolve(process.env.DIST_DIR);
 const candidates = [
@@ -27,6 +29,8 @@ if (found) {
 } else {
   console.error("❌ dist/index.html not found. Ensure build step creates it in the repo root or set DIST_DIR.");
 }
+
+app.use("/api/cards", cardsRouter);
 
 app.get("/healthz", (_req, res) => res.status(200).send("OK"));
 
