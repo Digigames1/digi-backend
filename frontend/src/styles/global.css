@@ -193,3 +193,24 @@ a:hover{ text-decoration:underline }
 .co-cta{ width:100%; margin-top:12px; padding:12px; }
 .btn[disabled]{ opacity:.5; cursor:not-allowed; }
 
+/* ===== Payment page ===== */
+.pm-list{ display:grid; gap:10px; }
+.pm-item{
+  display:flex; align-items:center; gap:12px;
+  width:100%; background:#fff; border:1px solid var(--card-border); border-radius:12px;
+  padding:12px; cursor:pointer; text-align:left;
+}
+.pm-item:hover{ background:#F8FAFC }
+.pm-item.active{ outline:2px solid #0B0B1C; outline-offset:0; }
+.pm-title{ flex:1; font-weight:600 }
+.pm-fee{ color:#6b7280 }
+.radio{ width:22px; text-align:center }
+
+.alert.warn{
+  margin-top:12px; border:1px solid #FCD34D; background:#FFFBEB; color:#7C2D12;
+  border-radius:12px; padding:10px 12px; font-size:14px;
+}
+
+/* правий блок — повторюємо checkout */
+.agree{ display:flex; gap:8px; align-items:flex-start; margin:10px 0; font-size:14px }
+.agree a{ color:var(--brand); text-decoration:none } .agree a:hover{ text-decoration:underline }
