@@ -6,20 +6,30 @@ const N = (x, d = 0) => (Number.isFinite(+x) ? +x : d);
 async function priceFor(id, fallback) {
   const x = await fetchBambooById(id).catch(() => null);
   const base = N(
-    x?.price ?? x?.currentPrice ?? x?.amount ?? fallback?.basePrice,
+    x?.price ??
+      x?.currentPrice ??
+      x?.amount ??
+      fallback?.price ??
+      fallback?.basePrice,
     0
   );
-  return applyMarkup(base, x || fallback || {});
+  const price = applyMarkup(base, x || fallback || {});
+  return { product: x, price };
 }
 
 export async function quote({ items = [], coupon, method }) {
   const lines = [];
   for (const it of items) {
     const qty = Math.max(1, N(it.qty, 1));
-    const unitPrice = await priceFor(String(it.id), it);
+    const { product, price: unitPrice } = await priceFor(String(it.id), it);
     lines.push({
       id: String(it.id),
-      name: it.name || it.title || "",
+      name:
+        it.name ||
+        it.title ||
+        product?.name ||
+        product?.title ||
+        "",
       qty,
       unitPrice,
       lineTotal: +(unitPrice * qty).toFixed(2),
