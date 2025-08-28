@@ -6,7 +6,7 @@ const N = (x, d = 0) => (Number.isFinite(+x) ? +x : d);
 async function priceFor(id, fallback) {
   const x = await fetchBambooById(id).catch(() => null);
   const base = N(
-    x?.price ?? x?.currentPrice ?? x?.amount ?? fallback?.basePrice,
+    x?.price ?? x?.currentPrice ?? x?.amount ?? fallback?.price ?? fallback?.basePrice,
     0
   );
   return applyMarkup(base, x || fallback || {});
