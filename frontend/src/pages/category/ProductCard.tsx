@@ -2,32 +2,40 @@ import type { Product } from "../../lib/types";
 import { addToCart, removeFromCart, inCart, qtyOf, setQty } from "../../store/cart";
 import { money } from "../checkout/cartUtils";
 
-export default function ProductCard({p}:{p:Product}){
+export default function ProductCard({
+  product,
+  showCategoryBadge,
+}: {
+  product: Product;
+  showCategoryBadge?: boolean;
+}) {
+  const p = product;
   const added = inCart(p.id);
   const qty = qtyOf(p.id);
   const cur = localStorage.getItem("dg_currency") || p.currency || "USD";
   return (
-    <div className="card" style={{padding:12}}>
-      <div style={{position:"relative"}}>
+    <div className="card" style={{ padding: 12 }}>
+      <div style={{ position: "relative" }}>
+        {showCategoryBadge && p.category && (
+          <span className={`badge cat-${p.category}`}>{p.category}</span>
+        )}
         {p.discount ? <span className="badge-tag">-{p.discount}%</span> : null}
         <img
           src={p.img || "/assets/images/placeholder.webp"}
           alt={p.name}
           loading="lazy"
-          style={{width:"100%",height:180,objectFit:"cover",borderRadius:12}}
+          style={{ width: "100%", height: 180, objectFit: "cover", borderRadius: 12 }}
         />
         {p.platform && <span className="badge-tag top-right">{p.platform}</span>}
       </div>
-      <div style={{marginTop:10, fontWeight:600}}>{p.name}</div>
-      <div className="muted" style={{display:"flex", gap:8, alignItems:"center", margin:"4px 0"}}>
+      <div style={{ marginTop: 10, fontWeight: 600 }}>{p.name}</div>
+      <div className="muted" style={{ display: "flex", gap: 8, alignItems: "center", margin: "4px 0" }}>
         <span>★ {(p.rating ?? 0).toFixed(1)}</span>
         {p.instant && <span className="chip">Instant</span>}
       </div>
-      <div style={{display:"flex", gap:8, alignItems:"baseline"}}>
-        <div style={{fontWeight:700}}>{money(p.price, cur)}</div>
-        {p.oldPrice ? (
-          <div className="muted" style={{textDecoration:"line-through"}}>{money(p.oldPrice, cur)}</div>
-        ) : null}
+      <div className="price" style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+        {p.oldPrice ? <s className="muted">{money(p.oldPrice, cur)}</s> : null}
+        <strong>{money(p.price, cur)}</strong>
       </div>
 
       {!added ? (

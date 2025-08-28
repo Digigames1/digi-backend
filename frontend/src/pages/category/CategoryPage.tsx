@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom";
 import CategoryBanner from "./CategoryBanner";
 import FiltersSidebar, { Filters } from "./FiltersSidebar";
 import SortBar from "./SortBar";
-import ProductCard from "./ProductCard";
+import { ProductCard } from "../../components/ProductCard";
 import { Catalog } from "../../lib/services";
 import type { Product, Facets } from "../../lib/types";
 import type { CategoryKey } from "./types";
@@ -61,7 +61,7 @@ export default function CategoryPage({category}:{category:CategoryKey}){
           {loading ? <div className="muted">Loading…</div> : err ? <div className="error">{err}</div> : (
             items.length ? (
               <div className={view==="grid" ? "grid featured" : "list"}>
-                {items.map(p => <ProductCard key={p.id} p={p}/>)}
+                {items.map(p => <ProductCard key={p.id} product={p}/>)}
               </div>
             ) : <div>No products found</div>
           )}

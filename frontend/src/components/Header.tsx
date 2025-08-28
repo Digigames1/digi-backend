@@ -29,22 +29,21 @@ export default function Header(){
       <div className="topbar">
         <div className="container topbar-inner">
           <Link to="/" className="brand">DigiGames</Link>
-          <div className="search"><input
-            placeholder="Search gift cards..."
-            value={query}
-            onChange={e=>setQuery(e.target.value)}
-            onKeyDown={async e=>{
-              if(e.key!=="Enter"||!query.trim()) return;
-              try{
-                const res=await fetch(`/api/cards?q=${encodeURIComponent(query.trim())}&currency=${encodeURIComponent(cur)}&lang=${encodeURIComponent(lang)}`);
-                const data=await res.json();
-                const cat=data.products?.[0]?.category||"gaming";
-                navigate(`/${cat}?q=${encodeURIComponent(query.trim())}`);
-              }catch(err){
-                console.error("search",err);
-              }
-            }}
-          /></div>
+          <div className="search">
+            <form
+              onSubmit={e => {
+                e.preventDefault();
+                if (!query.trim()) return;
+                navigate(`/search?q=${encodeURIComponent(query.trim())}`);
+              }}
+            >
+              <input
+                placeholder="Search gift cards..."
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+              />
+            </form>
+          </div>
           <nav className="topnav" aria-label="Actions">
             <LanguageMenu value={lang} onChange={setLang}/>
             <CurrencyMenu value={cur} onChange={setCur}/>
