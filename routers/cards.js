@@ -74,9 +74,11 @@ router.get("/", async (req, res) => {
         };
       });
 
-    if (q.platform) {
-      const p = String(q.platform).toUpperCase();
-      products = products.filter((it) => (it.platform || "").toUpperCase() === p);
+    const wantPlatform = q.platform ? String(q.platform).toUpperCase() : null;
+    if (wantPlatform) {
+      products = products.filter(
+        (it) => (it.platform || "").toUpperCase() === wantPlatform
+      );
     }
     if (q.regions) {
       const set = new Set(String(q.regions).split(",").map((s) => s.trim().toUpperCase()));
