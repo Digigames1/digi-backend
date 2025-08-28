@@ -3,6 +3,7 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import HomePage from "./components/HomePage"; // Figma Home
 import CategoryPage from "./pages/category/CategoryPage";
+import SearchPage from "./pages/search/SearchPage";
 import AboutUsPage from "./components/AboutUsPage";
 import ContactPage from "./components/ContactPage";
 import FAQPage from "./components/FAQPage";
@@ -21,6 +22,7 @@ export default function App(){
           <Route path="/music" element={<CategoryPage category="music"/>}/>
           <Route path="/fooddrink" element={<CategoryPage category="fooddrink"/>}/>
           <Route path="/travel" element={<CategoryPage category="travel"/>}/>
+          <Route path="/search" element={<SearchPage/>}/>
           <Route path="/about" element={<AboutUsPage/>}/>
           <Route path="/contact" element={<ContactPage/>}/>
           <Route path="/faq" element={<FAQPage/>}/>

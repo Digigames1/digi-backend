@@ -4,6 +4,7 @@ export type Product = {
   img?: string;
   price: number;
   oldPrice?: number;
+  category?: string;
   rating?: number;
   reviews?: number;
   platform?: "XBOX"|"PLAYSTATION"|"STEAM"|string;
