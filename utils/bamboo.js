@@ -98,3 +98,30 @@ export function mapProduct(x) {
   };
 }
 
+export async function fetchBambooProducts(params) {
+  try {
+    const r = await bambooFetch("/products", params);
+    const items = Array.isArray(r?.items)
+      ? r.items
+      : Array.isArray(r?.products)
+        ? r.products
+        : Array.isArray(r)
+          ? r
+          : [];
+    return items;
+  } catch (e) {
+    console.warn("[bamboo] products failed:", e?.message || e);
+    return [];
+  }
+}
+
+export async function fetchBambooById(id) {
+  try {
+    const x = await bambooFetch(`/products/${encodeURIComponent(id)}`);
+    return x || null;
+  } catch (e) {
+    console.warn("[bamboo] byId failed:", e?.message || e);
+    return null;
+  }
+}
+
