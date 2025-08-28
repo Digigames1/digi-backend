@@ -115,6 +115,20 @@ export async function fetchBambooProducts(params) {
   }
 }
 
+export async function fetchAllBambooProducts(params = {}) {
+  const limit = safeN(params.limit, 100);
+  let page = 1;
+  const all = [];
+  while (true) {
+    const items = await fetchBambooProducts({ ...params, page: String(page), limit: String(limit) });
+    if (!items.length) break;
+    all.push(...items);
+    if (items.length < limit) break;
+    page += 1;
+  }
+  return all;
+}
+
 export async function fetchBambooById(id) {
   try {
     const x = await bambooFetch(`/products/${encodeURIComponent(id)}`);
