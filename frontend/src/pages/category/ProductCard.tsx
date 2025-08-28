@@ -1,9 +1,11 @@
 import type { Product } from "../../lib/types";
 import { addToCart, removeFromCart, inCart, qtyOf, setQty } from "../../store/cart";
+import { money } from "../checkout/cartUtils";
 
 export default function ProductCard({p}:{p:Product}){
   const added = inCart(p.id);
   const qty = qtyOf(p.id);
+  const cur = localStorage.getItem("dg_currency") || p.currency || "USD";
   return (
     <div className="card" style={{padding:12}}>
       <div style={{position:"relative"}}>
@@ -22,9 +24,9 @@ export default function ProductCard({p}:{p:Product}){
         {p.instant && <span className="chip">Instant</span>}
       </div>
       <div style={{display:"flex", gap:8, alignItems:"baseline"}}>
-        <div style={{fontWeight:700}}>${p.price}</div>
+        <div style={{fontWeight:700}}>{money(p.price, cur)}</div>
         {p.oldPrice ? (
-          <div className="muted" style={{textDecoration:"line-through"}}>${p.oldPrice}</div>
+          <div className="muted" style={{textDecoration:"line-through"}}>{money(p.oldPrice, cur)}</div>
         ) : null}
       </div>
 

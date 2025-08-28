@@ -6,6 +6,15 @@ import { fileURLToPath } from "url";
 const BAMBOO_BASE = process.env.BAMBOO_BASE || "https://api.bamboo.example";
 const BAMBOO_KEY  = process.env.BAMBOO_API_KEY || "";
 
+// Простi курси для демо-режиму
+const SAMPLE_RATES = {
+  USD: 1,
+  EUR: 0.9,
+  PLN: 4,
+  AUD: 1.5,
+  CAD: 1.35,
+};
+
 const safeN = (n, d=0) => (Number.isFinite(+n) ? +n : d);
 
 function categorize(x) {
@@ -58,7 +67,16 @@ export async function bambooFetch(path, params={}) {
     return res.json();
   } catch (err) {
     console.warn("Bamboo fetch failed, using sample products", err.message);
-    return { products: loadSampleProducts() };
+    let products = loadSampleProducts();
+    const cur = String(params.currency || "USD").toUpperCase();
+    const rate = SAMPLE_RATES[cur] || 1;
+    if (rate !== 1) {
+      products = products.map(p => ({
+        ...p,
+        price: Number((safeN(p.price) * rate).toFixed(2))
+      }));
+    }
+    return { products };
   }
 }
 
