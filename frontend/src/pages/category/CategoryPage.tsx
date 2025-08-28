@@ -16,7 +16,7 @@ export default function CategoryPage({category}:{category:CategoryKey}){
   const [sort,setSort] = useState("popular");
   const [view,setView] = useState<"grid"|"list">("grid");
   const [filters,setFilters] = useState<Filters>({ inStock:false });
-  const [platform,setPlatform] = useState<"XBOX"|"PLAYSTATION"|"STEAM">("XBOX");
+  const [platform,setPlatform] = useState<"ALL"|"XBOX"|"PLAYSTATION"|"STEAM">("ALL");
   const [regions,setRegions] = useState<string[]>([]);
   const [denoms,setDenoms] = useState<number[]>([]);
   const [facets,setFacets] = useState<Facets>({});
@@ -35,7 +35,18 @@ export default function CategoryPage({category}:{category:CategoryKey}){
 
   useEffect(()=>{
     setLoading(true);
-    Catalog.list({ category, platform, regions, denoms, sort, inStock: filters.inStock, q, currency, lang })
+    const params: any = {
+      category,
+      regions,
+      denoms,
+      sort,
+      inStock: filters.inStock,
+      q,
+      currency,
+      lang,
+    };
+    if (platform !== "ALL") params.platform = platform;
+    Catalog.list(params)
       .then(res => { setItems(res.products||[]); setTotal(res.total||0); setFacets(res.facets||{}); })
       .catch(()=>{ setItems([]); setTotal(0); })
       .finally(()=> setLoading(false));

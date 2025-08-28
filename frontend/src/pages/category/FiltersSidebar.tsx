@@ -22,7 +22,10 @@ export default function FiltersSidebar({
   facets: Facets;
 }){
   const change = (patch:Partial<Filters>) => onChange({...value, ...patch});
-  const platforms = facets.platforms?.length ? facets.platforms : ["XBOX","PLAYSTATION","STEAM"];
+  const platforms = [
+    "ALL",
+    ...(facets.platforms?.length ? facets.platforms : ["XBOX","PLAYSTATION","STEAM"]),
+  ];
   const toggleRegion = (r:string) => {
     onRegions(regions.includes(r) ? regions.filter(x=>x!==r) : [...regions,r]);
   };
@@ -34,10 +37,11 @@ export default function FiltersSidebar({
       <div className="f-title">Gaming Platform</div>
       <div className="f-stack">
         {platforms.map(p=>(
-          <button key={p}
+          <button
+            key={p}
             className={"f-pill" + (platform===p ? " active":"")}
             onClick={()=>onPlatform(p)}
-          >{p}</button>
+          >{p === "ALL" ? "All Platforms" : p}</button>
         ))}
       </div>
 
