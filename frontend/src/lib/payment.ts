@@ -12,9 +12,10 @@ interface QuotePayload {
 }
 
 export interface QuoteResponse {
-  sub: number;
+  lines: { id: string; name: string; qty: number; unitPrice: number; lineTotal: number }[];
+  subtotal: number;
   discount: number;
-  txn: number;
+  transaction: number;
   total: number;
 }
 
@@ -27,6 +28,7 @@ interface SessionPayload extends QuotePayload {
 }
 
 interface SessionResponse {
+  sessionId: string;
   redirectUrl?: string;
 }
 
