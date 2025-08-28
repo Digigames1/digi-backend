@@ -13,20 +13,25 @@ export default function ProductCard({
   const added = inCart(p.id);
   const qty = qtyOf(p.id);
   const cur = localStorage.getItem("dg_currency") || p.currency || "USD";
+  const categoryLabel = p.category
+    ? p.category.charAt(0).toUpperCase() + p.category.slice(1)
+    : "";
   return (
     <div className="card" style={{ padding: 12 }}>
       <div style={{ position: "relative" }}>
-        {showCategoryBadge && p.category && (
-          <span className={`badge cat-${p.category}`}>{p.category}</span>
+        {showCategoryBadge && categoryLabel && (
+          <span className={`badge cat-${p.category}`}>{categoryLabel}</span>
         )}
         {p.discount ? <span className="badge-tag">-{p.discount}%</span> : null}
+        {!showCategoryBadge && p.platform && (
+          <span className="badge-tag top-right">{p.platform}</span>
+        )}
         <img
           src={p.img || "/assets/images/placeholder.webp"}
           alt={p.name}
           loading="lazy"
           style={{ width: "100%", height: 180, objectFit: "cover", borderRadius: 12 }}
         />
-        {p.platform && <span className="badge-tag top-right">{p.platform}</span>}
       </div>
       <div style={{ marginTop: 10, fontWeight: 600 }}>{p.name}</div>
       <div className="muted" style={{ display: "flex", gap: 8, alignItems: "center", margin: "4px 0" }}>
