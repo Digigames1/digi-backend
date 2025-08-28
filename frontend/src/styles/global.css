@@ -2,29 +2,37 @@
 
 *,*::before,*::after{box-sizing:border-box}
 html,body,#root{height:100%}
-/* щоб контент не заїжджав під хедер */
+body, main { padding-top: 0 !important; margin-top: 0 !important; }
 body{
   margin:0;background:#F7F7FB;color:#111827;
   font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
-  padding-top:96px; /* висота хедера (можна підправити) */
 }
 :root{
   --brand:#6F42C1; --ink:#111827; --muted:#6B7280;
   --card-bg:#fff; --card-border:#E5E7EB;
   --radius:16px; --container:1200px;
   --shadow:0 10px 30px rgba(17,24,39,.06);
+  --header-h:110px;
 }
+.header-wrap{
+  position:fixed;
+  top:0; left:0; right:0;
+  z-index:1000;
+  background:#fff;
+  border-bottom:1px solid var(--card-border);
+  box-shadow:0 0 0 rgba(0,0,0,0);
+  transition:box-shadow .15s ease;
+}
+.header-spacer{ height:var(--header-h); }
 .container{max-width:var(--container);margin:0 auto;padding:0 24px}
 .section-title{font-size:28px;font-weight:700;letter-spacing:-.01em;margin:32px 0 16px}
 
-.topbar{background:#fff;border-bottom:1px solid var(--card-border)}
+.topbar{ background:#fff; }
 .topbar-inner{height:64px;display:flex;align-items:center;gap:16px}
 .brand{font-weight:700;font-size:22px;color:var(--ink);text-decoration:none}
-.topnav{display:flex;gap:16px;font-size:14px}
-.topnav a{color:#374151;text-decoration:none;padding:8px 10px;border-radius:8px}
-.topnav a:hover{background:#F3F4F6}
+.topnav{display:flex;gap:12px;align-items:center}
 .search{flex:1;display:flex;justify-content:center}
 .search input{
   width:min(560px,100%);
@@ -150,36 +158,4 @@ a:hover{ text-decoration:underline }
 .card, .cat-card { transition: transform .18s ease, box-shadow .18s ease }
 .card:hover { transform: translateY(-4px); box-shadow: 0 18px 46px rgba(17,24,39,.12) }
 
-/* Sticky Header */
-.site-header {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  background: #fff;
-  border-bottom: 1px solid #e5e7eb;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.04);
-}
-
-/* внутрішня частина */
-.header-inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 12px 0;
-}
-
-.nav {
-  display: flex;
-  gap: 16px;
-  padding: 8px 0;
-}
-
-.nav a {
-  font-weight: 500;
-  color: #111;
-  text-decoration: none;
-}
-.nav a:hover {
-  color: #2563eb;
-}
+.has-scroll .header-wrap{ box-shadow: 0 2px 10px rgba(17,24,39,.08); }
