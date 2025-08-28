@@ -18,10 +18,38 @@ router.post(
       if (calc !== signature) return res.status(403).end("bad signature");
       const payload = JSON.parse(Buffer.from(data, "base64").toString("utf8"));
       const ok = payload?.status === "success" || payload?.paid === 1;
-      await Order.findOneAndUpdate(
-        { orderId: payload?.order_id },
-        { status: ok ? "paid" : "failed", meta: { liqpay: payload } }
-      );
+
+      const existing = await Order.findOne({ orderId: payload?.order_id });
+
+      if (existing) {
+        existing.status = ok ? "paid" : "failed";
+        existing.meta = { liqpay: payload };
+        await existing.save();
+      } else {
+        const amount = Number(payload?.amount) || 0;
+        await Order.create({
+          orderId: payload?.order_id || `lp_${Date.now()}`,
+          email: payload?.sender_email,
+          currency: payload?.currency,
+          items: [
+            {
+              id: payload?.product_id || "liqpay",
+              name: payload?.description || "LiqPay purchase",
+              qty: 1,
+              unitPrice: amount,
+              lineTotal: amount,
+            },
+          ],
+          subtotal: amount,
+          discount: 0,
+          transaction: 0,
+          total: amount,
+          provider: "liqpay",
+          status: ok ? "paid" : "failed",
+          meta: { liqpay: payload },
+        });
+      }
+
       res.sendStatus(200);
     } catch (e) {
       console.error("[liqpay webhook]", e.message);
