@@ -1,9 +1,25 @@
 import crypto from "crypto";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const BAMBOO_BASE = process.env.BAMBOO_BASE || "https://api.bamboo.example";
 const BAMBOO_KEY  = process.env.BAMBOO_API_KEY || "";
 
 const safeN = (n, d=0) => (Number.isFinite(+n) ? +n : d);
+
+function loadSampleProducts() {
+  try {
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    const p = path.join(__dirname, "../data/sample-products.json");
+    const txt = fs.readFileSync(p, "utf8");
+    return JSON.parse(txt);
+  } catch (e) {
+    console.error("Failed to load sample products", e.message);
+    return [];
+  }
+}
 
 export async function bambooFetch(path, params={}) {
   const url = new URL(`${BAMBOO_BASE}${path}`);
@@ -11,17 +27,22 @@ export async function bambooFetch(path, params={}) {
     if (v !== undefined && v !== null && v !== "") url.searchParams.set(k, v);
   });
 
-  const res = await fetch(url, {
-    headers: {
-      "Accept": "application/json",
-      "Authorization": BAMBOO_KEY ? `Bearer ${BAMBOO_KEY}` : undefined,
+  try {
+    const res = await fetch(url, {
+      headers: {
+        "Accept": "application/json",
+        "Authorization": BAMBOO_KEY ? `Bearer ${BAMBOO_KEY}` : undefined,
+      }
+    });
+    if (!res.ok) {
+      const t = await res.text().catch(()=> "");
+      throw new Error(`Bamboo ${res.status}: ${t || res.statusText}`);
     }
-  });
-  if (!res.ok) {
-    const t = await res.text().catch(()=> "");
-    throw new Error(`Bamboo ${res.status}: ${t || res.statusText}`);
+    return res.json();
+  } catch (err) {
+    console.warn("Bamboo fetch failed, using sample products", err.message);
+    return { products: loadSampleProducts() };
   }
-  return res.json();
 }
 
 /** Мапимо товар Bamboo → наш фронтовий формат */
