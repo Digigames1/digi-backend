@@ -29,8 +29,9 @@ export default function Header(){
       <div className="topbar">
         <div className="container topbar-inner">
           <Link to="/" className="brand">DigiGames</Link>
-          <div className="search">
+          <div className="search" style={{ flex: 1 }}>
             <form
+              style={{ width: "100%" }}
               onSubmit={e => {
                 e.preventDefault();
                 if (!query.trim()) return;
@@ -41,6 +42,7 @@ export default function Header(){
                 placeholder="Search gift cards..."
                 value={query}
                 onChange={e => setQuery(e.target.value)}
+                style={{ width: "100%", padding: "12px 16px", textAlign: "center" }}
               />
             </form>
           </div>
