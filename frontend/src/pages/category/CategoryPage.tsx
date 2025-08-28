@@ -1,28 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import CategoryBanner from "./CategoryBanner";
 import FiltersSidebar, { Filters } from "./FiltersSidebar";
 import SortBar from "./SortBar";
 import ProductCard from "./ProductCard";
-import { api } from "../../lib/api";
-import type { Product, ProductsResponse } from "../../lib/types";
+import { Catalog } from "../../lib/services";
+import type { Product, Facets } from "../../lib/types";
 import type { CategoryKey } from "./types";
-
-const buildQuery = (opts: {
-  category: string;
-  q?: string;
-  sort?: string;
-  regions?: string[];
-  inStock?: boolean;
-}) => {
-  const p = new URLSearchParams();
-  if (opts.category) p.set("category", opts.category);
-  if (opts.q) p.set("q", opts.q);
-  if (opts.sort) p.set("sort", opts.sort);
-  if (opts.regions?.length) p.set("regions", opts.regions.join(","));
-  if (typeof opts.inStock === "boolean") p.set("inStock", String(opts.inStock));
-  const s = p.toString();
-  return s ? `?${s}` : "";
-};
 
 export default function CategoryPage({category}:{category:CategoryKey}){
   const [loading,setLoading] = useState(false);
@@ -31,42 +14,35 @@ export default function CategoryPage({category}:{category:CategoryKey}){
   const [total,setTotal] = useState(0);
   const [sort,setSort] = useState("popular");
   const [view,setView] = useState<"grid"|"list">("grid");
-  const [filters,setFilters] = useState<Filters>({ platform:"All Platforms", regions:{}, inStock:false });
-
-  const regionsSelected = useMemo(()=>Object.keys(filters.regions).filter(r=>filters.regions[r]), [filters]);
-
-  const query = useMemo(() => buildQuery({
-    category,
-    sort,
-    regions: regionsSelected.length ? regionsSelected : undefined,
-    inStock: filters.inStock,
-  }), [category, sort, regionsSelected.join(","), filters.inStock]);
+  const [filters,setFilters] = useState<Filters>({ inStock:false });
+  const [platform,setPlatform] = useState<"XBOX"|"PLAYSTATION"|"STEAM">("XBOX");
+  const [regions,setRegions] = useState<string[]>([]);
+  const [denoms,setDenoms] = useState<number[]>([]);
+  const [facets,setFacets] = useState<Facets>({});
 
   useEffect(()=>{
-    let alive = true;
     setLoading(true);
-    setErr(null);
-    api.get<ProductsResponse>(`/cards${query}`)
-      .then(data => {
-        if (!alive) return;
-        setItems(data?.products ?? []);
-        setTotal(data?.total ?? 0);
-      })
-      .catch(e => {
-        if (!alive) return;
-        setErr(e?.message || "Failed to load products");
-        setItems([]);
-        setTotal(0);
-      })
-      .finally(() => { if (alive) setLoading(false); });
-    return () => { alive = false; };
-  }, [query]);
+    Catalog.list({ category, platform, regions, denoms, sort, inStock: filters.inStock })
+      .then(res => { setItems(res.products||[]); setTotal(res.total||0); setFacets(res.facets||{}); })
+      .catch(()=>{ setItems([]); setTotal(0); })
+      .finally(()=> setLoading(false));
+  }, [category, platform, regions.join(","), denoms.join(","), sort, filters.inStock]);
 
   return (
     <div className="container">
       <CategoryBanner category={category}/>
       <div style={{display:"grid", gridTemplateColumns:"280px 1fr", gap:16}}>
-        <FiltersSidebar value={filters} onChange={setFilters}/>
+        <FiltersSidebar
+          value={filters}
+          onChange={setFilters}
+          platform={platform}
+          onPlatform={setPlatform}
+          regions={regions}
+          onRegions={setRegions}
+          denoms={denoms}
+          onDenoms={setDenoms}
+          facets={facets}
+        />
         <div style={{display:"grid", gap:12}}>
           <SortBar total={total} sort={sort} onSort={setSort} view={view} onView={setView}/>
           {loading ? <div className="muted">Loading…</div> : err ? <div className="error">{err}</div> : (

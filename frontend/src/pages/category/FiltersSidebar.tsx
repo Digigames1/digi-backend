@@ -1,17 +1,42 @@
-import { useMemo } from "react";
-export type Filters = { platform: string; regions: Record<string,boolean>; inStock: boolean };
-export default function FiltersSidebar({value,onChange}:{value:Filters; onChange:(f:Filters)=>void}){
+import type { Facets } from "../../lib/types";
+export type Filters = { inStock: boolean };
+export default function FiltersSidebar({
+  value,
+  onChange,
+  platform,
+  onPlatform,
+  regions,
+  onRegions,
+  denoms,
+  onDenoms,
+  facets,
+}:{
+  value: Filters;
+  onChange: (f: Filters) => void;
+  platform: string;
+  onPlatform: (p: string) => void;
+  regions: string[];
+  onRegions: (r: string[]) => void;
+  denoms: number[];
+  onDenoms: (d: number[]) => void;
+  facets: Facets;
+}){
   const change = (patch:Partial<Filters>) => onChange({...value, ...patch});
-  const platforms = ["All Platforms","Xbox","PlayStation","Steam"];
-  const regions = useMemo(()=>["US","EU","UA","PL","NL","DE","CA"],[]);
+  const platforms = facets.platforms?.length ? facets.platforms : ["XBOX","PLAYSTATION","STEAM"];
+  const toggleRegion = (r:string) => {
+    onRegions(regions.includes(r) ? regions.filter(x=>x!==r) : [...regions,r]);
+  };
+  const toggleDenom = (d:number) => {
+    onDenoms(denoms.includes(d) ? denoms.filter(x=>x!==d) : [...denoms,d]);
+  };
   return (
     <aside className="card" style={{padding:16, position:"sticky", top:86}}>
       <div className="f-title">Gaming Platform</div>
       <div className="f-stack">
         {platforms.map(p=>(
           <button key={p}
-            className={"f-pill" + (value.platform===p ? " active":"")}
-            onClick={()=>change({platform:p})}
+            className={"f-pill" + (platform===p ? " active":"")}
+            onClick={()=>onPlatform(p)}
           >{p}</button>
         ))}
       </div>
@@ -22,18 +47,39 @@ export default function FiltersSidebar({value,onChange}:{value:Filters; onChange
         <span>In Stock Only</span>
       </label>
 
-      <div className="f-title" style={{marginTop:18}}>Region</div>
-      <div className="f-list">
-        {regions.map(r=>(
-          <label key={r} className="f-check">
-            <input type="checkbox"
-              checked={value.regions[r] ?? false}
-              onChange={e=>change({regions:{...value.regions,[r]:e.target.checked}})}
-            />
-            <span>{r}</span>
-          </label>
-        ))}
-      </div>
+      {facets.regions?.length ? (
+        <>
+          <div className="f-title" style={{marginTop:18}}>Region</div>
+          <div className="f-list">
+            {facets.regions.map(r=>(
+              <label key={r} className="f-check">
+                <input type="checkbox"
+                  checked={regions.includes(r)}
+                  onChange={()=>toggleRegion(r)}
+                />
+                <span>{r}</span>
+              </label>
+            ))}
+          </div>
+        </>
+      ) : null}
+
+      {facets.denominations?.length ? (
+        <>
+          <div className="f-title" style={{marginTop:18}}>Denomination</div>
+          <div className="f-list">
+            {facets.denominations.map(d=>(
+              <label key={d} className="f-check">
+                <input type="checkbox"
+                  checked={denoms.includes(d)}
+                  onChange={()=>toggleDenom(d)}
+                />
+                <span>{d}</span>
+              </label>
+            ))}
+          </div>
+        </>
+      ) : null}
     </aside>
   );
 }
