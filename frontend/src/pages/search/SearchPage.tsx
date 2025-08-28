@@ -38,7 +38,7 @@ export default function SearchPage() {
         <div className="grid">
           {items.map((p) => (
             <div key={p.id} style={{ display: "grid", gap: 8 }}>
-              <ProductCard product={p} showCategoryBadge />
+              <ProductCard product={p} />
               {p.category && (
                 <Link
                   to={`/${p.category}?highlight=${p.id}`}
