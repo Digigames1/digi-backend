@@ -1,8 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
-import { getCart, subtotal, totalCount } from "../../store/cart";
-import { METHOD_FEE, METHOD_LABEL, PayMethod } from "./fees";
-
-const safeN = (n: any, d = 0) => (Number.isFinite(+n) ? +n : d);
+import { useEffect, useState } from "react";
+import { getCart, totalCount } from "../../store/cart";
+import { createSession, getQuote } from "../../lib/payment";
 
 const money = (v: number, cur = "USD") =>
   new Intl.NumberFormat("en-US", {
@@ -18,9 +16,11 @@ export default function PaymentPage() {
   const [items, setItems] = useState(getCart());
   const [email, setEmail] = useState(getEmail());
   const [currency] = useState(getCurrency());
-  const [method, setMethod] = useState<PayMethod>("paypal");
   const [agree, setAgree] = useState(false);
   const [code, setCode] = useState(localStorage.getItem("dg_coupon") || "");
+  const [sums, setSums] = useState({ sub: 0, discount: 0, txn: 0, total: 0 });
+  const [creating, setCreating] = useState(false);
+  const [pErr, setPErr] = useState<string | null>(null);
 
   // автооновлення кошика
   useEffect(() => {
@@ -28,55 +28,46 @@ export default function PaymentPage() {
     return () => clearInterval(t);
   }, []);
 
-  const sums = useMemo(() => {
-    const sub = subtotal();
-    const discount =
-      code.trim().toUpperCase() === "SAVE5" ? Math.min(sub * 0.05, 50) : 0;
-    const feePct = Number(METHOD_FEE[method] ?? 0);
-    const txn = Math.max(0, (sub - discount) * (feePct / 100));
-    const total = Math.max(0, sub - discount + txn);
-    return { sub, discount, txn, total };
-  }, [items, code, method]);
+  useEffect(() => {
+    const payload = {
+      items: getCart().map((i) => ({ id: i.id, qty: Math.max(1, +i.qty || 1) })),
+      currency,
+      coupon: code.trim() || undefined,
+    };
+    getQuote(payload)
+      .then((res) => setSums(res))
+      .catch(() => setSums({ sub: 0, discount: 0, txn: 0, total: 0 }));
+  }, [items, code, currency]);
 
-  const methodLabel = METHOD_LABEL[method];
   const canProceed =
     !!email && /\S+@\S+\.\S+/.test(email) && items.length > 0 && agree;
 
+  async function handlePay() {
+    setCreating(true);
+    setPErr(null);
+    try {
+      const payload = {
+        items: getCart().map((i) => ({ id: i.id, qty: Math.max(1, +i.qty || 1) })),
+        currency: localStorage.getItem("dg_currency") || "USD",
+        coupon: (localStorage.getItem("dg_coupon") || "").trim() || undefined,
+        method: "liqpay" as const,
+        email,
+      };
+      const res = await createSession(payload);
+      if (res?.redirectUrl) {
+        window.location.href = res.redirectUrl;
+        return;
+      }
+      throw new Error("Payment redirect is missing");
+    } catch (e: any) {
+      setPErr(e?.message || "Failed to start payment");
+    } finally {
+      setCreating(false);
+    }
+  }
+
   return (
     <div className="container checkout">
-      {/* LEFT */}
-      <div className="co-left">
-        <div className="card">
-          <div className="co-title">Choose a Payment Method</div>
-          <div className="co-badge">✅ Instant e-mail delivery</div>
-
-          <div className="pm-list">
-            {(
-              ["paypal", "klarna", "sofort", "daopay", "applepay", "card"] as PayMethod[]
-            ).map((m) => (
-              <button
-                key={m}
-                onClick={() => setMethod(m)}
-                className={"pm-item" + (method === m ? " active" : "")}
-                aria-pressed={method === m}
-              >
-                <span className="radio">{method === m ? "●" : "○"}</span>
-                <span className="pm-title">{METHOD_LABEL[m]}</span>
-                <span className="pm-fee">+ {Number(METHOD_FEE[m] ?? 0)}%</span>
-              </button>
-            ))}
-          </div>
-
-          {method === "paypal" && (
-            <div className="alert warn">
-              Your code(s) will be sent to the email address linked to your
-              PayPal account, not the one you provided earlier.
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* RIGHT */}
       <aside className="co-right">
         <div className="card">
           <div className="co-right-title">Instant delivery to</div>
@@ -149,9 +140,13 @@ export default function PaymentPage() {
               <a href="/refunds" target="_blank">Return Policy</a>
             </span>
           </label>
-
-          <button className="btn primary co-cta" disabled={!canProceed}>
-            Continue with {methodLabel}
+          {pErr && <div className="alert warn">{pErr}</div>}
+          <button
+            className="btn primary co-cta"
+            disabled={!canProceed || creating}
+            onClick={handlePay}
+          >
+            Pay with card (LiqPay)
           </button>
         </div>
       </aside>
