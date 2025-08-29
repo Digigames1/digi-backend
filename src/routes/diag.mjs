@@ -1,62 +1,91 @@
 import express from "express";
-import { api, getEgressIp, getBambooConfig } from "../catalog/bambooClient.mjs";
+import axios from "axios";
+
+// Якщо у проєкті вже є bambooClient — не чіпай його імпорти тут.
+// Ми йдемо напряму, щоб цей роут працював навіть якщо інші модулі падають.
 
 export const diagRouter = express.Router();
 
-diagRouter.get("/bamboo", async (req, res) => {
-  const cfg = getBambooConfig();
-  const ip = await getEgressIp();
+// Найпростіший healthcheck, не залежить ні від чого
+diagRouter.get("/healthz", (_req, res) => {
+  res.json({ ok: true, ts: Date.now() });
+});
+
+// Поточний egress IP (для whitelist у Bamboo)
+diagRouter.get("/egress-ip", async (_req, res) => {
+  try {
+    const { data } = await axios.get("https://api.ipify.org?format=json", { timeout: 5000 });
+    res.json({ ip: data?.ip || null });
+  } catch (e) {
+    res.status(500).json({ ip: null, error: e?.message || "failed" });
+  }
+});
+
+// Діагностика Bamboo: гнучка авторизація + детальний статус
+diagRouter.get("/bamboo", async (_req, res) => {
+  const BASE =
+    process.env.BAMBOO_API_BASE ||
+    process.env.BAMBOO_API_URL ||
+    process.env.BAMBOO_BASE_URL ||
+    "";
+  const CATALOG_PATH = (process.env.BAMBOO_CATALOG_PATH || "/catalog").replace(/\/+$/, "") || "/catalog";
+  const AUTH_MODE = (process.env.BAMBOO_AUTH_MODE || (process.env.BAMBOO_API_TOKEN ? "BEARER" : "HEADERS")).toUpperCase();
+  const CLIENT_ID = process.env.BAMBOO_PROD_CLIENT_ID || process.env.BAMBOO_CLIENT_ID || "";
+  const CLIENT_SECRET = process.env.BAMBOO_PROD_CLIENT_SECRET || process.env.BAMBOO_CLIENT_SECRET || "";
+  const TOKEN = process.env.BAMBOO_API_TOKEN || "";
+
+  const headers = { "Content-Type": "application/json" };
+  if (AUTH_MODE === "BEARER") headers.Authorization = `Bearer ${TOKEN}`;
+  else {
+    headers["X-Client-Id"] = CLIENT_ID;
+    headers["X-Client-Secret"] = CLIENT_SECRET;
+  }
+
+  let ip = null;
+  try {
+    const ipRes = await axios.get("https://api.ipify.org?format=json", { timeout: 5000 });
+    ip = ipRes.data?.ip || null;
+  } catch {}
+
+  if (!BASE) {
+    return res.status(200).json({
+      ok: false,
+      egressIp: ip,
+      config: { baseUrl: BASE, catalogPath: CATALOG_PATH, authMode: AUTH_MODE },
+      error: "BASE url is empty. Set BAMBOO_API_URL/BAMBOO_BASE_URL in Render.",
+    });
+  }
 
   try {
-    const { data, status } = await api.get(cfg.catalogPath, { params: { limit: 5 } });
+    const { data, status } = await axios.get(
+      `${BASE.replace(/\/+$/, "")}${CATALOG_PATH}`,
+      { params: { limit: 5 }, headers, timeout: 15000 }
+    );
     const items = Array.isArray(data?.items) ? data.items :
                   Array.isArray(data?.data) ? data.data :
                   Array.isArray(data) ? data : [];
     const preview = items.slice(0, 5).map(it => ({
-      id: it.id ?? it.productId ?? it.sku ?? null,
-      name: it.name ?? it.title ?? it.displayName ?? null,
+      id: it?.id ?? it?.productId ?? it?.sku ?? null,
+      name: it?.name ?? it?.title ?? it?.displayName ?? null
     }));
-
-    return res.json({
+    res.json({
       ok: true,
       status,
       egressIp: ip,
-      config: cfg,
+      config: { baseUrl: BASE, catalogPath: CATALOG_PATH, authMode: AUTH_MODE },
       count: items.length || 0,
-      preview,
+      preview
     });
   } catch (e) {
     const status = e?.response?.status || null;
     const body = e?.response?.data || e?.message || "error";
-    return res.status(200).json({
+    res.status(200).json({
       ok: false,
       status,
       egressIp: ip,
-      config: cfg,
-      error: typeof body === "object" ? body : String(body),
+      config: { baseUrl: BASE, catalogPath: CATALOG_PATH, authMode: AUTH_MODE },
+      error: typeof body === "object" ? body : String(body)
     });
-  }
-});
-
-diagRouter.get("/egress-ip", async (req, res) => {
-  try {
-    const ip = await getEgressIp();
-    if (!ip) throw new Error("failed to fetch ip");
-    return res.json({ ip });
-  } catch (e) {
-    console.error("[diag] egress-ip error:", e?.code || e?.message);
-    return res.status(500).json({ ip: null, error: e?.message || "failed" });
-  }
-});
-
-diagRouter.get("/", async (req, res) => {
-  try {
-    const ip = await getEgressIp();
-    if (!ip) throw new Error("failed to fetch ip");
-    return res.json({ ip });
-  } catch (e) {
-    console.error("[diag] ip error:", e?.code || e?.message);
-    return res.status(500).json({ ip: null, error: e?.message || "failed" });
   }
 });
 
