@@ -7,10 +7,12 @@
     "node": "18.x"
   },
   "scripts": {
-    "start": "node server.mjs"
+    "start": "node server.mjs",
+    "postbuild": "mkdir -p dist/data && cp -f src/data/sample-products.json dist/data/sample-products.json"
   },
   "dependencies": {
     "express": "^4.19.2",
-    "mongoose": "^7.6.3"
+    "mongoose": "^7.6.3",
+    "axios": "^1.6.7"
   }
 }

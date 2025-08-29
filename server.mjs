@@ -8,6 +8,7 @@ import searchRouter from "./routers/search.js";
 import checkoutRouter from "./routers/checkout.js";
 import liqpayRouter from "./routers/liqpay.js";
 import catalogRouter from "./routers/catalog.js";
+import { diagRouter } from "./src/routes/diag.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -50,6 +51,8 @@ app.use("/api/cards", cardsRouter);
 app.use("/api/catalog", catalogRouter);
 app.use("/api/checkout", express.json(), checkoutRouter);
 app.use("/api/liqpay", liqpayRouter);
+app.use("/api/diag", diagRouter);
+app.use("/api/ip", diagRouter);
 
 app.get("/healthz", (_req, res) => res.status(200).send("OK"));
 
