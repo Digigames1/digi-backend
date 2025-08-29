@@ -1,0 +1,218 @@
+[
+  {
+    "id": "xbox-10-us",
+    "name": "Xbox Gift Card $10 (US)",
+    "platform": "XBOX",
+    "region": "US",
+    "denomination": 10,
+    "price": 10,
+    "img": "https://via.placeholder.com/300x180?text=XBOX"
+  },
+  {
+    "id": "xbox-25-us",
+    "name": "Xbox Gift Card $25 (US)",
+    "platform": "XBOX",
+    "region": "US",
+    "denomination": 25,
+    "price": 25,
+    "img": "https://via.placeholder.com/300x180?text=XBOX"
+  },
+  {
+    "id": "xbox-15-eu",
+    "name": "Xbox Gift Card €15 (EU)",
+    "platform": "XBOX",
+    "region": "EU",
+    "denomination": 15,
+    "price": 15,
+    "img": "https://via.placeholder.com/300x180?text=XBOX"
+  },
+  {
+    "id": "xbox-50-eu",
+    "name": "Xbox Gift Card €50 (EU)",
+    "platform": "XBOX",
+    "region": "EU",
+    "denomination": 50,
+    "price": 50,
+    "img": "https://via.placeholder.com/300x180?text=XBOX"
+  },
+  {
+    "id": "xbox-20-ua",
+    "name": "Xbox Gift Card ₴20 (UA)",
+    "platform": "XBOX",
+    "region": "UA",
+    "denomination": 20,
+    "price": 20,
+    "img": "https://via.placeholder.com/300x180?text=XBOX"
+  },
+  {
+    "id": "xbox-100-ua",
+    "name": "Xbox Gift Card ₴100 (UA)",
+    "platform": "XBOX",
+    "region": "UA",
+    "denomination": 100,
+    "price": 100,
+    "img": "https://via.placeholder.com/300x180?text=XBOX"
+  },
+  {
+    "id": "xbox-15-pl",
+    "name": "Xbox Gift Card zł15 (PL)",
+    "platform": "XBOX",
+    "region": "PL",
+    "denomination": 15,
+    "price": 15,
+    "img": "https://via.placeholder.com/300x180?text=XBOX"
+  },
+  {
+    "id": "xbox-50-pl",
+    "name": "Xbox Gift Card zł50 (PL)",
+    "platform": "XBOX",
+    "region": "PL",
+    "denomination": 50,
+    "price": 50,
+    "img": "https://via.placeholder.com/300x180?text=XBOX"
+  },
+  {
+    "id": "playstation-10-us",
+    "name": "PlayStation Gift Card $10 (US)",
+    "platform": "PLAYSTATION",
+    "region": "US",
+    "denomination": 10,
+    "price": 10,
+    "img": "https://via.placeholder.com/300x180?text=PS"
+  },
+  {
+    "id": "playstation-25-us",
+    "name": "PlayStation Gift Card $25 (US)",
+    "platform": "PLAYSTATION",
+    "region": "US",
+    "denomination": 25,
+    "price": 25,
+    "img": "https://via.placeholder.com/300x180?text=PS"
+  },
+  {
+    "id": "playstation-15-eu",
+    "name": "PlayStation Gift Card €15 (EU)",
+    "platform": "PLAYSTATION",
+    "region": "EU",
+    "denomination": 15,
+    "price": 15,
+    "img": "https://via.placeholder.com/300x180?text=PS"
+  },
+  {
+    "id": "playstation-50-eu",
+    "name": "PlayStation Gift Card €50 (EU)",
+    "platform": "PLAYSTATION",
+    "region": "EU",
+    "denomination": 50,
+    "price": 50,
+    "img": "https://via.placeholder.com/300x180?text=PS"
+  },
+  {
+    "id": "playstation-20-ua",
+    "name": "PlayStation Gift Card ₴20 (UA)",
+    "platform": "PLAYSTATION",
+    "region": "UA",
+    "denomination": 20,
+    "price": 20,
+    "img": "https://via.placeholder.com/300x180?text=PS"
+  },
+  {
+    "id": "playstation-100-ua",
+    "name": "PlayStation Gift Card ₴100 (UA)",
+    "platform": "PLAYSTATION",
+    "region": "UA",
+    "denomination": 100,
+    "price": 100,
+    "img": "https://via.placeholder.com/300x180?text=PS"
+  },
+  {
+    "id": "playstation-15-pl",
+    "name": "PlayStation Gift Card zł15 (PL)",
+    "platform": "PLAYSTATION",
+    "region": "PL",
+    "denomination": 15,
+    "price": 15,
+    "img": "https://via.placeholder.com/300x180?text=PS"
+  },
+  {
+    "id": "playstation-50-pl",
+    "name": "PlayStation Gift Card zł50 (PL)",
+    "platform": "PLAYSTATION",
+    "region": "PL",
+    "denomination": 50,
+    "price": 50,
+    "img": "https://via.placeholder.com/300x180?text=PS"
+  },
+  {
+    "id": "steam-10-us",
+    "name": "Steam Gift Card $10 (US)",
+    "platform": "STEAM",
+    "region": "US",
+    "denomination": 10,
+    "price": 10,
+    "img": "https://via.placeholder.com/300x180?text=STEAM"
+  },
+  {
+    "id": "steam-25-us",
+    "name": "Steam Gift Card $25 (US)",
+    "platform": "STEAM",
+    "region": "US",
+    "denomination": 25,
+    "price": 25,
+    "img": "https://via.placeholder.com/300x180?text=STEAM"
+  },
+  {
+    "id": "steam-15-eu",
+    "name": "Steam Gift Card €15 (EU)",
+    "platform": "STEAM",
+    "region": "EU",
+    "denomination": 15,
+    "price": 15,
+    "img": "https://via.placeholder.com/300x180?text=STEAM"
+  },
+  {
+    "id": "steam-50-eu",
+    "name": "Steam Gift Card €50 (EU)",
+    "platform": "STEAM",
+    "region": "EU",
+    "denomination": 50,
+    "price": 50,
+    "img": "https://via.placeholder.com/300x180?text=STEAM"
+  },
+  {
+    "id": "steam-20-ua",
+    "name": "Steam Gift Card ₴20 (UA)",
+    "platform": "STEAM",
+    "region": "UA",
+    "denomination": 20,
+    "price": 20,
+    "img": "https://via.placeholder.com/300x180?text=STEAM"
+  },
+  {
+    "id": "steam-100-ua",
+    "name": "Steam Gift Card ₴100 (UA)",
+    "platform": "STEAM",
+    "region": "UA",
+    "denomination": 100,
+    "price": 100,
+    "img": "https://via.placeholder.com/300x180?text=STEAM"
+  },
+  {
+    "id": "steam-15-pl",
+    "name": "Steam Gift Card zł15 (PL)",
+    "platform": "STEAM",
+    "region": "PL",
+    "denomination": 15,
+    "price": 15,
+    "img": "https://via.placeholder.com/300x180?text=STEAM"
+  },
+  {
+    "id": "steam-50-pl",
+    "name": "Steam Gift Card zł50 (PL)",
+    "platform": "STEAM",
+    "region": "PL",
+    "denomination": 50,
+    "price": 50,
+    "img": "https://via.placeholder.com/300x180?text=STEAM"
+  }
+]
