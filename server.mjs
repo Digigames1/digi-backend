@@ -3,12 +3,12 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import mongoose from "mongoose";
+import { diagRouter } from "./src/routes/diag.mjs";
 import cardsRouter from "./routers/cards.js";
 import searchRouter from "./routers/search.js";
 import checkoutRouter from "./routers/checkout.js";
 import liqpayRouter from "./routers/liqpay.js";
 import catalogRouter from "./routers/catalog.js";
-import { diagRouter } from "./src/routes/diag.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,15 +16,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.use(express.json());
 
-const MONGO = process.env.MONGODB_URI;
-if (MONGO) {
-  mongoose
-    .connect(MONGO)
-    .then(() => console.log("Mongo connected"))
-    .catch((e) => console.error("Mongo connect error:", e.message));
-} else {
-  console.warn("MONGODB_URI not set");
-}
+// ДІАГНОСТИКА — піднімаємо першою, без залежностей
+app.use("/api/diag", diagRouter);
+app.get("/healthz", (_req, res) => res.json({ ok: true }));
 
 const envDist = process.env.DIST_DIR && path.resolve(process.env.DIST_DIR);
 const candidates = [
@@ -46,15 +40,12 @@ if (found) {
   console.error("❌ dist/index.html not found. Ensure build step creates it in the repo root or set DIST_DIR.");
 }
 
+// далі — основні роутери
 app.use("/api/search", searchRouter);
 app.use("/api/cards", cardsRouter);
 app.use("/api/catalog", catalogRouter);
 app.use("/api/checkout", express.json(), checkoutRouter);
 app.use("/api/liqpay", liqpayRouter);
-app.use("/api/diag", diagRouter);
-app.use("/api/ip", diagRouter);
-
-app.get("/healthz", (_req, res) => res.status(200).send("OK"));
 
 app.get("*", (_req, res) => {
   const indexPath = found && path.join(found, "index.html");
@@ -63,5 +54,24 @@ app.get("*", (_req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server on ${PORT}`));
+
+// БЕЗПЕЧНИЙ СТАРТ: не валимо весь процес, якщо Mongo впав — просто логґуємо
+(async () => {
+  try {
+    const MONGO = process.env.MONGODB_URI;
+    if (MONGO) {
+      mongoose.connect(MONGO).catch(err => {
+        console.error("[mongo] initial connect failed:", err?.message);
+      });
+    } else {
+      console.warn("MONGODB_URI not set");
+    }
+  } catch (e) {
+    console.error("[server] mongo bootstrap error:", e?.message);
+  }
+  app.listen(PORT, () => console.log(`Server on :${PORT}`));
+})();
+
+process.on("unhandledRejection", (r) => console.error("[unhandledRejection]", r));
+process.on("uncaughtException", (e) => console.error("[uncaughtException]", e));
 
