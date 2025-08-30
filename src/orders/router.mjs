@@ -62,10 +62,13 @@ ordersRouter.post("/orders/:id/confirm", async (req, res) => {
 
 ordersRouter.post(
   "/liqpay/callback",
-  express.urlencoded({ extended: false }),
+  express.urlencoded({ extended: true }),
   async (req, res) => {
     try {
       const { data, signature } = req.body || {};
+      if (!data || !signature) {
+        return res.status(400).json({ ok: false, error: "missing data" });
+      }
       if (!verifyLiqpaySignature({ data, signature })) {
         return res.status(403).json({ ok: false, error: "bad signature" });
       }
