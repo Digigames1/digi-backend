@@ -1,8 +1,6 @@
 import express from "express";
 import axios from "axios";
-
-// Якщо у проєкті вже є bambooClient — не чіпай його імпорти тут.
-// Ми йдемо напряму, щоб цей роут працював навіть якщо інші модулі падають.
+import { authHeaders, debugAuthConfig } from "../catalog/auth.mjs";
 
 export const diagRouter = express.Router();
 
@@ -27,29 +25,11 @@ diagRouter.get("/bamboo", async (_req, res) => {
     process.env.BAMBOO_API_BASE ||
     process.env.BAMBOO_API_URL ||
     process.env.BAMBOO_BASE_URL ||
-    "";
-  const CATALOG_PATH = (process.env.BAMBOO_CATALOG_PATH || "/catalog").replace(/\/+$/, "") || "/catalog";
-  const AUTH_MODE = (process.env.BAMBOO_AUTH_MODE ||
-    (process.env.BAMBOO_API_TOKEN ? "BEARER" : (process.env.BAMBOO_SECRET_KEY ? "SECRET" : "HEADERS"))
-  ).toUpperCase();
-  const CLIENT_ID = process.env.BAMBOO_PROD_CLIENT_ID || process.env.BAMBOO_CLIENT_ID || "";
-  const CLIENT_SECRET = process.env.BAMBOO_PROD_CLIENT_SECRET || process.env.BAMBOO_CLIENT_SECRET || "";
-  const TOKEN = process.env.BAMBOO_API_TOKEN || "";
-  const SECRET_KEY = process.env.BAMBOO_SECRET_KEY || "";
+    "https://api.bamboocardportal.com";
+  const CATALOG_PATH = (process.env.BAMBOO_CATALOG_PATH || "/api/integration/v2.0/catalog").replace(/\/+$/, "") || "/api/integration/v2.0/catalog";
 
   const headers = { "Content-Type": "application/json" };
-  switch (AUTH_MODE) {
-    case "BEARER":
-      headers.Authorization = `Bearer ${TOKEN}`;
-      break;
-    case "SECRET":
-      headers["X-Secret-Key"] = SECRET_KEY;
-      if (CLIENT_ID) headers["X-Client-Id"] = CLIENT_ID;
-      break;
-    default: // HEADERS
-      headers["X-Client-Id"] = CLIENT_ID;
-      headers["X-Client-Secret"] = CLIENT_SECRET;
-  }
+  Object.assign(headers, await authHeaders());
   const headerKeys = Object.keys(headers);
 
   let ip = null;
@@ -62,16 +42,7 @@ diagRouter.get("/bamboo", async (_req, res) => {
     return res.status(200).json({
       ok: false,
       egressIp: ip,
-      config: {
-        baseUrl: BASE,
-        catalogPath: CATALOG_PATH,
-        authMode: AUTH_MODE,
-        headers: headerKeys,
-        hasToken: Boolean(TOKEN),
-        hasSecretKey: Boolean(SECRET_KEY),
-        hasClientId: Boolean(CLIENT_ID),
-        hasClientSecret: Boolean(CLIENT_SECRET),
-      },
+      config: { baseUrl: BASE, catalogPath: CATALOG_PATH, ...debugAuthConfig() },
       error: "BASE url is empty. Set BAMBOO_API_URL/BAMBOO_BASE_URL in Render.",
     });
   }
@@ -92,16 +63,7 @@ diagRouter.get("/bamboo", async (_req, res) => {
       ok: true,
       status,
       egressIp: ip,
-      config: {
-        baseUrl: BASE,
-        catalogPath: CATALOG_PATH,
-        authMode: AUTH_MODE,
-        headers: headerKeys,
-        hasToken: Boolean(TOKEN),
-        hasSecretKey: Boolean(SECRET_KEY),
-        hasClientId: Boolean(CLIENT_ID),
-        hasClientSecret: Boolean(CLIENT_SECRET),
-      },
+      config: { baseUrl: BASE, catalogPath: CATALOG_PATH, ...debugAuthConfig() },
       count: items.length || 0,
       preview
     });
@@ -112,17 +74,7 @@ diagRouter.get("/bamboo", async (_req, res) => {
       ok: false,
       status,
       egressIp: ip,
-      config: {
-        baseUrl: BASE,
-        catalogPath: CATALOG_PATH,
-        authMode: AUTH_MODE,
-        headers: headerKeys,
-        // підкажемо, що саме активовано (без значень ключів)
-        hasToken: Boolean(TOKEN),
-        hasSecretKey: Boolean(SECRET_KEY),
-        hasClientId: Boolean(CLIENT_ID),
-        hasClientSecret: Boolean(CLIENT_SECRET),
-      },
+      config: { baseUrl: BASE, catalogPath: CATALOG_PATH, ...debugAuthConfig() },
       error: typeof body === "object" ? body : String(body)
     });
   }
