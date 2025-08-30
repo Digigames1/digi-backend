@@ -1,6 +1,6 @@
 import express from "express";
 import axios from "axios";
-import { authHeaders, debugAuthConfig, secretHeaderVariants } from "../catalog/auth.mjs";
+import { authHeaders, debugAuthConfig } from "../catalog/auth.mjs";
 
 export const diagRouter = express.Router();
 
@@ -26,74 +26,58 @@ diagRouter.get("/bamboo", async (_req, res) => {
     process.env.BAMBOO_API_URL ||
     process.env.BAMBOO_BASE_URL ||
     "https://api.bamboocardportal.com";
-  const CATALOG_PATH = (process.env.BAMBOO_CATALOG_PATH || "/api/integration/v2.0/catalog").replace(/\/+$/, "") || "/api/integration/v2.0/catalog";
+  const CATALOG_PATH =
+    (process.env.BAMBOO_CATALOG_PATH || "/api/integration/v2.0/catalog").replace(
+      /\/+$/,
+      ""
+    ) || "/api/integration/v2.0/catalog";
 
-    const headers = { "Content-Type": "application/json" };
-    let authErr = null, usedHeaderNames = [];
-    try { Object.assign(headers, await authHeaders()); }
-    catch (e) { authErr = e?.response?.data || e?.message || "authHeaders failed"; }
-
-  let ip = null;
+  const headers = { "Content-Type": "application/json" };
+  let authErr = null;
   try {
-    const ipRes = await axios.get("https://api.ipify.org?format=json", { timeout: 5000 });
-    ip = ipRes.data?.ip || null;
-  } catch {}
-
-  if (!BASE) {
-    return res.status(200).json({
-      ok: false,
-      egressIp: ip,
-      config: { baseUrl: BASE, catalogPath: CATALOG_PATH, ...debugAuthConfig() },
-      error: "BASE url is empty. Set BAMBOO_API_URL/BAMBOO_BASE_URL in Render.",
-    });
+    Object.assign(headers, await authHeaders());
+  } catch (e) {
+    authErr = e?.response?.data || e?.message || "authHeaders failed";
   }
 
   try {
-    let data, status;
     const url = `${BASE.replace(/\/+$/, "")}${CATALOG_PATH}`;
-    if ("X-Secret-Key" in headers || "X-Api-Key" in headers) {
-      // SECRET режим: перебір варіантів
-      const variants = secretHeaderVariants();
-      let lastErr;
-      for (const v of variants) {
-        try {
-          const r = await axios.get(url, { params: { limit: 5 }, headers: { "Content-Type": "application/json", ...v }, timeout: 15000 });
-          data = r.data; status = r.status; usedHeaderNames = Object.keys(v); break;
-        } catch (e) {
-          lastErr = e;
-          if (e?.response?.status && e.response.status !== 401 && e.response.status !== 403) throw e;
-        }
-      }
-      if (!status) throw lastErr || new Error("All SECRET header variants failed");
-    } else {
-      const r = await axios.get(url, { params: { limit: 5 }, headers, timeout: 15000 });
-      data = r.data; status = r.status; usedHeaderNames = Object.keys(headers);
-    }
-    const items = Array.isArray(data?.items) ? data.items :
-                  Array.isArray(data?.data) ? data.data :
-                  Array.isArray(data) ? data : [];
-    const preview = items.slice(0, 5).map(it => ({
-      id: it?.id ?? it?.productId ?? it?.sku ?? null,
-      name: it?.name ?? it?.title ?? it?.displayName ?? null
-    }));
-    res.json({
+    const r = await axios.get(url, {
+      params: { limit: 5 },
+      headers,
+      timeout: 15000,
+    });
+    const data = r.data;
+    const status = r.status;
+
+    const items = Array.isArray(data?.items)
+      ? data.items
+      : Array.isArray(data?.data)
+      ? data.data
+      : Array.isArray(data)
+      ? data
+      : [];
+
+    return res.json({
       ok: true,
       status,
-      egressIp: ip,
-      config: { baseUrl: BASE, catalogPath: CATALOG_PATH, ...debugAuthConfig() },
       count: items.length || 0,
-      usedHeaders: usedHeaderNames,
-      preview
+      usedHeaders: Object.keys(headers),
+      config: { ...debugAuthConfig() },
     });
   } catch (e) {
     const status = e?.response?.status || null;
     const body = e?.response?.data || e?.message || "error";
-    res.status(200).json({
+    return res.status(200).json({
       ok: false,
       status,
-      egressIp: ip,
-      config: { baseUrl: BASE, catalogPath: CATALOG_PATH, ...debugAuthConfig() },
-      error: authErr ? { auth: authErr } : (typeof body === "object" ? body : String(body))
+      usedHeaders: Object.keys(headers),
+      config: { ...debugAuthConfig() },
+      error: authErr
+        ? { auth: authErr }
+        : typeof body === "object"
+        ? body
+        : String(body),
     });
   }
 });
