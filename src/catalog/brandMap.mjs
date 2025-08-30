@@ -2,48 +2,22 @@ export const CATEGORY_BRANDS = {
   gaming: {
     title: "Gaming",
     match: [
-      /playstation|psn/i,
-      /xbox/i,
-      /nintendo/i,
-      /steam/i,
+      // PlayStation / PSN
+      /\bplay\s*station\b/i,
+      /\bpsn\b/i,
+      /sony\s*(psn|play\s*station)/i,
+      // Xbox
+      /\bxbox\b/i,
+      /\bms\s*xbox\b/i,
+      // Nintendo
+      /\bnintendo\b/i,
+      /\be?shop\b.*nintendo/i,
+      // Steam
+      /\bsteam\b/i,
+      /valve\s*steam/i,
     ],
   },
-  streaming: {
-    title: "Streaming",
-    match: [
-      /twitch/i,
-    ],
-  },
-  shopping: {
-    title: "Shopping",
-    match: [
-      /zalando|zelando/i,
-      /\bamazon\b/i,
-      /\bebay\b/i,
-    ],
-  },
-  music: {
-    title: "Music",
-    match: [
-      /spotify/i,
-      /google\s*play/i,
-      /apple\s*(music|itunes)/i,
-    ],
-  },
-  food: {
-    title: "Food & Drink",
-    match: [
-      /starbucks?/i,
-      /uber\s*eats/i,
-    ],
-  },
-  travel: {
-    title: "Travel",
-    match: [
-      /airbnb/i,
-      /\buber\b/i,
-    ],
-  },
+  // інші категорії додамо пізніше
 };
 
 export function detectCategory(brandName = "") {
