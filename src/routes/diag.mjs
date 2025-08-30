@@ -1,6 +1,6 @@
 import express from "express";
 import axios from "axios";
-import { authHeaders, debugAuthConfig } from "../catalog/auth.mjs";
+import { authHeaders, debugAuthConfig, secretHeaderVariants } from "../catalog/auth.mjs";
 
 export const diagRouter = express.Router();
 
@@ -29,13 +29,9 @@ diagRouter.get("/bamboo", async (_req, res) => {
   const CATALOG_PATH = (process.env.BAMBOO_CATALOG_PATH || "/api/integration/v2.0/catalog").replace(/\/+$/, "") || "/api/integration/v2.0/catalog";
 
     const headers = { "Content-Type": "application/json" };
-    let authErr = null;
-    try {
-      Object.assign(headers, await authHeaders());
-    } catch (e) {
-      authErr = e?.response?.data || e?.message || "authHeaders failed";
-    }
-    const headerKeys = Object.keys(headers);
+    let authErr = null, usedHeaderNames = [];
+    try { Object.assign(headers, await authHeaders()); }
+    catch (e) { authErr = e?.response?.data || e?.message || "authHeaders failed"; }
 
   let ip = null;
   try {
@@ -53,10 +49,26 @@ diagRouter.get("/bamboo", async (_req, res) => {
   }
 
   try {
-    const { data, status } = await axios.get(
-      `${BASE.replace(/\/+$/, "")}${CATALOG_PATH}`,
-      { params: { limit: 5 }, headers, timeout: 15000 }
-    );
+    let data, status;
+    const url = `${BASE.replace(/\/+$/, "")}${CATALOG_PATH}`;
+    if ("X-Secret-Key" in headers || "X-Api-Key" in headers) {
+      // SECRET режим: перебір варіантів
+      const variants = secretHeaderVariants();
+      let lastErr;
+      for (const v of variants) {
+        try {
+          const r = await axios.get(url, { params: { limit: 5 }, headers: { "Content-Type": "application/json", ...v }, timeout: 15000 });
+          data = r.data; status = r.status; usedHeaderNames = Object.keys(v); break;
+        } catch (e) {
+          lastErr = e;
+          if (e?.response?.status && e.response.status !== 401 && e.response.status !== 403) throw e;
+        }
+      }
+      if (!status) throw lastErr || new Error("All SECRET header variants failed");
+    } else {
+      const r = await axios.get(url, { params: { limit: 5 }, headers, timeout: 15000 });
+      data = r.data; status = r.status; usedHeaderNames = Object.keys(headers);
+    }
     const items = Array.isArray(data?.items) ? data.items :
                   Array.isArray(data?.data) ? data.data :
                   Array.isArray(data) ? data : [];
@@ -70,6 +82,7 @@ diagRouter.get("/bamboo", async (_req, res) => {
       egressIp: ip,
       config: { baseUrl: BASE, catalogPath: CATALOG_PATH, ...debugAuthConfig() },
       count: items.length || 0,
+      usedHeaders: usedHeaderNames,
       preview
     });
   } catch (e) {
