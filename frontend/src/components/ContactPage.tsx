@@ -1,8 +1,11 @@
+import { useTranslation } from "react-i18next";
+
 export default function ContactPage() {
+  const { t } = useTranslation();
   return (
     <div>
-      <h1>Contact Us</h1>
-      <p>Email us at support@digigames.example</p>
+      <h1>{t("contact_title")}</h1>
+      <p>{t("contact_text")}</p>
     </div>
   );
 }
