@@ -2,21 +2,33 @@ import express from "express";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
-import { diagRouter } from "./src/routes/diag.mjs";
-import { bambooMatrixRouter } from "./src/routes/bamboo-matrix.mjs";
-import { catalogRouter } from "./src/routes/catalog.mjs";
-import cardsRouter from "./routers/cards.js";
-import searchRouter from "./routers/search.js";
-import { curatedRouter } from "./src/routes/curated.mjs";
-import { fxRouter } from "./src/routes/fx.mjs";
-import { ordersRouter } from "./src/orders/router.mjs";
-import { connectMongo } from "./src/utils/db.mjs";
+import mongoose from "mongoose";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(express.json());
+
+// 1) Конект до Mongo
+const DB_URL = process.env.DB_URL || process.env.MONGODB_URI;
+if (!DB_URL) {
+  console.warn("DB_URL/MONGODB_URI not set");
+} else {
+  console.log(`ℹ️  Mongo connecting to: ${DB_URL}`);
+  await mongoose.connect(DB_URL);
+  console.log(`✅ Mongo connected: ${mongoose.connection.name || "(unknown)"}`);
+}
+
+// 2) Тільки тепер підключаємо роутери (які імпортують моделі)
+const { diagRouter } = await import("./src/routes/diag.mjs");
+const { bambooMatrixRouter } = await import("./src/routes/bamboo-matrix.mjs");
+const { catalogRouter } = await import("./src/routes/catalog.mjs");
+const cardsRouter = (await import("./routers/cards.js")).default;
+const searchRouter = (await import("./routers/search.js")).default;
+const { curatedRouter } = await import("./src/routes/curated.mjs");
+const { fxRouter } = await import("./src/routes/fx.mjs");
+const { ordersRouter } = await import("./src/orders/router.mjs");
 
 // ДІАГНОСТИКА — піднімаємо першою, без залежностей
 app.use("/api/diag", diagRouter);
@@ -58,14 +70,9 @@ app.get("*", (_req, res) => {
   else res.status(500).send("dist/index.html not found. Build step failed or wrong path.");
 });
 
+// 3) Старт сервера
 const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, async () => {
-  await connectMongo();
-  console.log(`Server on :${PORT}`);
-  // refreshCatalog({ force: false }).catch(() => {}); // тимчасово вимкнено на час налагодження
-});
+app.listen(PORT, () => console.log(`Server on :${PORT}`));
 
 process.on("unhandledRejection", (r) => console.error("[unhandledRejection]", r));
 process.on("uncaughtException", (e) => console.error("[uncaughtException]", e));
-
