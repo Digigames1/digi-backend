@@ -14,6 +14,7 @@ export const Catalog = {
     limit?: number;
     currency?: string;
     lang?: string;
+    country?: string;
   }) => {
     const qs = new URLSearchParams();
     qs.set("category", p.category);
@@ -27,6 +28,7 @@ export const Catalog = {
     if (p.limit) qs.set("limit", String(p.limit));
     if (p.currency) qs.set("currency", p.currency);
     if (p.lang) qs.set("lang", p.lang);
+    if (p.country) qs.set("country", p.country);
     return api.get<ProductsResponse>(`/cards?${qs.toString()}`);
   },
 };

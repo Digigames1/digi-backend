@@ -3,19 +3,39 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import mongoose from "mongoose";
-import { diagRouter } from "./src/routes/diag.mjs";
-import { bambooMatrixRouter } from "./src/routes/bamboo-matrix.mjs";
-import cardsRouter from "./routers/cards.js";
-import searchRouter from "./routers/search.js";
-import checkoutRouter from "./routers/checkout.js";
-import liqpayRouter from "./routers/liqpay.js";
-import catalogRouter from "./routers/catalog.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(express.json());
+
+// 1) Конект до Mongo
+const DB_URL = process.env.DB_URL || process.env.MONGODB_URI;
+if (!DB_URL) {
+  console.warn("DB_URL/MONGODB_URI not set");
+} else {
+  console.log(`ℹ️  Mongo connecting to: ${DB_URL}`);
+  try {
+    const conn = await mongoose.connect(DB_URL);
+    console.log(`✅ Mongo connected: ${conn.connection?.name ?? "(unknown)"}`);
+  } catch (err) {
+    console.error(err);
+    process.exit(1);
+  }
+}
+
+// 2) Тільки тепер підключаємо роутери (які імпортують моделі)
+const { diagRouter } = await import("./src/routes/diag.mjs");
+const { bambooMatrixRouter } = await import("./src/routes/bamboo-matrix.mjs");
+const { catalogRouter } = await import("./src/routes/catalog.mjs");
+const cardsRouter = (await import("./routers/cards.js")).default;
+const searchRouter = (await import("./routers/search.js")).default;
+const { curatedRouter } = await import("./src/routes/curated.mjs");
+const fxUtils = await import("./src/utils/fx.mjs");
+const { fxRouter } = await import("./src/routes/fx.mjs");
+fxUtils.initFxWatcher?.();
+const { ordersRouter } = await import("./src/orders/router.mjs");
 
 // ДІАГНОСТИКА — піднімаємо першою, без залежностей
 app.use("/api/diag", diagRouter);
@@ -45,9 +65,11 @@ if (found) {
 // далі — основні роутери
 app.use("/api/search", searchRouter);
 app.use("/api/cards", cardsRouter);
-app.use("/api/catalog", catalogRouter);
-app.use("/api/checkout", express.json(), checkoutRouter);
-app.use("/api/liqpay", liqpayRouter);
+// catalogRouter тепер включає і /api/catalog, і /api/diag/bamboo/*
+app.use("/api", catalogRouter);
+app.use("/api", curatedRouter);
+app.use("/api", fxRouter);
+app.use("/api", ordersRouter);
 
 app.get("*", (_req, res) => {
   const indexPath = found && path.join(found, "index.html");
@@ -55,25 +77,9 @@ app.get("*", (_req, res) => {
   else res.status(500).send("dist/index.html not found. Build step failed or wrong path.");
 });
 
+// 3) Старт сервера
 const PORT = process.env.PORT || 3000;
-
-// БЕЗПЕЧНИЙ СТАРТ: не валимо весь процес, якщо Mongo впав — просто логґуємо
-(async () => {
-  try {
-    const MONGO = process.env.MONGODB_URI;
-    if (MONGO) {
-      mongoose.connect(MONGO).catch(err => {
-        console.error("[mongo] initial connect failed:", err?.message);
-      });
-    } else {
-      console.warn("MONGODB_URI not set");
-    }
-  } catch (e) {
-    console.error("[server] mongo bootstrap error:", e?.message);
-  }
-  app.listen(PORT, () => console.log(`Server on :${PORT}`));
-})();
+app.listen(PORT, () => console.log(`Server on :${PORT}`));
 
 process.on("unhandledRejection", (r) => console.error("[unhandledRejection]", r));
 process.on("uncaughtException", (e) => console.error("[uncaughtException]", e));
-

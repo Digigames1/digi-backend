@@ -34,8 +34,10 @@ export default function HomePage() {
 
   return (
     <div className="container">
+    
       <h2 className="section-title">{t("shop_by_category")}</h2>
       <div className="grid categories">
+       
         {categories.map((c) => (
           <CategoryCard
             key={c.key}

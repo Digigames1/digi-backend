@@ -1,6 +1,6 @@
 import express from "express";
 import axios from "axios";
-import { authHeaders, debugAuthConfig, secretHeaderVariants } from "../catalog/auth.mjs";
+import { getBambooConfig, fetchCatalogRaw } from "../catalog/bambooClient.mjs";
 
 export const diagRouter = express.Router();
 
@@ -19,81 +19,78 @@ diagRouter.get("/egress-ip", async (_req, res) => {
   }
 });
 
-// Діагностика Bamboo: гнучка авторизація + детальний статус
-diagRouter.get("/bamboo", async (_req, res) => {
-  const BASE =
-    process.env.BAMBOO_API_BASE ||
-    process.env.BAMBOO_API_URL ||
-    process.env.BAMBOO_BASE_URL ||
-    "https://api.bamboocardportal.com";
-  const CATALOG_PATH = (process.env.BAMBOO_CATALOG_PATH || "/api/integration/v2.0/catalog").replace(/\/+$/, "") || "/api/integration/v2.0/catalog";
-
-    const headers = { "Content-Type": "application/json" };
-    let authErr = null, usedHeaderNames = [];
-    try { Object.assign(headers, await authHeaders()); }
-    catch (e) { authErr = e?.response?.data || e?.message || "authHeaders failed"; }
-
-  let ip = null;
+// GET /api/diag/bamboo
+// Проксить у Bamboo РІВНО ті query-параметри, що прийшли
+diagRouter.get("/bamboo", async (req, res) => {
   try {
-    const ipRes = await axios.get("https://api.ipify.org?format=json", { timeout: 5000 });
-    ip = ipRes.data?.ip || null;
-  } catch {}
+    // Витягуємо поля з точними назвами (як у V2)
+    const q = {
+      CurrencyCode: req.query.CurrencyCode,
+      CountryCode: req.query.CountryCode,
+      Name: req.query.Name,
+      ModifiedDate: req.query.ModifiedDate,
+      ProductId: req.query.ProductId ? Number(req.query.ProductId) : undefined,
+      BrandId: req.query.BrandId ? Number(req.query.BrandId) : undefined,
+      TargetCurrency: req.query.TargetCurrency,
+      PageSize: req.query.PageSize ? Number(req.query.PageSize) : undefined,
+      PageIndex: req.query.PageIndex ? Number(req.query.PageIndex) : undefined,
+    };
 
-  if (!BASE) {
-    return res.status(200).json({
-      ok: false,
-      egressIp: ip,
-      config: { baseUrl: BASE, catalogPath: CATALOG_PATH, ...debugAuthConfig() },
-      error: "BASE url is empty. Set BAMBOO_API_URL/BAMBOO_BASE_URL in Render.",
-    });
-  }
-
-  try {
-    let data, status;
-    const url = `${BASE.replace(/\/+$/, "")}${CATALOG_PATH}`;
-    if ("X-Secret-Key" in headers || "X-Api-Key" in headers) {
-      // SECRET режим: перебір варіантів
-      const variants = secretHeaderVariants();
-      let lastErr;
-      for (const v of variants) {
-        try {
-          const r = await axios.get(url, { params: { limit: 5 }, headers: { "Content-Type": "application/json", ...v }, timeout: 15000 });
-          data = r.data; status = r.status; usedHeaderNames = Object.keys(v); break;
-        } catch (e) {
-          lastErr = e;
-          if (e?.response?.status && e.response.status !== 401 && e.response.status !== 403) throw e;
-        }
-      }
-      if (!status) throw lastErr || new Error("All SECRET header variants failed");
-    } else {
-      const r = await axios.get(url, { params: { limit: 5 }, headers, timeout: 15000 });
-      data = r.data; status = r.status; usedHeaderNames = Object.keys(headers);
-    }
-    const items = Array.isArray(data?.items) ? data.items :
-                  Array.isArray(data?.data) ? data.data :
-                  Array.isArray(data) ? data : [];
-    const preview = items.slice(0, 5).map(it => ({
-      id: it?.id ?? it?.productId ?? it?.sku ?? null,
-      name: it?.name ?? it?.title ?? it?.displayName ?? null
-    }));
-    res.json({
-      ok: true,
+    const { data, status, usedHeaders } = await fetchCatalogRaw(q);
+    const items = Array.isArray(data?.items) ? data.items : [];
+    return res.json({
+      ok: status === 200,
       status,
-      egressIp: ip,
-      config: { baseUrl: BASE, catalogPath: CATALOG_PATH, ...debugAuthConfig() },
-      count: items.length || 0,
-      usedHeaders: usedHeaderNames,
-      preview
+      count: items.length,
+      usedHeaders,
+      config: getBambooConfig(),
+      querySent: q,
+      preview: items.slice(0, 3),
     });
   } catch (e) {
-    const status = e?.response?.status || null;
-    const body = e?.response?.data || e?.message || "error";
-    res.status(200).json({
+    const status = e?.response?.status || 500;
+    return res.status(200).json({
       ok: false,
       status,
-      egressIp: ip,
-      config: { baseUrl: BASE, catalogPath: CATALOG_PATH, ...debugAuthConfig() },
-      error: authErr ? { auth: authErr } : (typeof body === "object" ? body : String(body))
+      usedHeaders: undefined,
+      config: getBambooConfig(),
+      error: e?.response?.data || e?.message || "failed",
+    });
+  }
+});
+
+// POST /api/diag/bamboo/refresh
+// (залишити вашу реалізацію кешу; головне — читати ті самі параметри і передавати їх у внутрішній фетч)
+diagRouter.post("/bamboo/refresh", async (req, res) => {
+  try {
+    const q = {
+      CurrencyCode: req.query.CurrencyCode,
+      CountryCode: req.query.CountryCode,
+      Name: req.query.Name,
+      ModifiedDate: req.query.ModifiedDate,
+      ProductId: req.query.ProductId ? Number(req.query.ProductId) : undefined,
+      BrandId: req.query.BrandId ? Number(req.query.BrandId) : undefined,
+      TargetCurrency: req.query.TargetCurrency,
+      PageSize: req.query.PageSize ? Number(req.query.PageSize) : undefined,
+      PageIndex: req.query.PageIndex ? Number(req.query.PageIndex) : undefined,
+    };
+
+    // TODO: тут виклик вашого сервісу кешу з q
+    // await refreshCatalogWithQuery(q) — якщо є
+    const { data, status } = await fetchCatalogRaw(q); // мінімально підтягнемо й повернемо
+
+    return res.json({
+      ok: status === 200,
+      status,
+      querySent: q,
+      cached: false, // якщо реалізований кеш — оновити відповідно
+    });
+  } catch (e) {
+    const status = e?.response?.status || 500;
+    return res.status(200).json({
+      ok: false,
+      status,
+      error: e?.response?.data || e?.message || "failed",
     });
   }
 });

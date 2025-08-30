@@ -20,12 +20,18 @@ export default function CartPage(){
     return ()=> clearInterval(t);
   },[]);
 
+  useEffect(()=>{
+    const curH = () => setCurrency(getCurrency());
+    window.addEventListener("currencychange", curH);
+    return () => window.removeEventListener("currencychange", curH);
+  },[]);
+
   const summary: Summary = useMemo(()=>{
-    const sub = subtotal();
+    const sub = subtotal(currency);
     const discount = code.trim().toUpperCase()==="SAVE5" ? Math.min(sub*0.05, 50) : 0;
     const total = Math.max(0, sub - discount);
     return { itemsTotal: totalCount(), discount, subTotal: sub, total };
-  }, [items, code]);
+  }, [items, code, currency]);
 
   const canPay = items.length>0 && emailRe.test(email);
 
@@ -55,7 +61,7 @@ export default function CartPage(){
                 </div>
               </div>
               <div className="co-price">
-                {money(safeMul(it.price, it.qty), currency)}
+                {money(safeMul(it.price, it.qty), currency, it.currency || "USD")}
               </div>
             </div>
           ))}
