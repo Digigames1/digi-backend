@@ -40,3 +40,17 @@ curatedRouter.get("/curated", async (req, res) => {
       .json({ ok: false, error: e?.response?.data || e?.message || "failed" });
   }
 });
+
+// GET /api/curated/gaming - повертає ТІЛЬКИ Gaming
+curatedRouter.get("/curated/gaming", async (req, res) => {
+  try {
+    // підхопимо дефолтну матрицю (в т.ч. нові валюти з ENV)
+    const { categories, meta } = await fetchMatrix({});
+    const gaming = categories?.gaming || [];
+    res.json({ ok: true, count: gaming.length, items: gaming, meta });
+  } catch (e) {
+    res
+      .status(200)
+      .json({ ok:false, error: e?.response?.data || e?.message || "failed" });
+  }
+});
