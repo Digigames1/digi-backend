@@ -1,30 +1,19 @@
-const express = require("express");
+import express from "express";
+import axios from "axios";
+import { authHeaders } from "../src/catalog/auth.mjs";
+import { addMarginToPrices } from "../utils/priceMargin.js";
+
 const router = express.Router();
-const axios = require("axios");
-const { addMarginToPrices } = require("../utils/priceMargin");
+const { BAMBOO_BASE_URL } = process.env;
 
-const {
-  BAMBOO_PROD_CLIENT_ID,
-  BAMBOO_PROD_CLIENT_SECRET,
-  BAMBOO_PROD_BASE_URL
-} = process.env;
-
-router.get("/", async (req, res) => {
+router.get("/", async (_req, res) => {
   try {
-    // 🧾 Формуємо Basic Auth
-    const credentials = `${BAMBOO_PROD_CLIENT_ID}:${BAMBOO_PROD_CLIENT_SECRET}`;
-    const encodedAuth = Buffer.from(credentials).toString("base64");
-
-    const url = `${BAMBOO_PROD_BASE_URL}/api/integration/v2.0/catalog?CurrencyCode=USD&CountryCode=US&PageSize=100&PageIndex=0`;
+    const headers = { Accept: "application/json", ...(await authHeaders()) };
+    const url = `${BAMBOO_BASE_URL}/api/integration/v2.0/catalog?CurrencyCode=USD&CountryCode=US&PageSize=100&PageIndex=0`;
 
     console.log("🌍 Bamboo PRODUCTION URL:", url);
 
-    const response = await axios.get(url, {
-      headers: {
-        Authorization: `Basic ${encodedAuth}`,
-        Accept: "application/json"
-      }
-    });
+    const response = await axios.get(url, { headers });
 
     console.log("✅ Bamboo production catalog items:", response.data?.items?.length || 0);
 
@@ -39,7 +28,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
 
 
 

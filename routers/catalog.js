@@ -44,7 +44,7 @@ router.get("/", async (req, res) => {
     res.json(result);
   } catch (e) {
     console.error("[/api/catalog]", e?.message || e);
-    res.status(500).json({ error: true });
+    res.status(500).json({ error: e?.message || true });
   }
 });
 
