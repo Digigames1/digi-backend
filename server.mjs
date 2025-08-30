@@ -2,7 +2,6 @@ import express from "express";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
-import mongoose from "mongoose";
 import { diagRouter } from "./src/routes/diag.mjs";
 import { bambooMatrixRouter } from "./src/routes/bamboo-matrix.mjs";
 import { catalogRouter } from "./src/routes/catalog.mjs";
@@ -11,6 +10,7 @@ import searchRouter from "./routers/search.js";
 import checkoutRouter from "./routers/checkout.js";
 import liqpayRouter from "./routers/liqpay.js";
 import { refreshCatalog } from "./src/catalog/catalogService.mjs";
+import { connectMongo } from "./src/utils/db.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -59,26 +59,12 @@ app.get("*", (_req, res) => {
 
 const PORT = process.env.PORT || 3000;
 
-// БЕЗПЕЧНИЙ СТАРТ: не валимо весь процес, якщо Mongo впав — просто логґуємо
-(async () => {
-  try {
-    const MONGO = process.env.MONGODB_URI;
-    if (MONGO) {
-      mongoose.connect(MONGO).catch(err => {
-        console.error("[mongo] initial connect failed:", err?.message);
-      });
-    } else {
-      console.warn("MONGODB_URI not set");
-    }
-  } catch (e) {
-    console.error("[server] mongo bootstrap error:", e?.message);
-  }
-  app.listen(PORT, async () => {
-    console.log(`Server on :${PORT}`);
-    // тихо спробувати освіжити кеш при старті (поважає TTL)
-    refreshCatalog({ force: false }).catch(() => {});
-  });
-})();
+app.listen(PORT, async () => {
+  await connectMongo();
+  console.log(`Server on :${PORT}`);
+  // тихо спробувати освіжити кеш при старті (поважає TTL)
+  refreshCatalog({ force: false }).catch(() => {});
+});
 
 process.on("unhandledRejection", (r) => console.error("[unhandledRejection]", r));
 process.on("uncaughtException", (e) => console.error("[uncaughtException]", e));
