@@ -27,7 +27,9 @@ const { catalogRouter } = await import("./src/routes/catalog.mjs");
 const cardsRouter = (await import("./routers/cards.js")).default;
 const searchRouter = (await import("./routers/search.js")).default;
 const { curatedRouter } = await import("./src/routes/curated.mjs");
+const fxUtils = await import("./src/utils/fx.mjs");
 const { fxRouter } = await import("./src/routes/fx.mjs");
+fxUtils.initFxWatcher?.();
 const { ordersRouter } = await import("./src/orders/router.mjs");
 
 // ДІАГНОСТИКА — піднімаємо першою, без залежностей

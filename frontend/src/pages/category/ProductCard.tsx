@@ -35,8 +35,8 @@ export default function ProductCard({
           {p.instant && <span className="chip">Instant</span>}
         </div>
         <div className="price" style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
-          {p.oldPrice ? <s className="muted">{money(p.oldPrice, cur)}</s> : null}
-          <strong>{money(p.price, cur)}</strong>
+          {p.oldPrice ? <s className="muted">{money(p.oldPrice, cur, p.currency || "USD")}</s> : null}
+          <strong>{money(p.price, cur, p.currency || "USD")}</strong>
         </div>
       </div>
 
@@ -44,7 +44,9 @@ export default function ProductCard({
         <button
           className="btn primary"
           style={{ marginTop: 10 }}
-          onClick={() => addToCart({ id: p.id, name: p.name, price: p.price, img: p.img })}
+          onClick={() =>
+            addToCart({ id: p.id, name: p.name, price: p.price, img: p.img, currency: p.currency })
+          }
         >
           Add to Cart
         </button>

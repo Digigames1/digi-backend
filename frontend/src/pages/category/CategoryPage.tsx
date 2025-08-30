@@ -7,6 +7,7 @@ import { ProductCard } from "../../components/ProductCard";
 import { Catalog } from "../../lib/services";
 import type { Product, Facets } from "../../lib/types";
 import type { CategoryKey } from "./types";
+import { useTranslation } from "react-i18next";
 
 export default function CategoryPage({category}:{category:CategoryKey}){
   const [loading,setLoading] = useState(false);
@@ -24,6 +25,7 @@ export default function CategoryPage({category}:{category:CategoryKey}){
   const [lang,setLang] = useState(localStorage.getItem("dg_language") || "EN");
   const loc = useLocation();
   const q = new URLSearchParams(loc.search).get("q") || "";
+  const { t } = useTranslation();
 
   useEffect(()=>{
     const curH = () => setCurrency(localStorage.getItem("dg_currency") || "USD");
@@ -69,12 +71,12 @@ export default function CategoryPage({category}:{category:CategoryKey}){
         />
         <div style={{display:"grid", gap:12}}>
           <SortBar total={total} sort={sort} onSort={setSort} view={view} onView={setView}/>
-          {loading ? <div className="muted">Loading…</div> : err ? <div className="error">{err}</div> : (
+          {loading ? <div className="muted">{t("loading")}</div> : err ? <div className="error">{err}</div> : (
             items.length ? (
               <div className={view==="grid" ? "grid featured" : "list"}>
                 {items.map(p => <ProductCard key={p.id} product={p}/>)}
               </div>
-            ) : <div>No products found</div>
+            ) : <div>{t("no_products")}</div>
           )}
         </div>
       </div>

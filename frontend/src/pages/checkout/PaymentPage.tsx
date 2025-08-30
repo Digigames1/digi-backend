@@ -1,13 +1,7 @@
 import { useEffect, useState } from "react";
 import { getCart, totalCount } from "../../store/cart";
 import { createSession, getQuote } from "../../lib/payment";
-
-const money = (v: number, cur = "USD") =>
-  new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: cur,
-    maximumFractionDigits: 2,
-  }).format(Number.isFinite(v) ? v : 0);
+import { money } from "./cartUtils";
 
 const getCurrency = () => localStorage.getItem("dg_currency") || "USD";
 const getEmail = () => localStorage.getItem("dg_checkout_email") || "";
@@ -15,7 +9,7 @@ const getEmail = () => localStorage.getItem("dg_checkout_email") || "";
 export default function PaymentPage() {
   const [items, setItems] = useState(getCart());
   const [email, setEmail] = useState(getEmail());
-  const [currency] = useState(getCurrency());
+  const [currency, setCurrency] = useState(getCurrency());
   const [agree, setAgree] = useState(false);
   const [code, setCode] = useState(localStorage.getItem("dg_coupon") || "");
   const [sums, setSums] = useState({
@@ -47,6 +41,12 @@ export default function PaymentPage() {
       );
   }, [items, code, currency]);
 
+  useEffect(()=>{
+    const curH = () => setCurrency(getCurrency());
+    window.addEventListener("currencychange", curH);
+    return () => window.removeEventListener("currencychange", curH);
+  },[]);
+
   const canProceed =
     !!email &&
     /\S+@\S+\.\S+/.test(email) &&
@@ -60,7 +60,7 @@ export default function PaymentPage() {
     try {
       const payload = {
         items: getCart().map((i) => ({ id: i.id, qty: Math.max(1, +i.qty || 1) })),
-        currency: localStorage.getItem("dg_currency") || "USD",
+        currency,
         coupon: (localStorage.getItem("dg_coupon") || "").trim() || undefined,
         method: "liqpay" as const,
         email,
