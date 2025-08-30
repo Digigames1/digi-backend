@@ -28,7 +28,13 @@ diagRouter.get("/bamboo", async (_req, res) => {
     "https://api.bamboocardportal.com";
   const CATALOG_PATH = (process.env.BAMBOO_CATALOG_PATH || "/api/integration/v2.0/catalog").replace(/\/+$/, "") || "/api/integration/v2.0/catalog";
 
-    const headers = { "Content-Type": "application/json", ...(await authHeaders()) };
+    const headers = { "Content-Type": "application/json" };
+    let authErr = null;
+    try {
+      Object.assign(headers, await authHeaders());
+    } catch (e) {
+      authErr = e?.response?.data || e?.message || "authHeaders failed";
+    }
     const headerKeys = Object.keys(headers);
 
   let ip = null;
@@ -74,7 +80,7 @@ diagRouter.get("/bamboo", async (_req, res) => {
       status,
       egressIp: ip,
       config: { baseUrl: BASE, catalogPath: CATALOG_PATH, ...debugAuthConfig() },
-      error: typeof body === "object" ? body : String(body)
+      error: authErr ? { auth: authErr } : (typeof body === "object" ? body : String(body))
     });
   }
 });
