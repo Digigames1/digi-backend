@@ -74,6 +74,7 @@ router.get("/", async (req, res) => {
           rating: it.rating,
           reviews: it.reviews,
           instant: it.instant,
+          currency: q.currency ? String(q.currency).toUpperCase() : "USD",
         };
       });
 
@@ -105,7 +106,7 @@ router.get("/", async (req, res) => {
     console.log(
       `[cards] gaming=${String(q.category).toLowerCase() === "gaming"} count=${products.length}`
     );
-    res.json({ products, total: products.length, facets });
+    res.json({ products, total: products.length, facets, currency: q.currency ? String(q.currency).toUpperCase() : "USD" });
   } catch (e) {
     console.error("[/api/cards] fatal:", e?.message || e);
     res.json({
