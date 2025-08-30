@@ -28,9 +28,8 @@ diagRouter.get("/bamboo", async (_req, res) => {
     "https://api.bamboocardportal.com";
   const CATALOG_PATH = (process.env.BAMBOO_CATALOG_PATH || "/api/integration/v2.0/catalog").replace(/\/+$/, "") || "/api/integration/v2.0/catalog";
 
-  const headers = { "Content-Type": "application/json" };
-  Object.assign(headers, await authHeaders());
-  const headerKeys = Object.keys(headers);
+    const headers = { "Content-Type": "application/json", ...(await authHeaders()) };
+    const headerKeys = Object.keys(headers);
 
   let ip = null;
   try {

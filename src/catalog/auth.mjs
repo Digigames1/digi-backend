@@ -2,6 +2,7 @@ import axios from "axios";
 
 // ENV
 const AUTH_MODE = (process.env.BAMBOO_AUTH_MODE || "OAUTH").toUpperCase(); // OAUTH | SECRET | BEARER | HEADERS
+// PROD має пріоритет, але залогуймо, що саме взяли
 const CLIENT_ID = process.env.BAMBOO_PROD_CLIENT_ID || process.env.BAMBOO_CLIENT_ID || "";
 const CLIENT_SECRET = process.env.BAMBOO_PROD_CLIENT_SECRET || process.env.BAMBOO_CLIENT_SECRET || "";
 const SECRET_KEY = process.env.BAMBOO_SECRET_KEY || ""; // для SECRET-режиму
@@ -19,21 +20,53 @@ const TOKEN_URL =
 
 let cached = { token: null, exp: 0 };
 
+function mask(s) { return s ? s.toString().slice(0,4) + "***" : ""; }
+
 async function fetchToken() {
-  const body = new URLSearchParams({
+  const form = new URLSearchParams({
     grant_type: "client_credentials",
     client_id: CLIENT_ID,
     client_secret: CLIENT_SECRET,
   });
-  const { data } = await axios.post(TOKEN_URL, body.toString(), {
-    timeout: 15000,
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-  });
-  if (!data?.access_token) throw new Error("No access_token in token response");
-  const now = Math.floor(Date.now() / 1000);
-  const ttl = Number(data.expires_in || 3600);
-  cached = { token: data.access_token, exp: now + Math.max(300, ttl - 60) }; // мін. 5 хв, -60s запас
-  return cached.token;
+  // 1) спершу — form-варіант
+  try {
+    const { data } = await axios.post(TOKEN_URL, form.toString(), {
+      timeout: 15000,
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    });
+    if (!data?.access_token) throw new Error("No access_token in token response");
+    const now = Math.floor(Date.now() / 1000);
+    const ttl = Number(data.expires_in || 3600);
+    cached = { token: data.access_token, exp: now + Math.max(300, ttl - 60) };
+    return cached.token;
+  } catch (e1) {
+    // 2) якщо 401 — пробуємо Basic Authorization (деякі OAuth так вимагають)
+    if (e1?.response?.status !== 401) throw e1;
+    const basic = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64");
+    const body = new URLSearchParams({ grant_type: "client_credentials" });
+    try {
+      const { data } = await axios.post(TOKEN_URL, body.toString(), {
+        timeout: 15000,
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Authorization": `Basic ${basic}`
+        },
+      });
+      if (!data?.access_token) throw new Error("No access_token in token response");
+      const now = Math.floor(Date.now() / 1000);
+      const ttl = Number(data.expires_in || 3600);
+      cached = { token: data.access_token, exp: now + Math.max(300, ttl - 60) };
+      return cached.token;
+    } catch (e2) {
+      // логування, щоб у логах було видно, які змінні задіяні (без значень)
+      console.error("[oauth] token failed",
+        { tokenUrl: TOKEN_URL, clientId: mask(CLIENT_ID), clientSecret: CLIENT_SECRET ? "***" : "" },
+        "first:", e1?.response?.status || e1?.code || e1?.message,
+        "second:", e2?.response?.status || e2?.code || e2?.message
+      );
+      throw e2;
+    }
+  }
 }
 
 async function getBearer() {
@@ -67,6 +100,7 @@ export function debugAuthConfig() {
     hasSecretKey: Boolean(SECRET_KEY),
     hasApiToken: Boolean(API_TOKEN),
     tokenUrl: TOKEN_URL,
+    clientIdUsed: CLIENT_ID ? mask(CLIENT_ID) : "",
   };
 }
 
