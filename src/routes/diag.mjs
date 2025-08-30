@@ -1,7 +1,6 @@
 import express from "express";
 import axios from "axios";
-import { authHeaders, debugAuthConfig } from "../catalog/auth.mjs";
-import { getNextRetryAt } from "../catalog/oauthBackoff.mjs";
+import { getBambooConfig, fetchCatalogRaw } from "../catalog/bambooClient.mjs";
 
 export const diagRouter = express.Router();
 
@@ -20,82 +19,78 @@ diagRouter.get("/egress-ip", async (_req, res) => {
   }
 });
 
-// Діагностика Bamboo: гнучка авторизація + детальний статус
-diagRouter.get("/bamboo", async (_req, res) => {
-  const BASE =
-    process.env.BAMBOO_API_BASE ||
-    process.env.BAMBOO_API_URL ||
-    process.env.BAMBOO_BASE_URL ||
-    "https://api.bamboocardportal.com";
-  const CATALOG_PATH =
-    (process.env.BAMBOO_CATALOG_PATH || "/api/integration/v2.0/catalog").replace(
-      /\/+$/,
-      ""
-    ) || "/api/integration/v2.0/catalog";
+// GET /api/diag/bamboo
+// Проксить у Bamboo РІВНО ті query-параметри, що прийшли
+diagRouter.get("/bamboo", async (req, res) => {
+  try {
+    // Витягуємо поля з точними назвами (як у V2)
+    const q = {
+      CurrencyCode: req.query.CurrencyCode,
+      CountryCode: req.query.CountryCode,
+      Name: req.query.Name,
+      ModifiedDate: req.query.ModifiedDate,
+      ProductId: req.query.ProductId ? Number(req.query.ProductId) : undefined,
+      BrandId: req.query.BrandId ? Number(req.query.BrandId) : undefined,
+      TargetCurrency: req.query.TargetCurrency,
+      PageSize: req.query.PageSize ? Number(req.query.PageSize) : undefined,
+      PageIndex: req.query.PageIndex ? Number(req.query.PageIndex) : undefined,
+    };
 
-  const headers = { "Content-Type": "application/json" };
-  let authErr = null;
-  const nextRetryAt = await getNextRetryAt();
-  const nextRetryIso = nextRetryAt ? new Date(nextRetryAt).toISOString() : null;
-  if (nextRetryAt && nextRetryAt > Date.now()) {
+    const { data, status, usedHeaders } = await fetchCatalogRaw(q);
+    const items = Array.isArray(data?.items) ? data.items : [];
+    return res.json({
+      ok: status === 200,
+      status,
+      count: items.length,
+      usedHeaders,
+      config: getBambooConfig(),
+      querySent: q,
+      preview: items.slice(0, 3),
+    });
+  } catch (e) {
+    const status = e?.response?.status || 500;
     return res.status(200).json({
       ok: false,
-      status: 401,
-      usedHeaders: Object.keys(headers),
-      config: { baseUrl: BASE, catalogPath: CATALOG_PATH, ...debugAuthConfig() },
-      error: { auth: `token endpoint rate-limited until ${nextRetryIso}` },
-      nextRetryAt,
-      nextRetryIso,
+      status,
+      usedHeaders: undefined,
+      config: getBambooConfig(),
+      error: e?.response?.data || e?.message || "failed",
     });
   }
-  try {
-    Object.assign(headers, await authHeaders());
-  } catch (e) {
-    authErr = e?.response?.data || e?.message || "authHeaders failed";
-  }
+});
 
+// POST /api/diag/bamboo/refresh
+// (залишити вашу реалізацію кешу; головне — читати ті самі параметри і передавати їх у внутрішній фетч)
+diagRouter.post("/bamboo/refresh", async (req, res) => {
   try {
-    const url = `${BASE.replace(/\/+$/, "")}${CATALOG_PATH}`;
-    const r = await axios.get(url, {
-      params: { limit: 5 },
-      headers,
-      timeout: 15000,
-    });
-    const data = r.data;
-    const status = r.status;
+    const q = {
+      CurrencyCode: req.query.CurrencyCode,
+      CountryCode: req.query.CountryCode,
+      Name: req.query.Name,
+      ModifiedDate: req.query.ModifiedDate,
+      ProductId: req.query.ProductId ? Number(req.query.ProductId) : undefined,
+      BrandId: req.query.BrandId ? Number(req.query.BrandId) : undefined,
+      TargetCurrency: req.query.TargetCurrency,
+      PageSize: req.query.PageSize ? Number(req.query.PageSize) : undefined,
+      PageIndex: req.query.PageIndex ? Number(req.query.PageIndex) : undefined,
+    };
 
-    const items = Array.isArray(data?.items)
-      ? data.items
-      : Array.isArray(data?.data)
-      ? data.data
-      : Array.isArray(data)
-      ? data
-      : [];
+    // TODO: тут виклик вашого сервісу кешу з q
+    // await refreshCatalogWithQuery(q) — якщо є
+    const { data, status } = await fetchCatalogRaw(q); // мінімально підтягнемо й повернемо
 
     return res.json({
-      ok: true,
+      ok: status === 200,
       status,
-      count: items.length || 0,
-      usedHeaders: Object.keys(headers),
-      config: { baseUrl: BASE, catalogPath: CATALOG_PATH, ...debugAuthConfig() },
-      nextRetryAt,
-      nextRetryIso,
+      querySent: q,
+      cached: false, // якщо реалізований кеш — оновити відповідно
     });
   } catch (e) {
-    const status = e?.response?.status || null;
-    const body = e?.response?.data || e?.message || "error";
+    const status = e?.response?.status || 500;
     return res.status(200).json({
       ok: false,
       status,
-      usedHeaders: Object.keys(headers),
-      config: { baseUrl: BASE, catalogPath: CATALOG_PATH, ...debugAuthConfig() },
-      error: authErr
-        ? { auth: authErr }
-        : typeof body === "object"
-        ? body
-        : String(body),
-      nextRetryAt,
-      nextRetryIso,
+      error: e?.response?.data || e?.message || "failed",
     });
   }
 });
