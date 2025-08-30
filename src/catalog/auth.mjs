@@ -2,10 +2,12 @@ import axios from "axios";
 import { getNextRetryAt, setNextRetryAt, isAfterNow } from "./oauthBackoff.mjs";
 
 // ENV
-const AUTH_MODE = (process.env.BAMBOO_AUTH_MODE || "SECRET").toUpperCase(); // SECRET | OAUTH | BEARER | HEADERS
+const AUTH_MODE = (process.env.BAMBOO_AUTH_MODE || "BASIC").toUpperCase(); // SECRET | OAUTH | BEARER | HEADERS | BASIC
 // PROD має пріоритет, але залогуймо, що саме взяли
 const CLIENT_ID = process.env.BAMBOO_PROD_CLIENT_ID || process.env.BAMBOO_CLIENT_ID || "";
 const CLIENT_SECRET = process.env.BAMBOO_PROD_CLIENT_SECRET || process.env.BAMBOO_CLIENT_SECRET || "";
+const BASIC_USER = process.env.BAMBOO_BASIC_USER || process.env.BAMBOO_CLIENT_ID || "";
+const BASIC_PASS = process.env.BAMBOO_BASIC_PASS || process.env.BAMBOO_CLIENT_SECRET || "";
 const SECRET_KEY = process.env.BAMBOO_SECRET_KEY || ""; // для SECRET-режиму
 const API_TOKEN = process.env.BAMBOO_API_TOKEN || "";   // для BEARER-режиму
 
@@ -105,6 +107,11 @@ async function getBearer() {
 
 export async function authHeaders() {
   try {
+    if (AUTH_MODE === "BASIC") {
+      if (!BASIC_USER || !BASIC_PASS) throw new Error("BASIC creds missing");
+      const basic = Buffer.from(`${BASIC_USER}:${BASIC_PASS}`).toString("base64");
+      return { Authorization: `Basic ${basic}` };
+    }
     switch (AUTH_MODE) {
       case "SECRET": {
         // у SECRET-режимі не ходимо за токеном — лише ставимо заголовки
@@ -136,22 +143,17 @@ export async function authHeaders() {
 }
 
 export function debugAuthConfig() {
-  const baseInfo = {
+  const base = {
     mode: AUTH_MODE,
-    hasClientId: Boolean(CLIENT_ID),
-    hasClientSecret: Boolean(CLIENT_SECRET),
+    hasClientId: Boolean(CLIENT_ID || BASIC_USER),
+    hasClientSecret: Boolean(CLIENT_SECRET || BASIC_PASS),
     hasSecretKey: Boolean(SECRET_KEY),
     hasApiToken: Boolean(API_TOKEN),
-    clientIdUsed: CLIENT_ID ? mask(CLIENT_ID) : "",
+    clientIdUsed: mask(CLIENT_ID || BASIC_USER || ""),
   };
-  if (AUTH_MODE === "OAUTH") {
-    return {
-      ...baseInfo,
-      tokenUrl: TOKEN_URL,
-      scope: OAUTH_SCOPE || null,
-    };
-  }
-  return baseInfo;
+  if (AUTH_MODE === "OAUTH") return { ...base, tokenUrl: TOKEN_URL, scope: OAUTH_SCOPE || null };
+  if (AUTH_MODE === "BASIC") return base;
+  return base;
 }
 
 // Варіанти заголовків для SECRET-режиму
