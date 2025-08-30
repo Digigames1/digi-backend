@@ -17,6 +17,7 @@ const BASE =
 const TOKEN_URL =
   process.env.BAMBOO_TOKEN_URL ||
   `${BASE.replace(/\/+$/, "")}${process.env.BAMBOO_TOKEN_PATH || "/connect/token"}`;
+const OAUTH_SCOPE = process.env.BAMBOO_OAUTH_SCOPE || ""; // напр. "api" або "catalog.read"
 
 let cached = { token: null, exp: 0 };
 
@@ -27,6 +28,7 @@ async function fetchToken() {
     grant_type: "client_credentials",
     client_id: CLIENT_ID,
     client_secret: CLIENT_SECRET,
+    ...(OAUTH_SCOPE ? { scope: OAUTH_SCOPE } : {}),
   });
   // 1) спершу — form-варіант
   try {
@@ -43,7 +45,7 @@ async function fetchToken() {
     // 2) якщо 401 — пробуємо Basic Authorization (деякі OAuth так вимагають)
     if (e1?.response?.status !== 401) throw e1;
     const basic = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64");
-    const body = new URLSearchParams({ grant_type: "client_credentials" });
+    const body = new URLSearchParams({ grant_type: "client_credentials", ...(OAUTH_SCOPE ? { scope: OAUTH_SCOPE } : {}) });
     try {
       const { data } = await axios.post(TOKEN_URL, body.toString(), {
         timeout: 15000,
@@ -76,19 +78,24 @@ async function getBearer() {
 }
 
 export async function authHeaders() {
-  switch (AUTH_MODE) {
-    case "OAUTH": {
-      const token = await getBearer();
-      return { Authorization: `Bearer ${token}` };
+  try {
+    switch (AUTH_MODE) {
+      case "OAUTH": {
+        const token = await getBearer();
+        return { Authorization: `Bearer ${token}` };
+      }
+      case "SECRET":
+        return { "X-Client-Id": CLIENT_ID, "X-Secret-Key": SECRET_KEY };
+      case "BEARER":
+        return { Authorization: `Bearer ${API_TOKEN}` };
+      case "HEADERS":
+        return { "X-Client-Id": CLIENT_ID, "X-Client-Secret": CLIENT_SECRET };
+      default:
+        return {};
     }
-    case "SECRET":
-      return { "X-Client-Id": CLIENT_ID, "X-Secret-Key": SECRET_KEY };
-    case "BEARER":
-      return { Authorization: `Bearer ${API_TOKEN}` };
-    case "HEADERS":
-      return { "X-Client-Id": CLIENT_ID, "X-Client-Secret": CLIENT_SECRET };
-    default:
-      return {};
+  } catch (e) {
+    console.error("[auth] authHeaders failed", { mode: AUTH_MODE, tokenUrl: TOKEN_URL }, e?.response?.status || e?.code || e?.message);
+    throw e;
   }
 }
 
@@ -100,6 +107,7 @@ export function debugAuthConfig() {
     hasSecretKey: Boolean(SECRET_KEY),
     hasApiToken: Boolean(API_TOKEN),
     tokenUrl: TOKEN_URL,
+    scope: OAUTH_SCOPE || null,
     clientIdUsed: CLIENT_ID ? mask(CLIENT_ID) : "",
   };
 }
