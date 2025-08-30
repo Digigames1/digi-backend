@@ -19,12 +19,16 @@ export default function HomePage() {
   const { t } = useTranslation();
 
   useEffect(() => {
-    categories.forEach((c) => {
-      Catalog.list({ category: c.key, limit: 4 })
-        .then((res) =>
-          setSections((s) => ({ ...s, [c.key]: res.products || [] }))
-        )
-        .catch(() => {});
+    Promise.all(
+      categories.map((c) =>
+        Catalog.list({ category: c.key, limit: 4 })
+          .then(
+            (res) => [c.key, res.products || []] as [string, Product[]]
+          )
+          .catch(() => [c.key, []] as [string, Product[]])
+      )
+    ).then((entries) => {
+      setSections(Object.fromEntries(entries));
     });
   }, []);
 
