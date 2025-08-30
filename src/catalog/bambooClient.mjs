@@ -1,25 +1,27 @@
 import axios from "axios";
 
+// ---- base + paths ----
 const BASE =
   process.env.BAMBOO_API_BASE ||
   process.env.BAMBOO_API_URL ||
   process.env.BAMBOO_BASE_URL ||
   "";
-
+// дозволяємо перевизначати шлях каталогу з ENV (за замовчуванням /catalog)
 const CATALOG_PATH = (process.env.BAMBOO_CATALOG_PATH || "/catalog").replace(/\/+$/, "") || "/catalog";
 
-// authMode: "BEARER" або "HEADERS" (за замовчуванням HEADERS, якщо немає токена)
-const AUTH_MODE = (process.env.BAMBOO_AUTH_MODE || (process.env.BAMBOO_API_TOKEN ? "BEARER" : "HEADERS")).toUpperCase();
+// ---- auth modes ----
+// Підтримувані режими:
+//  - BEARER : Authorization: Bearer <token> (BAMBOO_API_TOKEN)
+//  - SECRET : X-Secret-Key: <key> (BAMBOO_SECRET_KEY)
+//  - HEADERS: X-Client-Id / X-Client-Secret (BAMBOO_CLIENT_ID / BAMBOO_CLIENT_SECRET)
+const AUTH_MODE = (process.env.BAMBOO_AUTH_MODE ||
+  (process.env.BAMBOO_API_TOKEN ? "BEARER" : (process.env.BAMBOO_SECRET_KEY ? "SECRET" : "HEADERS"))
+).toUpperCase();
 
-const CLIENT_ID =
-  process.env.BAMBOO_PROD_CLIENT_ID ||
-  process.env.BAMBOO_CLIENT_ID || "";
-
-const CLIENT_SECRET =
-  process.env.BAMBOO_PROD_CLIENT_SECRET ||
-  process.env.BAMBOO_CLIENT_SECRET || "";
-
+const CLIENT_ID = process.env.BAMBOO_PROD_CLIENT_ID || process.env.BAMBOO_CLIENT_ID || "";
+const CLIENT_SECRET = process.env.BAMBOO_PROD_CLIENT_SECRET || process.env.BAMBOO_CLIENT_SECRET || "";
 const TOKEN = process.env.BAMBOO_API_TOKEN || "";
+const SECRET_KEY = process.env.BAMBOO_SECRET_KEY || "";
 
 if (!BASE) console.error("[bamboo] BASE url is EMPTY. Set BAMBOO_API_URL/BAMBOO_BASE_URL.");
 if (AUTH_MODE === "HEADERS" && (!CLIENT_ID || !CLIENT_SECRET)) {
@@ -28,13 +30,23 @@ if (AUTH_MODE === "HEADERS" && (!CLIENT_ID || !CLIENT_SECRET)) {
 if (AUTH_MODE === "BEARER" && !TOKEN) {
   console.warn("[bamboo] BAMBOO_API_TOKEN is empty — check ENV.");
 }
+if (AUTH_MODE === "SECRET" && !SECRET_KEY) {
+  console.warn("[bamboo] BAMBOO_SECRET_KEY is empty — check ENV.");
+}
 
 const headers = { "Content-Type": "application/json" };
-if (AUTH_MODE === "BEARER") {
-  headers.Authorization = `Bearer ${TOKEN}`;
-} else {
-  headers["X-Client-Id"] = CLIENT_ID;
-  headers["X-Client-Secret"] = CLIENT_SECRET;
+switch (AUTH_MODE) {
+  case "BEARER":
+    headers.Authorization = `Bearer ${TOKEN}`;
+    break;
+  case "SECRET":
+    headers["X-Secret-Key"] = SECRET_KEY;
+    // деякі інсталяції також вимагають Client-Id поряд із Secret — залишимо умовно:
+    if (CLIENT_ID) headers["X-Client-Id"] = CLIENT_ID;
+    break;
+  default: // HEADERS
+    headers["X-Client-Id"] = CLIENT_ID;
+    headers["X-Client-Secret"] = CLIENT_SECRET;
 }
 
 export const api = axios.create({
@@ -92,6 +104,7 @@ export function getBambooConfig() {
     hasClientId: Boolean(CLIENT_ID),
     hasClientSecret: Boolean(CLIENT_SECRET),
     hasToken: Boolean(TOKEN),
+    hasSecretKey: Boolean(SECRET_KEY),
   };
 }
 
