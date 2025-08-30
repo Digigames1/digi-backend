@@ -16,7 +16,7 @@ export default function CategoryPage({category}:{category:CategoryKey}){
   const [sort,setSort] = useState("popular");
   const [view,setView] = useState<"grid"|"list">("grid");
   const [filters,setFilters] = useState<Filters>({ inStock:false });
-  const [platform,setPlatform] = useState<"ALL"|"XBOX"|"PLAYSTATION"|"STEAM">("ALL");
+  const [platform,setPlatform] = useState<"ALL"|"XBOX"|"PLAYSTATION"|"STEAM"|"NINTENDO">("ALL");
   const [regions,setRegions] = useState<string[]>([]);
   const [denoms,setDenoms] = useState<number[]>([]);
   const [facets,setFacets] = useState<Facets>({});

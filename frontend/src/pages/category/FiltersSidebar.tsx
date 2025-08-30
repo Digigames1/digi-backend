@@ -24,7 +24,7 @@ export default function FiltersSidebar({
   const change = (patch:Partial<Filters>) => onChange({...value, ...patch});
   const platforms = [
     "ALL",
-    ...(facets.platforms?.length ? facets.platforms : ["XBOX","PLAYSTATION","STEAM"]),
+    ...(facets.platforms?.length ? facets.platforms : ["XBOX","PLAYSTATION","NINTENDO","STEAM"]),
   ];
   const toggleRegion = (r:string) => {
     onRegions(regions.includes(r) ? regions.filter(x=>x!==r) : [...regions,r]);
