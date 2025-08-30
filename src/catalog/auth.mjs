@@ -16,14 +16,19 @@ const BASE =
   "https://api.bamboocardportal.com";
 const TOKEN_URL =
   process.env.BAMBOO_TOKEN_URL ||
-  `${BASE.replace(/\/+$/, "")}${process.env.BAMBOO_TOKEN_PATH || "/connect/token"}`;
+  `${BASE.replace(/\/+$/, "")}${process.env.BAMBOO_TOKEN_PATH || "/api/integration/connect/token"}`;
 const OAUTH_SCOPE = process.env.BAMBOO_OAUTH_SCOPE || ""; // напр. "api" або "catalog.read"
 
 let cached = { token: null, exp: 0 };
+let blockedUntil = 0; // UNIX sec, якщо отримали 429
 
 function mask(s) { return s ? s.toString().slice(0,4) + "***" : ""; }
 
 async function fetchToken() {
+  const now = Math.floor(Date.now() / 1000);
+  if (blockedUntil && now < blockedUntil) {
+    throw new Error(`token endpoint rate-limited until ${new Date(blockedUntil * 1000).toISOString()}`);
+  }
   const form = new URLSearchParams({
     grant_type: "client_credentials",
     client_id: CLIENT_ID,
@@ -37,11 +42,15 @@ async function fetchToken() {
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
     });
     if (!data?.access_token) throw new Error("No access_token in token response");
-    const now = Math.floor(Date.now() / 1000);
+    const now2 = Math.floor(Date.now() / 1000);
     const ttl = Number(data.expires_in || 3600);
-    cached = { token: data.access_token, exp: now + Math.max(300, ttl - 60) };
+    cached = { token: data.access_token, exp: now2 + Math.max(300, ttl - 60) };
     return cached.token;
   } catch (e1) {
+    if (e1?.response?.status === 429) {
+      blockedUntil = Math.floor(Date.now() / 1000) + 60; // хвилина паузи
+      throw e1;
+    }
     // 2) якщо 401 — пробуємо Basic Authorization (деякі OAuth так вимагають)
     if (e1?.response?.status !== 401) throw e1;
     const basic = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64");
@@ -55,9 +64,9 @@ async function fetchToken() {
         },
       });
       if (!data?.access_token) throw new Error("No access_token in token response");
-      const now = Math.floor(Date.now() / 1000);
+      const now2 = Math.floor(Date.now() / 1000);
       const ttl = Number(data.expires_in || 3600);
-      cached = { token: data.access_token, exp: now + Math.max(300, ttl - 60) };
+      cached = { token: data.access_token, exp: now2 + Math.max(300, ttl - 60) };
       return cached.token;
     } catch (e2) {
       // логування, щоб у логах було видно, які змінні задіяні (без значень)
@@ -66,6 +75,9 @@ async function fetchToken() {
         "first:", e1?.response?.status || e1?.code || e1?.message,
         "second:", e2?.response?.status || e2?.code || e2?.message
       );
+      if (e2?.response?.status === 429) {
+        blockedUntil = Math.floor(Date.now() / 1000) + 60;
+      }
       throw e2;
     }
   }
