@@ -1,5 +1,5 @@
 import express from "express";
-import { getCatalog, refreshCatalog, getCatalogStatus } from "../catalog/catalogService.mjs";
+import { getCatalog, getCatalogStatus } from "../catalog/catalogService.mjs";
 
 export const catalogRouter = express.Router();
 
@@ -21,23 +21,6 @@ catalogRouter.get("/catalog", async (req, res) => {
       ok: false,
       error: e?.message || "failed",
     });
-  }
-});
-
-// Примусовий рефреш (діагностика/адмін). За замовчуванням шанує TTL; з ?force=1 ігнорує.
-catalogRouter.post("/diag/bamboo/refresh", async (req, res) => {
-  try {
-    const force = String(req.query.force || "") === "1";
-    const doc = await refreshCatalog({ force });
-    res.json({
-      ok: true,
-      source: doc.source,
-      updatedAt: doc.updatedAt,
-      count: doc.items?.length || 0,
-      meta: doc.meta,
-    });
-  } catch (e) {
-    res.status(200).json({ ok: false, error: e?.message || "refresh failed" });
   }
 });
 

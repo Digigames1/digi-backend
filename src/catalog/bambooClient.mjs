@@ -11,8 +11,23 @@ const BASE =
 const CATALOG_PATH =
   (process.env.BAMBOO_CATALOG_PATH || "/api/integration/v2.0/catalog").replace(
     /\/+$/,
-    ""
+    "",
   ) || "/api/integration/v2.0/catalog";
+
+function buildQuery(q = {}) {
+  // Будуємо РІВНО ті ключі, як у Bamboo V2 (чутливі до регістру!)
+  const p = new URLSearchParams();
+  if (q.CurrencyCode) p.set("CurrencyCode", q.CurrencyCode);
+  if (q.CountryCode) p.set("CountryCode", q.CountryCode);
+  if (q.Name) p.set("Name", q.Name);
+  if (q.ModifiedDate) p.set("ModifiedDate", q.ModifiedDate); // YYYY-MM-DD
+  if (q.ProductId != null) p.set("ProductId", String(q.ProductId));
+  if (q.BrandId != null) p.set("BrandId", String(q.BrandId));
+  if (q.TargetCurrency) p.set("TargetCurrency", q.TargetCurrency);
+  if (q.PageSize != null) p.set("PageSize", String(q.PageSize));
+  if (q.PageIndex != null) p.set("PageIndex", String(q.PageIndex));
+  return p.toString();
+}
 
 export const api = axios.create({
   baseURL: BASE.replace(/\/+$/, ""),
@@ -53,7 +68,7 @@ export async function* paginateCatalog(params = {}) {
         st || e?.code || e?.message,
         body && typeof body === "object"
           ? JSON.stringify(body).slice(0, 400)
-          : body || ""
+          : body || "",
       );
       throw e;
     }
@@ -78,3 +93,12 @@ export function getBambooConfig() {
     ...debugAuthConfig(),
   };
 }
+
+export async function fetchCatalogRaw(query = {}) {
+  const headers = { "Content-Type": "application/json", ...(await authHeaders()) };
+  const qs = buildQuery(query);
+  const url = `${BASE}${CATALOG_PATH}${qs ? `?${qs}` : ""}`;
+  const { data, status } = await axios.get(url, { headers, timeout: 20000 });
+  return { data, status, usedHeaders: Object.keys(headers) };
+}
+
