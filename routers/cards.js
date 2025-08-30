@@ -1,5 +1,5 @@
 import express from "express";
-import { fetchBambooProducts } from "../utils/bamboo.js";
+import { fetchBambooProducts, mapProduct } from "../utils/bamboo.js";
 import { applyMarkup } from "../utils/markup.js";
 import { createRequire } from "module";
 
@@ -32,20 +32,8 @@ router.get("/", async (req, res) => {
     }
 
     const mapItem = (x) => {
-      const base = N(x.price ?? x.currentPrice ?? x.amount, 0);
-      const platform = String(x.platform || x.vendor || "").toUpperCase();
-      return {
-        id: String(x.id ?? x.sku ?? x.code ?? `${platform}-${x.denomination}-${x.region}`),
-        name: String(x.name ?? x.title ?? "Untitled"),
-        img: x.image_url || x.img || x.thumbnail,
-        basePrice: base,
-        platform,
-        region: x.region || x.country || "US",
-        denomination: N(x.denomination ?? x.faceValue, undefined),
-        rating: N(x.rating, 0),
-        reviews: N(x.reviews, 0),
-        instant: true,
-      };
+      const p = mapProduct(x);
+      return { ...p, basePrice: p.price };
     };
 
     const mergedRaw = [...bamboo.map(mapItem), ...fb.map(mapItem)];
@@ -55,7 +43,7 @@ router.get("/", async (req, res) => {
       .filter((it) => {
         if (seen.has(it.id)) return false;
         seen.add(it.id);
-        return true;
+        return !q.category || String(it.category).toLowerCase() === String(q.category).toLowerCase();
       })
       .map((it) => {
         const price = applyMarkup(it.basePrice, it);
@@ -71,6 +59,7 @@ router.get("/", async (req, res) => {
           rating: it.rating,
           reviews: it.reviews,
           instant: it.instant,
+          category: it.category,
         };
       });
 

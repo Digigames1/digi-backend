@@ -93,6 +93,7 @@ export function mapProduct(x) {
     platform: x.platform || x.vendor || undefined,
     instant: x.instant ?? true,
     discount: x.discount ? safeN(x.discount, 0) : undefined,
+    denomination: safeN(x.denomination ?? x.faceValue, undefined),
     region: x.region || x.country || "US",
     category: categorize(x),
   };
