@@ -112,3 +112,31 @@ export function debugAuthConfig() {
   };
 }
 
+// Варіанти заголовків для SECRET-режиму
+export function secretHeaderVariants() {
+  // ENV-перемикач на випадок, якщо потрібно примусово задати ім'я ключа
+  const KEY_HEADER = process.env.BAMBOO_KEY_HEADER?.trim(); // напр. "X-Api-Key" або "X-Secret-Key"
+  const arr = [];
+  if (KEY_HEADER) {
+    const h = {};
+    h[KEY_HEADER] = SECRET_KEY;
+    if (CLIENT_ID) h["X-Client-Id"] = CLIENT_ID;
+    arr.push(h);
+  }
+  // Стандартні спроби (найчастіші зверху)
+  arr.push(
+    // 1) X-Api-Key (без Client-Id)
+    { "X-Api-Key": SECRET_KEY },
+    // 2) X-Api-Key + X-Client-Id
+    { "X-Api-Key": SECRET_KEY, "X-Client-Id": CLIENT_ID },
+    // 3) X-Secret-Key + X-Client-Id
+    { "X-Secret-Key": SECRET_KEY, "X-Client-Id": CLIENT_ID }
+  );
+  // Прибери пусті Client-Id, якщо його немає
+  return arr.map(h => {
+    const copy = { ...h };
+    if (!CLIENT_ID) delete copy["X-Client-Id"];
+    return copy;
+  });
+}
+

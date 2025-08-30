@@ -1,5 +1,5 @@
 import axios from "axios";
-import { authHeaders, debugAuthConfig } from "./auth.mjs";
+import { authHeaders, debugAuthConfig, secretHeaderVariants } from "./auth.mjs";
 
 const BASE =
   process.env.BAMBOO_API_BASE ||
@@ -15,6 +15,30 @@ export const api = axios.create({
   timeout: 15000,
 });
 
+// Допоміжна: зробити GET із перебором заголовків (для SECRET-режиму)
+async function getWithSecretHeaderFallback(path, { params } = {}) {
+  const variants = secretHeaderVariants();
+  let lastErr = null;
+  for (const v of variants) {
+    try {
+      const { data } = await api.get(path, {
+        params,
+        headers: { "Content-Type": "application/json", ...v },
+        timeout: 15000,
+      });
+      return { data, usedHeaders: Object.keys(v) };
+    } catch (e) {
+      lastErr = e;
+      if (e?.response?.status && e.response.status !== 401 && e.response.status !== 403) {
+        // інші статуси не мають сенсу для наступних спроб — віддаємо одразу
+        throw e;
+      }
+      // інакше пробуємо наступний варіант
+    }
+  }
+  throw lastErr || new Error("All SECRET header variants failed");
+}
+
 export async function* paginateCatalog(params = {}) {
   let next = null;
   let page = 1;
@@ -23,14 +47,26 @@ export async function* paginateCatalog(params = {}) {
     if ("cursor" in (next || {})) query.cursor = next.cursor;
     else query.page = page;
     try {
-      const headers = { "Content-Type": "application/json", ...(await authHeaders()) };
-      const { data } = await api.get(CATALOG_PATH, { params: query, headers });
-      const items = data?.items || data?.data || data || [];
+      const baseHeaders = await authHeaders(); // повертає або BEARER/HEADERS/SECRET-початкове
+      let payload, usedHeaders;
+      if (baseHeaders["X-Secret-Key"] || baseHeaders["X-Api-Key"]) {
+        // SECRET режим — пробуємо фолбек варіанти
+        const r = await getWithSecretHeaderFallback(CATALOG_PATH, { params: query });
+        payload = r.data; usedHeaders = r.usedHeaders;
+      } else {
+        const { data } = await api.get(CATALOG_PATH, {
+          params: query,
+          headers: { "Content-Type": "application/json", ...baseHeaders },
+          timeout: 15000,
+        });
+        payload = data; usedHeaders = Object.keys(baseHeaders);
+      }
+      const items = payload?.items || payload?.data || payload || [];
       if (!Array.isArray(items) || !items.length) break;
       yield items;
 
-      next = data?.next || data?.pagination?.next || null;
-      if (!next && !data?.pagination) {
+      next = payload?.next || payload?.pagination?.next || null;
+      if (!next && !payload?.pagination) {
         if (items.length < (params.limit || 100)) break;
         page += 1;
       } else if (!next) break;
@@ -62,4 +98,3 @@ export function getBambooConfig() {
     ...debugAuthConfig(),
   };
 }
-
