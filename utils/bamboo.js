@@ -3,8 +3,9 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
-const BAMBOO_BASE = process.env.BAMBOO_BASE || "https://api.bamboo.example";
-const BAMBOO_KEY  = process.env.BAMBOO_API_KEY || "";
+const BAMBOO_BASE = process.env.BAMBOO_BASE_URL;
+const BAMBOO_CLIENT_ID = process.env.BAMBOO_CLIENT_ID;
+const BAMBOO_CLIENT_SECRET = process.env.BAMBOO_CLIENT_SECRET;
 
 // Простi курси для демо-режиму
 const SAMPLE_RATES = {
@@ -47,36 +48,46 @@ function loadSampleProducts() {
   }
 }
 
-export async function bambooFetch(path, params={}) {
+export async function bambooFetch(path, params = {}) {
+  if (!BAMBOO_BASE || !BAMBOO_CLIENT_ID || !BAMBOO_CLIENT_SECRET) {
+    throw new Error(
+      "BAMBOO_BASE_URL, BAMBOO_CLIENT_ID and BAMBOO_CLIENT_SECRET must be set in the environment"
+    );
+  }
+
   const url = new URL(`${BAMBOO_BASE}${path}`);
-  Object.entries(params).forEach(([k,v]) => {
+  Object.entries(params).forEach(([k, v]) => {
     if (v !== undefined && v !== null && v !== "") url.searchParams.set(k, v);
   });
 
+  const auth = Buffer.from(`${BAMBOO_CLIENT_ID}:${BAMBOO_CLIENT_SECRET}`).toString(
+    "base64"
+  );
+
   try {
     const headers = {
-      "Accept": "application/json",
+      Accept: "application/json",
+      Authorization: `Basic ${auth}`,
     };
-    if (BAMBOO_KEY) headers["Authorization"] = `Bearer ${BAMBOO_KEY}`;
 
     const res = await fetch(url, { headers });
     if (!res.ok) {
-      const t = await res.text().catch(()=> "");
+      const t = await res.text().catch(() => "");
       throw new Error(`Bamboo ${res.status}: ${t || res.statusText}`);
     }
     return res.json();
   } catch (err) {
     console.warn("Bamboo fetch failed, using sample products", err.message);
     let products = loadSampleProducts();
-    const cur = String(params.currency || "USD").toUpperCase();
+    const cur = String(params.CurrencyCode || "USD").toUpperCase();
     const rate = SAMPLE_RATES[cur] || 1;
     if (rate !== 1) {
-      products = products.map(p => ({
+      products = products.map((p) => ({
         ...p,
-        price: Number((safeN(p.price) * rate).toFixed(2))
+        price: Number((safeN(p.price) * rate).toFixed(2)),
       }));
     }
-    return { products };
+    return { items: products };
   }
 }
 
@@ -98,40 +109,39 @@ export function mapProduct(x) {
   };
 }
 
-export async function fetchBambooProducts(params) {
-  try {
-    const r = await bambooFetch("/products", params);
-    const items = Array.isArray(r?.items)
-      ? r.items
-      : Array.isArray(r?.products)
-        ? r.products
-        : Array.isArray(r)
-          ? r
-          : [];
-    return items;
-  } catch (e) {
-    console.warn("[bamboo] products failed:", e?.message || e);
-    return [];
-  }
+export async function fetchBambooProducts(params = {}) {
+  const r = await bambooFetch("/api/integration/v2.0/catalog", params);
+  const items = Array.isArray(r?.items)
+    ? r.items
+    : Array.isArray(r?.products)
+    ? r.products
+    : Array.isArray(r)
+    ? r
+    : [];
+  return items;
 }
 
 export async function fetchAllBambooProducts(params = {}) {
-  const limit = safeN(params.limit, 100);
-  let page = 1;
+  const pageSize = safeN(params.PageSize, 100);
+  let pageIndex = 0;
   const all = [];
   while (true) {
-    const items = await fetchBambooProducts({ ...params, page: String(page), limit: String(limit) });
+    const items = await fetchBambooProducts({
+      ...params,
+      PageSize: String(pageSize),
+      PageIndex: String(pageIndex),
+    });
     if (!items.length) break;
     all.push(...items);
-    if (items.length < limit) break;
-    page += 1;
+    if (items.length < pageSize) break;
+    pageIndex += 1;
   }
   return all;
 }
 
 export async function fetchBambooById(id) {
   try {
-    const x = await bambooFetch(`/products/${encodeURIComponent(id)}`);
+    const x = await bambooFetch(`/api/integration/v2.0/catalog/${encodeURIComponent(id)}`);
     if (x && !Array.isArray(x) && !x.products && !x.items) return x;
     const list = Array.isArray(x?.products)
       ? x.products
