@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getNextRetryAt, setNextRetryAt, isAfterNow } from "./oauthBackoff.mjs";
 
 // ENV
 const AUTH_MODE = (process.env.BAMBOO_AUTH_MODE || "SECRET").toUpperCase(); // SECRET | OAUTH | BEARER | HEADERS
@@ -23,14 +24,17 @@ const OAUTH_SCOPE = process.env.BAMBOO_OAUTH_SCOPE || ""; // напр. "api" а�
 const KEY_HEADER = (process.env.BAMBOO_KEY_HEADER || "X-Secret-Key").trim();
 
 let cached = { token: null, exp: 0 };
-let blockedUntil = 0; // UNIX sec, якщо отримали 429
 
 function mask(s) { return s ? s.toString().slice(0,4) + "***" : ""; }
 
 async function fetchToken() {
-  const now = Math.floor(Date.now() / 1000);
-  if (blockedUntil && now < blockedUntil) {
-    throw new Error(`token endpoint rate-limited until ${new Date(blockedUntil * 1000).toISOString()}`);
+  // 0) Якщо є активний бекоф — не стукаємо в токен
+  const next = await getNextRetryAt();
+  if (isAfterNow(next)) {
+    const untilIso = new Date(next).toISOString();
+    const err = new Error(`token endpoint rate-limited until ${untilIso}`);
+    err.status = 429;
+    throw err;
   }
   const form = new URLSearchParams({
     grant_type: "client_credentials",
@@ -51,7 +55,7 @@ async function fetchToken() {
     return cached.token;
   } catch (e1) {
     if (e1?.response?.status === 429) {
-      blockedUntil = Math.floor(Date.now() / 1000) + 60; // хвилина паузи
+      await setNextRetryAt(Date.now() + 60_000);
       throw e1;
     }
     // 2) якщо 401 — пробуємо Basic Authorization (деякі OAuth так вимагають)
@@ -72,15 +76,22 @@ async function fetchToken() {
       cached = { token: data.access_token, exp: now2 + Math.max(300, ttl - 60) };
       return cached.token;
     } catch (e2) {
+      // Якщо сервер повертає підказку "rate-limited until <ISO>" — збережемо це і шануватимемо
+      const msg = e2?.response?.data?.reason || e2?.message || "";
+      const m = /rate-limited until ([0-9T:\.\-Z]+)/i.exec(String(msg));
+      if (m && m[1]) {
+        const until = Date.parse(m[1]); // ms
+        if (!Number.isNaN(until)) await setNextRetryAt(until);
+      } else if (e2?.response?.status === 429) {
+        await setNextRetryAt(Date.now() + 60_000);
+      }
       // логування, щоб у логах було видно, які змінні задіяні (без значень)
-      console.error("[oauth] token failed",
-        { tokenUrl: TOKEN_URL, clientId: mask(CLIENT_ID), clientSecret: CLIENT_SECRET ? "***" : "" },
+      console.error(
+        "[oauth] token failed",
+        { tokenUrl: TOKEN_URL, clientId: mask(CLIENT_ID) },
         "first:", e1?.response?.status || e1?.code || e1?.message,
         "second:", e2?.response?.status || e2?.code || e2?.message
       );
-      if (e2?.response?.status === 429) {
-        blockedUntil = Math.floor(Date.now() / 1000) + 60;
-      }
       throw e2;
     }
   }

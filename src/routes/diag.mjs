@@ -1,6 +1,7 @@
 import express from "express";
 import axios from "axios";
 import { authHeaders, debugAuthConfig } from "../catalog/auth.mjs";
+import { getNextRetryAt } from "../catalog/oauthBackoff.mjs";
 
 export const diagRouter = express.Router();
 
@@ -34,6 +35,19 @@ diagRouter.get("/bamboo", async (_req, res) => {
 
   const headers = { "Content-Type": "application/json" };
   let authErr = null;
+  const nextRetryAt = await getNextRetryAt();
+  const nextRetryIso = nextRetryAt ? new Date(nextRetryAt).toISOString() : null;
+  if (nextRetryAt && nextRetryAt > Date.now()) {
+    return res.status(200).json({
+      ok: false,
+      status: 401,
+      usedHeaders: Object.keys(headers),
+      config: { baseUrl: BASE, catalogPath: CATALOG_PATH, ...debugAuthConfig() },
+      error: { auth: `token endpoint rate-limited until ${nextRetryIso}` },
+      nextRetryAt,
+      nextRetryIso,
+    });
+  }
   try {
     Object.assign(headers, await authHeaders());
   } catch (e) {
@@ -63,7 +77,9 @@ diagRouter.get("/bamboo", async (_req, res) => {
       status,
       count: items.length || 0,
       usedHeaders: Object.keys(headers),
-      config: { ...debugAuthConfig() },
+      config: { baseUrl: BASE, catalogPath: CATALOG_PATH, ...debugAuthConfig() },
+      nextRetryAt,
+      nextRetryIso,
     });
   } catch (e) {
     const status = e?.response?.status || null;
@@ -72,12 +88,14 @@ diagRouter.get("/bamboo", async (_req, res) => {
       ok: false,
       status,
       usedHeaders: Object.keys(headers),
-      config: { ...debugAuthConfig() },
+      config: { baseUrl: BASE, catalogPath: CATALOG_PATH, ...debugAuthConfig() },
       error: authErr
         ? { auth: authErr }
         : typeof body === "object"
         ? body
         : String(body),
+      nextRetryAt,
+      nextRetryIso,
     });
   }
 });

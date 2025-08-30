@@ -9,7 +9,6 @@ import cardsRouter from "./routers/cards.js";
 import searchRouter from "./routers/search.js";
 import checkoutRouter from "./routers/checkout.js";
 import liqpayRouter from "./routers/liqpay.js";
-import { refreshCatalog } from "./src/catalog/catalogService.mjs";
 import { connectMongo } from "./src/utils/db.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -62,8 +61,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {
   await connectMongo();
   console.log(`Server on :${PORT}`);
-  // тихо спробувати освіжити кеш при старті (поважає TTL)
-  refreshCatalog({ force: false }).catch(() => {});
+  // refreshCatalog({ force: false }).catch(() => {}); // тимчасово вимкнено на час налагодження
 });
 
 process.on("unhandledRejection", (r) => console.error("[unhandledRejection]", r));
