@@ -4,18 +4,18 @@ const axios = require("axios");
 const { addMarginToPrices } = require("../utils/priceMargin");
 
 const {
-  BAMBOO_PROD_CLIENT_ID,
-  BAMBOO_PROD_CLIENT_SECRET,
-  BAMBOO_PROD_BASE_URL
+  BAMBOO_CLIENT_ID,
+  BAMBOO_CLIENT_SECRET,
+  BAMBOO_BASE_URL
 } = process.env;
 
 router.get("/", async (req, res) => {
   try {
     // 🧾 Формуємо Basic Auth
-    const credentials = `${BAMBOO_PROD_CLIENT_ID}:${BAMBOO_PROD_CLIENT_SECRET}`;
+    const credentials = `${BAMBOO_CLIENT_ID}:${BAMBOO_CLIENT_SECRET}`;
     const encodedAuth = Buffer.from(credentials).toString("base64");
 
-    const url = `${BAMBOO_PROD_BASE_URL}/api/integration/v2.0/catalog?CurrencyCode=USD&CountryCode=US&PageSize=100&PageIndex=0`;
+    const url = `${BAMBOO_BASE_URL}/api/integration/v2.0/catalog?CurrencyCode=USD&CountryCode=US&PageSize=100&PageIndex=0`;
 
     console.log("🌍 Bamboo PRODUCTION URL:", url);
 
