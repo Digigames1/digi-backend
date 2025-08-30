@@ -7,8 +7,9 @@ import { bambooMatrixRouter } from "./src/routes/bamboo-matrix.mjs";
 import { catalogRouter } from "./src/routes/catalog.mjs";
 import cardsRouter from "./routers/cards.js";
 import searchRouter from "./routers/search.js";
-import checkoutRouter from "./routers/checkout.js";
-import liqpayRouter from "./routers/liqpay.js";
+import { curatedRouter } from "./src/routes/curated.mjs";
+import { fxRouter } from "./src/routes/fx.mjs";
+import { ordersRouter } from "./src/orders/router.mjs";
 import { connectMongo } from "./src/utils/db.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -47,8 +48,9 @@ app.use("/api/search", searchRouter);
 app.use("/api/cards", cardsRouter);
 // catalogRouter тепер включає і /api/catalog, і /api/diag/bamboo/*
 app.use("/api", catalogRouter);
-app.use("/api/checkout", express.json(), checkoutRouter);
-app.use("/api/liqpay", liqpayRouter);
+app.use("/api", curatedRouter);
+app.use("/api", fxRouter);
+app.use("/api", ordersRouter);
 
 app.get("*", (_req, res) => {
   const indexPath = found && path.join(found, "index.html");

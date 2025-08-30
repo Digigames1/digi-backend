@@ -2,6 +2,7 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import CartIcon from "./icons/CartIcon";
 import { LanguageMenu, CurrencyMenu } from "./menus/LanguageCurrencyMenu";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { totalCount } from "../store/cart";
 
 export default function Header(){
@@ -10,18 +11,23 @@ export default function Header(){
   const [count,setCount] = useState(0);
   const [query,setQuery] = useState("");
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   useEffect(()=>{
     setCount(totalCount());
     const t=setInterval(()=>setCount(totalCount()),800);
     return ()=>clearInterval(t);
   },[]);
-  useEffect(()=>{ 
-    localStorage.setItem("dg_currency", cur); 
+  useEffect(()=>{
+    localStorage.setItem("dg_currency", cur);
     window.dispatchEvent(new CustomEvent("currencychange",{detail:cur}));
+    fetch("/api/fx").then(r=>r.json()).then(d=>{
+      if(d?.ok) localStorage.setItem("dg_fx", JSON.stringify(d));
+    }).catch(()=>{});
   }, [cur]);
-  useEffect(()=>{ 
+  useEffect(()=>{
     localStorage.setItem("dg_language", lang);
     window.dispatchEvent(new CustomEvent("languagechange",{detail:lang}));
+    i18n.changeLanguage(lang.toLowerCase());
   }, [lang]);
 
   return (
@@ -39,7 +45,7 @@ export default function Header(){
               }}
             >
               <input
-                placeholder="Search gift cards..."
+                placeholder={t("search_placeholder")}
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 style={{ width: "100%", padding: "12px 16px", textAlign: "center" }}
@@ -57,13 +63,13 @@ export default function Header(){
       </div>
 
       <div className="topcats container">
-        <NavLink to="/" end>Home</NavLink>
-        <NavLink to="/gaming">Gaming</NavLink>
-        <NavLink to="/streaming">Streaming</NavLink>
-        <NavLink to="/shopping">Shopping</NavLink>
-        <NavLink to="/music">Music</NavLink>
-        <NavLink to="/fooddrink">Food & Drink</NavLink>
-        <NavLink to="/travel">Travel</NavLink>
+        <NavLink to="/" end>{t("home")}</NavLink>
+        <NavLink to="/gaming">{t("gaming")}</NavLink>
+        <NavLink to="/streaming">{t("streaming")}</NavLink>
+        <NavLink to="/shopping">{t("shopping")}</NavLink>
+        <NavLink to="/music">{t("music")}</NavLink>
+        <NavLink to="/fooddrink">{t("food")}</NavLink>
+        <NavLink to="/travel">{t("travel")}</NavLink>
       </div>
     </header>
   );
