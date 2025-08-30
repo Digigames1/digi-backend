@@ -28,10 +28,11 @@ function categorize(x) {
   if (raw.includes("shop")) return "shopping";
   const guess = String(x.platform || x.vendor || x.name || "").toLowerCase();
   if (/xbox|playstation|steam|nintendo|game/.test(guess)) return "gaming";
-  if (/netflix|hulu|disney|prime|stream/.test(guess)) return "streaming";
-  if (/spotify|itunes|music|apple/.test(guess)) return "music";
-  if (/uber|doordash|food|drink|restaurant/.test(guess)) return "fooddrink";
-  if (/air|hotel|travel|flight/.test(guess)) return "travel";
+  if (/twitch|netflix|hulu|disney|prime|stream/.test(guess)) return "streaming";
+  if (/spotify|itunes|music|apple|google\s*play/.test(guess)) return "music";
+  if (/ubereats|uber\s*eats|starbucks|doordash|food|drink|restaurant/.test(guess)) return "fooddrink";
+  if (/airbnb|uber|air|hotel|travel|flight/.test(guess)) return "travel";
+  if (/zalando|amazon|ebay/.test(guess)) return "shopping";
   return "shopping";
 }
 

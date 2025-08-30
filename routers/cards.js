@@ -24,6 +24,9 @@ router.get("/", async (req, res) => {
       page: q.page || "1",
       limit: q.limit || "48",
       sort: q.sort,
+      CurrencyCode: q.currency,
+      CountryCode: q.country,
+      LanguageCode: q.lang,
     });
 
     let fb = [];
