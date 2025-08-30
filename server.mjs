@@ -4,6 +4,7 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import mongoose from "mongoose";
 import { diagRouter } from "./src/routes/diag.mjs";
+import { bambooMatrixRouter } from "./src/routes/bamboo-matrix.mjs";
 import cardsRouter from "./routers/cards.js";
 import searchRouter from "./routers/search.js";
 import checkoutRouter from "./routers/checkout.js";
@@ -18,6 +19,7 @@ app.use(express.json());
 
 // ДІАГНОСТИКА — піднімаємо першою, без залежностей
 app.use("/api/diag", diagRouter);
+app.use("/api/diag", bambooMatrixRouter);
 app.get("/healthz", (_req, res) => res.json({ ok: true }));
 
 const envDist = process.env.DIST_DIR && path.resolve(process.env.DIST_DIR);
