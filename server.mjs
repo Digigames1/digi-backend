@@ -16,8 +16,13 @@ if (!DB_URL) {
   console.warn("DB_URL/MONGODB_URI not set");
 } else {
   console.log(`ℹ️  Mongo connecting to: ${DB_URL}`);
-  await mongoose.connect(DB_URL);
-  console.log(`✅ Mongo connected: ${mongoose.connection.name || "(unknown)"}`);
+  try {
+    const conn = await mongoose.connect(DB_URL);
+    console.log(`✅ Mongo connected: ${conn.connection?.name ?? "(unknown)"}`);
+  } catch (err) {
+    console.error(err);
+    process.exit(1);
+  }
 }
 
 // 2) Тільки тепер підключаємо роутери (які імпортують моделі)
