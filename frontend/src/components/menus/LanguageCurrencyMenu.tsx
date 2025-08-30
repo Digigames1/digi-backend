@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 
-const LANGS = ["EN","UA","PL","DE"];
+const LANGS = ["EN","UK","PL","DE"];
 const CURRENCIES = ["USD","EUR","UAH","CAD","AUD","PLN"];
 
 function useDropdown(){
