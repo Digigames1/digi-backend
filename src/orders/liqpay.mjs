@@ -22,6 +22,9 @@ export function liqpayParams({ orderId, amount, currency, description }) {
 }
 
 export function verifyLiqpaySignature({ data, signature }) {
-  const calc = crypto.createHash("sha1").update(process.env.LIQPAY_PRIVATE_KEY + data + process.env.LIQPAY_PRIVATE_KEY).digest("base64");
+  const calc = crypto
+    .createHash("sha1")
+    .update(PRIV + data + PRIV)
+    .digest("base64");
   return calc === signature;
 }
