@@ -24,6 +24,9 @@ router.get("/", async (req, res) => {
       page: q.page || "1",
       limit: q.limit || "48",
       sort: q.sort,
+      CurrencyCode: q.currency,
+      CountryCode: q.country,
+      LanguageCode: q.lang,
     });
 
     let fb = [];
@@ -32,7 +35,6 @@ router.get("/", async (req, res) => {
     }
 
     const mapItem = (x) => {
-    
       const p = mapProduct(x);
       return { ...p, basePrice: p.price };
     };
@@ -44,7 +46,6 @@ router.get("/", async (req, res) => {
       .filter((it) => {
         if (seen.has(it.id)) return false;
         seen.add(it.id);
-       
         return !q.category || String(it.category).toLowerCase() === String(q.category).toLowerCase();
       })
       .map((it) => {
@@ -62,6 +63,7 @@ router.get("/", async (req, res) => {
           reviews: it.reviews,
           instant: it.instant,
           category: it.category,
+          currency: q.currency ? String(q.currency).toUpperCase() : "USD",
         };
       });
 
@@ -87,3 +89,28 @@ router.get("/", async (req, res) => {
     const facets = {
       platforms: uniq(products.map((p) => p.platform)),
       regions: uniq(products.map((p) => p.region)),
+      denominations: uniq(products.map((p) => p.denomination)).sort((a, b) => a - b),
+    };
+
+    console.log(
+      `[cards] gaming=${String(q.category).toLowerCase() === "gaming"} count=${products.length}`
+    );
+    res.json({
+      products,
+      total: products.length,
+      facets,
+      currency: q.currency ? String(q.currency).toUpperCase() : "USD",
+    });
+  } catch (e) {
+    console.error("[/api/cards] fatal:", e?.message || e);
+    res.json({
+      products: [],
+      total: 0,
+      facets: { platforms: [], regions: [], denominations: [] },
+      error: true,
+    });
+  }
+});
+
+export default router;
+
