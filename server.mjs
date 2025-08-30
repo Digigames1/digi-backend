@@ -5,11 +5,12 @@ import { fileURLToPath } from "url";
 import mongoose from "mongoose";
 import { diagRouter } from "./src/routes/diag.mjs";
 import { bambooMatrixRouter } from "./src/routes/bamboo-matrix.mjs";
+import { catalogRouter } from "./src/routes/catalog.mjs";
 import cardsRouter from "./routers/cards.js";
 import searchRouter from "./routers/search.js";
 import checkoutRouter from "./routers/checkout.js";
 import liqpayRouter from "./routers/liqpay.js";
-import catalogRouter from "./routers/catalog.js";
+import { refreshCatalog } from "./src/catalog/catalogService.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -45,7 +46,8 @@ if (found) {
 // далі — основні роутери
 app.use("/api/search", searchRouter);
 app.use("/api/cards", cardsRouter);
-app.use("/api/catalog", catalogRouter);
+// catalogRouter тепер включає і /api/catalog, і /api/diag/bamboo/*
+app.use("/api", catalogRouter);
 app.use("/api/checkout", express.json(), checkoutRouter);
 app.use("/api/liqpay", liqpayRouter);
 
@@ -71,7 +73,11 @@ const PORT = process.env.PORT || 3000;
   } catch (e) {
     console.error("[server] mongo bootstrap error:", e?.message);
   }
-  app.listen(PORT, () => console.log(`Server on :${PORT}`));
+  app.listen(PORT, async () => {
+    console.log(`Server on :${PORT}`);
+    // тихо спробувати освіжити кеш при старті (поважає TTL)
+    refreshCatalog({ force: false }).catch(() => {});
+  });
 })();
 
 process.on("unhandledRejection", (r) => console.error("[unhandledRejection]", r));
