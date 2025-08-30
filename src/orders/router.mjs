@@ -2,9 +2,28 @@ import express from "express";
 import Order from "../models/Order.mjs";
 import { sendCodesEmail } from "../utils/mailer.mjs";
 import { purchaseCodes } from "../bamboo/purchase.mjs";
-import { verifyLiqpaySignature } from "./liqpay.mjs";
+import { liqpayParams, verifyLiqpaySignature } from "./liqpay.mjs";
 
 export const ordersRouter = express.Router();
+
+async function deliverOrder(order) {
+  const buy = await purchaseCodes({
+    lines: order.lines.map((l) => ({
+      productId: l.productId,
+      name: l.name,
+      qty: l.qty,
+    })),
+    currency: order.currency,
+    email: order.email,
+  });
+
+  order.codes = buy.codes || [];
+  order.status = "delivered";
+  order.updatedAt = new Date();
+  await order.save();
+
+  await sendCodesEmail({ to: order.email, orderId: String(order._id), codes: order.codes });
+}
 
 ordersRouter.post("/checkout", async (req, res) => {
   try {
@@ -15,7 +34,13 @@ ordersRouter.post("/checkout", async (req, res) => {
       0
     );
     const order = await Order.create({ email, currency, lines, total, status: "pending" });
-    res.json({ ok: true, orderId: String(order._id) });
+    const liqpay = liqpayParams({
+      orderId: String(order._id),
+      amount: total,
+      currency,
+      description: `Order ${order._id}`,
+    });
+    res.json({ ok: true, orderId: String(order._id), liqpay });
   } catch (err) {
     res.json({ ok: false, error: err.message });
   }
@@ -27,22 +52,7 @@ ordersRouter.post("/orders/:id/confirm", async (req, res) => {
     const order = await Order.findById(id);
     if (!order) throw new Error("Order not found");
 
-    const buy = await purchaseCodes({
-      lines: order.lines.map((l) => ({
-        productId: l.productId,
-        name: l.name,
-        qty: l.qty,
-      })),
-      currency: order.currency,
-      email: order.email,
-    });
-
-    order.codes = buy.codes || [];
-    order.status = "delivered";
-    order.updatedAt = new Date();
-    await order.save();
-
-    await sendCodesEmail({ to: order.email, orderId: id, codes: order.codes });
+    await deliverOrder(order);
 
     res.json({ ok: true, order });
   } catch (err) {
@@ -56,44 +66,29 @@ ordersRouter.post(
   async (req, res) => {
     try {
       const { data, signature } = req.body || {};
-      if (!data || !signature) throw new Error("Missing LiqPay data");
-
-      if (!verifyLiqpaySignature({ data, signature }))
-        throw new Error("Invalid signature");
-
-      const payload = JSON.parse(Buffer.from(data, "base64").toString("utf8"));
-      const ok = payload.status === "success" || payload.status === "sandbox";
-      const order = await Order.findById(payload.order_id);
-      if (!order) throw new Error("Order not found");
-
-      order.liqpay = payload;
-      order.updatedAt = new Date();
-
-      if (!ok) {
-        order.status = "failed";
-        await order.save();
-        return res.json({ ok: true });
+      if (!data || !signature) {
+        return res.status(400).json({ ok: false, error: "missing data" });
+      }
+      if (!verifyLiqpaySignature({ data, signature })) {
+        return res.status(403).json({ ok: false, error: "bad signature" });
       }
 
-      const buy = await purchaseCodes({
-        lines: order.lines.map((l) => ({
-          productId: l.productId,
-          name: l.name,
-          qty: l.qty,
-        })),
-        currency: order.currency,
-        email: order.email,
-      });
+      const payload = JSON.parse(Buffer.from(data, "base64").toString("utf8"));
+      const ok =
+        payload?.status === "success" ||
+        payload?.status === "sandbox" ||
+        payload?.paid === 1;
 
-      order.codes = buy.codes || [];
-      order.status = "delivered";
-      await order.save();
+      const orderId = payload?.order_id;
+      const order = await Order.findById(orderId);
+      if (order) {
+        order.liqpay = payload;
+        order.status = ok ? "paid" : "failed";
+        order.updatedAt = new Date();
+        await order.save();
 
-      await sendCodesEmail({
-        to: order.email,
-        orderId: String(order._id),
-        codes: order.codes,
-      });
+        if (ok) await deliverOrder(order);
+      }
 
       res.json({ ok: true });
     } catch (err) {
