@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // ENV
-const AUTH_MODE = (process.env.BAMBOO_AUTH_MODE || "OAUTH").toUpperCase(); // OAUTH | SECRET | BEARER | HEADERS
+const AUTH_MODE = (process.env.BAMBOO_AUTH_MODE || "SECRET").toUpperCase(); // SECRET | OAUTH | BEARER | HEADERS
 // PROD має пріоритет, але залогуймо, що саме взяли
 const CLIENT_ID = process.env.BAMBOO_PROD_CLIENT_ID || process.env.BAMBOO_CLIENT_ID || "";
 const CLIENT_SECRET = process.env.BAMBOO_PROD_CLIENT_SECRET || process.env.BAMBOO_CLIENT_SECRET || "";
@@ -18,6 +18,9 @@ const TOKEN_URL =
   process.env.BAMBOO_TOKEN_URL ||
   `${BASE.replace(/\/+$/, "")}${process.env.BAMBOO_TOKEN_PATH || "/api/integration/connect/token"}`;
 const OAUTH_SCOPE = process.env.BAMBOO_OAUTH_SCOPE || ""; // напр. "api" або "catalog.read"
+
+// Назва заголовка з секретним ключем (деякі інсталяції хочуть X-Api-Key)
+const KEY_HEADER = (process.env.BAMBOO_KEY_HEADER || "X-Secret-Key").trim();
 
 let cached = { token: null, exp: 0 };
 let blockedUntil = 0; // UNIX sec, якщо отримали 429
@@ -92,60 +95,73 @@ async function getBearer() {
 export async function authHeaders() {
   try {
     switch (AUTH_MODE) {
+      case "SECRET": {
+        // у SECRET-режимі не ходимо за токеном — лише ставимо заголовки
+        const h = { [KEY_HEADER]: SECRET_KEY };
+        if (CLIENT_ID) h["X-Client-Id"] = CLIENT_ID;
+        return h;
+      }
       case "OAUTH": {
         const token = await getBearer();
         return { Authorization: `Bearer ${token}` };
       }
-      case "SECRET":
-        return { "X-Client-Id": CLIENT_ID, "X-Secret-Key": SECRET_KEY };
-      case "BEARER":
+      case "BEARER": {
         return { Authorization: `Bearer ${API_TOKEN}` };
-      case "HEADERS":
+      }
+      case "HEADERS": {
         return { "X-Client-Id": CLIENT_ID, "X-Client-Secret": CLIENT_SECRET };
+      }
       default:
         return {};
     }
   } catch (e) {
-    console.error("[auth] authHeaders failed", { mode: AUTH_MODE, tokenUrl: TOKEN_URL }, e?.response?.status || e?.code || e?.message);
+    console.error(
+      "[auth] authHeaders failed",
+      { mode: AUTH_MODE, tokenUrl: TOKEN_URL },
+      e?.response?.status || e?.code || e?.message
+    );
     throw e;
   }
 }
 
 export function debugAuthConfig() {
-  return {
+  const baseInfo = {
     mode: AUTH_MODE,
     hasClientId: Boolean(CLIENT_ID),
     hasClientSecret: Boolean(CLIENT_SECRET),
     hasSecretKey: Boolean(SECRET_KEY),
     hasApiToken: Boolean(API_TOKEN),
-    tokenUrl: TOKEN_URL,
-    scope: OAUTH_SCOPE || null,
     clientIdUsed: CLIENT_ID ? mask(CLIENT_ID) : "",
   };
+  if (AUTH_MODE === "OAUTH") {
+    return {
+      ...baseInfo,
+      tokenUrl: TOKEN_URL,
+      scope: OAUTH_SCOPE || null,
+    };
+  }
+  return baseInfo;
 }
 
 // Варіанти заголовків для SECRET-режиму
 export function secretHeaderVariants() {
-  // ENV-перемикач на випадок, якщо потрібно примусово задати ім'я ключа
-  const KEY_HEADER = process.env.BAMBOO_KEY_HEADER?.trim(); // напр. "X-Api-Key" або "X-Secret-Key"
   const arr = [];
+  // 0) якщо задано ім'я заголовка через ENV — ставимо його першим
   if (KEY_HEADER) {
-    const h = {};
-    h[KEY_HEADER] = SECRET_KEY;
+    const h = { [KEY_HEADER]: SECRET_KEY };
     if (CLIENT_ID) h["X-Client-Id"] = CLIENT_ID;
     arr.push(h);
   }
-  // Стандартні спроби (найчастіші зверху)
+  // 1) X-Api-Key (+ X-Client-Id)
   arr.push(
-    // 1) X-Api-Key (без Client-Id)
     { "X-Api-Key": SECRET_KEY },
-    // 2) X-Api-Key + X-Client-Id
-    { "X-Api-Key": SECRET_KEY, "X-Client-Id": CLIENT_ID },
-    // 3) X-Secret-Key + X-Client-Id
-    { "X-Secret-Key": SECRET_KEY, "X-Client-Id": CLIENT_ID }
+    { "X-Api-Key": SECRET_KEY, "X-Client-Id": CLIENT_ID }
   );
-  // Прибери пусті Client-Id, якщо його немає
-  return arr.map(h => {
+  // 2) X-Secret-Key + X-Client-Id
+  arr.push({ "X-Secret-Key": SECRET_KEY, "X-Client-Id": CLIENT_ID });
+
+  // Прибери X-Client-Id якщо його немає
+  return arr.map((h) => {
     const copy = { ...h };
     if (!CLIENT_ID) delete copy["X-Client-Id"];
     return copy;
