@@ -5,7 +5,7 @@ export const curatedRouter = express.Router();
 
 const split = (s) => String(s || "").split(",").map(x => x.trim()).filter(Boolean);
 
-// GET /api/curated — тільки кеш; якщо треба — фонове оновлення
+// GET /api/curated — кеш; при TTL запускає фонове оновлення
 curatedRouter.get("/curated", async (req, res) => {
   try {
     const countries = req.query.countries ? split(req.query.countries) : undefined;
@@ -29,7 +29,7 @@ curatedRouter.post("/curated/refresh", async (req, res) => {
   }
 });
 
-// GET /api/curated/gaming — тільки кеш
+// GET /api/curated/gaming — лише кеш
 curatedRouter.get("/curated/gaming", async (_req, res) => {
   try {
     const out = await getCuratedFromCache({});
