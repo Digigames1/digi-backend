@@ -26,6 +26,7 @@ if (!DB_URL) {
 
 // 2) Тільки тепер підключаємо роутери (які імпортують моделі)
 const { diagRouter } = await import("./src/routes/diag.mjs");
+const { debugRouter } = await import("./src/routes/debug.mjs");
 const { bambooMatrixRouter } = await import("./src/routes/bamboo-matrix.mjs");
 const { catalogRouter } = await import("./src/routes/catalog.mjs");
 const cardsRouter = (await import("./routers/cards.js")).default;
@@ -43,6 +44,7 @@ app.use("/api", express.json());
 // ДІАГНОСТИКА — піднімаємо першою, без залежностей
 app.use("/api/diag", diagRouter);
 app.use("/api/diag", bambooMatrixRouter);
+app.use("/api", debugRouter);
 app.get("/api/health", (_req, res) => res.json({ ok: true, ts: new Date().toISOString() }));
 app.get("/healthz", (_req, res) => res.json({ ok: true }));
 
