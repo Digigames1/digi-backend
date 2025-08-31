@@ -2,18 +2,17 @@ import mongoose from "mongoose";
 
 const DumpSchema = new mongoose.Schema(
   {
-    key: { type: String, index: true, unique: true },  // унікальний ключ кешу (фільтри)
+    key: { type: String, index: true, unique: true },
     filters: { type: Object, default: {} },
-    rows: { type: Array, default: [] },                // плоский список товарів
+    rows: { type: Array, default: [] },
     updatedAt: { type: Date, default: Date.now },
   },
   { collection: "bamboo_dump" }
 );
 
-const existing =
+const Model =
+  mongoose.models?.BambooDump ||
   (mongoose.connection?.models?.BambooDump) ||
-  (mongoose.models?.BambooDump) ||
-  null;
+  mongoose.model("BambooDump", DumpSchema);
 
-export const BambooDump = existing || mongoose.model("BambooDump", DumpSchema);
-export default BambooDump;
+export default Model;
