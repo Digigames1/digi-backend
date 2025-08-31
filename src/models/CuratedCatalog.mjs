@@ -1,20 +1,21 @@
-import mongoose from "mongoose";
+import { getMongoose } from "../db/mongoose.mjs";
+
+const mongoose = getMongoose();
 
 const CuratedSchema = new mongoose.Schema(
   {
     key: { type: String, index: true, unique: true },
-    data: { type: Object, required: true }, // { categories, meta, updatedAt }
+    data: { type: Object, required: true },
     updatedAt: { type: Date, default: Date.now },
   },
   { collection: "curated_catalog" }
 );
 
-// Реєструємо один раз
 const CuratedCatalogModel =
   mongoose.models?.CuratedCatalog ||
   (mongoose.connection?.models?.CuratedCatalog) ||
   mongoose.model("CuratedCatalog", CuratedSchema);
 
-// 🔑 Експортуємо і як default, і як named — щоб спіймати всі стилі імпорту
+// подвійний експорт — для сумісності
 export const CuratedCatalog = CuratedCatalogModel;
 export default CuratedCatalogModel;
