@@ -1,71 +1,164 @@
 import express from "express";
-import { getCuratedFromCache, refreshCuratedNow } from "../catalog/cache.mjs";
-import CuratedCatalog from "../models/CuratedCatalog.mjs"; // для status
+import BambooDump from "../models/BambooDump.mjs";
+import CuratedCatalog from "../models/CuratedCatalog.mjs";
 
 export const curatedRouter = express.Router();
 
-const split = (s) => String(s || "").split(",").map(x => x.trim()).filter(Boolean);
+/** Ключові слова → категорії/лейбли брендів */
+const BRAND_MAP = [
+  // Gaming
+  { key: "gaming", label: "PlayStation", match: /playstation|psn|ps[\s-]?store/i },
+  { key: "gaming", label: "Xbox",       match: /xbox|microsoft xbox/i },
+  { key: "gaming", label: "Nintendo",   match: /nintendo/i },
+  { key: "gaming", label: "Steam",      match: /steam/i },
+  // Streaming
+  { key: "streaming", label: "Twitch",  match: /twitch/i },
+  // Shopping
+  { key: "shopping", label: "Amazon",   match: /\bamazon\b/i },
+  { key: "shopping", label: "eBay",     match: /\bebay\b/i },
+  { key: "shopping", label: "Zalando",  match: /zalando/i },
+  // Music
+  { key: "music", label: "Spotify",     match: /spotify/i },
+  { key: "music", label: "Google Play", match: /google\s*play|google\s*gift/i },
+  { key: "music", label: "Apple",       match: /\bapple\b|itunes/i },
+  // Food & Drink
+  { key: "food", label: "Starbucks",    match: /starbucks/i },
+  { key: "food", label: "Uber Eats",    match: /uber\s*eats/i },
+  // Travel
+  { key: "travel", label: "Airbnb",     match: /airbnb/i },
+  { key: "travel", label: "Uber",       match: /^uber$/i },
+];
 
-// GET /api/curated — читаємо з кешу (оновлення у фоні при TTL)
-curatedRouter.get("/curated", async (req, res) => {
-  try {
-    const countries = req.query.countries ? split(req.query.countries) : undefined;
-    const currencies = req.query.currencies ? split(req.query.currencies) : undefined;
-    const out = await getCuratedFromCache({ countries, currencies, force: false });
-    res.json({ ok: true, ...out });
-  } catch (e) {
-    res.status(200).json({ ok: false, error: e?.message || "failed" });
+const CATEGORY_KEYS = ["gaming", "streaming", "shopping", "music", "food", "travel"];
+
+/** Нормалізація продукту під фронт */
+function normalizeProduct(brand, p) {
+  // Формати у v2 можуть відрізнятись — страхуємося опціональностями
+  const priceMin = p?.price?.min ?? p?.priceMin ?? p?.minFaceValue ?? null;
+  const priceMax = p?.price?.max ?? p?.priceMax ?? p?.maxFaceValue ?? null;
+  const currency = p?.price?.currencyCode ?? p?.currencyCode ?? brand?.currencyCode ?? null;
+
+  return {
+    id: p?.id ?? p?.productId ?? null,
+    name: p?.name || brand?.name || "",
+    brandId: brand?.brandId ?? brand?.id ?? null,
+    brandName: brand?.name || "",
+    countryCode: brand?.countryCode || null,
+    currencyCode: currency,
+    price: {
+      min: Number.isFinite(+priceMin) ? +priceMin : null,
+      max: Number.isFinite(+priceMax) ? +priceMax : null,
+    },
+    modifiedDate: p?.modifiedDate || brand?.modifiedDate || null,
+    logoUrl: brand?.logoUrl || null,
+  };
+}
+
+/** Побудова всіх категорій з дампу */
+function buildCurated(rows, wantedCurrencies = []) {
+  const res = {
+    gaming:    { items: [], count: 0, currencies: [] },
+    streaming: { items: [], count: 0, currencies: [] },
+    shopping:  { items: [], count: 0, currencies: [] },
+    music:     { items: [], count: 0, currencies: [] },
+    food:      { items: [], count: 0, currencies: [] },
+    travel:    { items: [], count: 0, currencies: [] },
+  };
+
+  for (const brand of rows || []) {
+    const name = brand?.name || "";
+    const hit = BRAND_MAP.find((b) => b.match.test(name));
+    if (!hit) continue;
+
+    const products = Array.isArray(brand?.products) ? brand.products : [];
+    for (const p of products) {
+      const np = normalizeProduct(brand, p);
+      if (!np.id) continue;
+
+      // Валютний фільтр (необов'язковий)
+      if (Array.isArray(wantedCurrencies) && wantedCurrencies.length > 0) {
+        if (np.currencyCode && !wantedCurrencies.includes(np.currencyCode)) continue;
+      }
+
+      res[hit.key].items.push(np);
+    }
   }
-});
 
-// POST /api/curated/refresh — лишаємо як було
-curatedRouter.post("/curated/refresh", async (req, res) => {
-  try {
-    const countries = req.query.countries ? split(req.query.countries) : undefined;
-    const currencies = req.query.currencies ? split(req.query.currencies) : undefined;
-    const out = await refreshCuratedNow({ countries, currencies });
-    res.json({ ok: true, ...out });
-  } catch (e) {
-    res.status(200).json({ ok: false, error: e?.message || "refresh failed" });
+  // Підрахунок та множини валют
+  for (const k of CATEGORY_KEYS) {
+    const curSet = new Set();
+    for (const it of res[k].items) if (it.currencyCode) curSet.add(it.currencyCode);
+    res[k].currencies = Array.from(curSet);
+    res[k].count = res[k].items.length;
   }
-});
 
-// ✅ ДОДАТИ GET-АЛІАС, бо користувач викликає з браузера GET
+  return res;
+}
+
+/** GET /api/curated/refresh?currencies=USD,EUR,CAD,AUD&dumpKey=... */
 curatedRouter.get("/curated/refresh", async (req, res) => {
   try {
-    const countries = req.query.countries ? split(req.query.countries) : undefined;
-    const currencies = req.query.currencies ? split(req.query.currencies) : undefined;
-    const out = await refreshCuratedNow({ countries, currencies });
-    res.json({ ok: true, ...out, method: "GET" });
+    const currencies = String(req.query.currencies || "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    const dumpKey =
+      String(req.query.dumpKey || "") ||
+      `catalog:v2:ps${Number(process.env.CATALOG_PAGE_SIZE || 100)}:mp${Number(process.env.CATALOG_MAX_PAGES || 30)}`;
+
+    const dump = await BambooDump.findOne({ key: dumpKey }).lean();
+    if (!dump) {
+      return res.status(404).json({
+        ok: false,
+        error: `Dump not found for key=${dumpKey}. Спочатку виконай /api/bamboo/export.json?force=1`,
+      });
+    }
+
+    const curated = buildCurated(dump.rows, currencies);
+
+    // Зберігаємо кожну категорію окремо
+    const ops = [];
+    for (const k of CATEGORY_KEYS) {
+      ops.push(
+        CuratedCatalog.updateOne(
+          { key: k },
+          { $set: { key: k, data: curated[k], updatedAt: new Date() } },
+          { upsert: true }
+        )
+      );
+    }
+    await Promise.all(ops);
+
+    res.json({ ok: true, currencies, keys: CATEGORY_KEYS, dumpKey, counts: Object.fromEntries(CATEGORY_KEYS.map(k => [k, curated[k].count])) });
   } catch (e) {
-    res.status(200).json({ ok: false, error: e?.message || "refresh failed" });
+    res.status(500).json({ ok: false, error: e?.message || String(e) });
   }
 });
 
-// GET /api/curated/gaming — з кешу
-curatedRouter.get("/curated/gaming", async (_req, res) => {
+/** GET /api/curated/:key  (key ∈ gaming|streaming|shopping|music|food|travel) */
+curatedRouter.get("/curated/:key", async (req, res) => {
   try {
-    const out = await getCuratedFromCache({});
-    const gaming = out.data?.categories?.gaming || [];
-    res.json({ ok: true, count: gaming.length, items: gaming, meta: out.data?.meta, source: out.source });
+    const key = String(req.params.key || "").toLowerCase();
+    if (!CATEGORY_KEYS.includes(key)) {
+      return res.status(400).json({ ok: false, error: `Unknown category key: ${key}` });
+    }
+    const doc = await CuratedCatalog.findOne({ key }).lean();
+    if (!doc) return res.json({ ok: true, key, data: { items: [], currencies: [], count: 0 } });
+    res.json({ ok: true, key, data: doc.data, updatedAt: doc.updatedAt });
   } catch (e) {
-    res.status(200).json({ ok: false, error: e?.message || "failed" });
+    res.status(500).json({ ok: false, error: e?.message || String(e) });
   }
 });
 
-// ✅ ДОДАТИ діагностику: чи є документ у БД і коли оновлено
+/** Статус кешу */
 curatedRouter.get("/curated/status", async (_req, res) => {
   try {
-    const doc = await CuratedCatalog.findOne({ key: "curated:v1" }).lean();
-    res.json({
-      ok: true,
-      hasDoc: !!doc,
-      updatedAt: doc?.updatedAt || null,
-      keys: doc ? Object.keys(doc?.data?.categories || {}) : [],
-      meta: doc?.data?.meta || null,
-    });
+    const docs = await CuratedCatalog.find({}).select({ key: 1, updatedAt: 1, "data.count": 1 }).lean();
+    res.json({ ok: true, items: docs || [] });
   } catch (e) {
-    res.status(200).json({ ok: false, error: e?.message || "status failed" });
+    res.status(500).json({ ok: false, error: e?.message || String(e) });
   }
 });
 
+export default curatedRouter;
