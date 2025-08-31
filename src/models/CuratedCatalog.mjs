@@ -9,10 +9,11 @@ const CuratedSchema = new mongoose.Schema(
   { collection: "curated_catalog" }
 );
 
-const existing =
+// реєстрація моделі один раз
+const Model =
+  mongoose.models?.CuratedCatalog ||
   (mongoose.connection?.models?.CuratedCatalog) ||
-  (mongoose.models?.CuratedCatalog) ||
-  null;
+  mongoose.model("CuratedCatalog", CuratedSchema);
 
-export const CuratedCatalog = existing || mongoose.model("CuratedCatalog", CuratedSchema);
-export default CuratedCatalog;
+// ВАЖЛИВО: тільки default-експорт
+export default Model;
