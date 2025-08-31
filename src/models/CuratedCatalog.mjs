@@ -1,5 +1,4 @@
 import { getMongoose } from "../db/mongoose.mjs";
-
 const mongoose = getMongoose();
 
 const CuratedSchema = new mongoose.Schema(
@@ -16,6 +15,5 @@ const CuratedCatalogModel =
   (mongoose.connection?.models?.CuratedCatalog) ||
   mongoose.model("CuratedCatalog", CuratedSchema);
 
-// подвійний експорт — для сумісності
 export const CuratedCatalog = CuratedCatalogModel;
 export default CuratedCatalogModel;
