@@ -2,18 +2,17 @@ import mongoose from "mongoose";
 
 const DumpSchema = new mongoose.Schema(
   {
-    key: { type: String, index: true, unique: true },
+    key: { type: String, index: true, unique: true },  // cache key (фільтри)
     filters: { type: Object, default: {} },
-    rows: { type: Array, default: [] }, // плоскі товари
+    rows: { type: Array, default: [] },                // плоскі товари
     updatedAt: { type: Date, default: Date.now },
   },
   { collection: "bamboo_dump" }
 );
 
-// безпечна реєстрація моделі
 const existing =
-  (mongoose.connection && mongoose.connection.models && mongoose.connection.models.BambooDump) ||
-  (mongoose.models && mongoose.models.BambooDump) ||
+  (mongoose.connection?.models?.BambooDump) ||
+  (mongoose.models?.BambooDump) ||
   null;
 
 export const BambooDump = existing || mongoose.model("BambooDump", DumpSchema);

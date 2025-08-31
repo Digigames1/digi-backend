@@ -8,7 +8,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-app.use(express.json());
 
 // 1) Конект до Mongo
 const DB_URL = process.env.DB_URL || process.env.MONGODB_URI;
@@ -38,9 +37,13 @@ fxUtils.initFxWatcher?.();
 const { ordersRouter } = await import("./src/orders/router.mjs");
 const { bambooExportRouter } = await import("./src/routes/bambooExport.mjs");
 
+// JSON parser for all /api routes
+app.use("/api", express.json());
+
 // ДІАГНОСТИКА — піднімаємо першою, без залежностей
 app.use("/api/diag", diagRouter);
 app.use("/api/diag", bambooMatrixRouter);
+app.get("/api/health", (_req, res) => res.json({ ok: true, ts: new Date().toISOString() }));
 app.get("/healthz", (_req, res) => res.json({ ok: true }));
 
 const envDist = process.env.DIST_DIR && path.resolve(process.env.DIST_DIR);

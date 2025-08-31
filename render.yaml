@@ -6,12 +6,14 @@ services:
     envVars:
       - key: VITE_API_BASE
         value: https://digi-backend-ln8f.onrender.com/api
-      - key: CATALOG_CACHE_TTL_MIN
+      - key: CATALOG_TTL_MIN
         value: "60"
-      - key: CATALOG_CACHE_PATH
-        value: ./data/catalog-cache.json
-      - key: CATALOG_MAX_ITEMS
-        value: "10000"
+      - key: CATALOG_BACKOFF_MIN
+        value: "30"
+      - key: CATALOG_PAGE_SIZE
+        value: "100"
+      - key: CATALOG_MAX_PAGES
+        value: "30"
     buildCommand: >
       npm --prefix frontend install --no-audit --no-fund --registry=https://registry.npmjs.org
       && npm --prefix frontend run build
