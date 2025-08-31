@@ -1,20 +1,14 @@
 import CuratedCatalog from "../models/CuratedCatalog.mjs";
 import { fetchMatrix } from "./bambooMatrix.mjs";
 
-/**
- * Глобальний (на процес) лок, щоб не запускати паралельних оновлень
- */
-let refreshing = null;
-/** Час до якого заборонено ходити в Bamboo після 429/помилки */
-let backoffUntil = 0;
-/** Остання помилка оновлення (для діагностики) */
+let refreshing = null;     // лок проти паралельних оновлень
+let backoffUntil = 0;      // не ходити в Bamboo до цього часу після 429/помилки
 let lastError = null;
 
 const TTL_MIN = Math.max(5, Number(process.env.CATALOG_TTL_MIN || 60));
 const BACKOFF_MIN = Math.max(5, Number(process.env.CATALOG_BACKOFF_MIN || 30));
 const KEY = "curated:v1";
-
-function now() { return Date.now(); }
+const now = () => Date.now();
 
 async function readCache() {
   return CuratedCatalog.findOne({ key: KEY }).lean();
@@ -34,10 +28,8 @@ function isFresh(ts) {
 
 /**
  * Основний метод: повертає дані з кешу, а при потребі — оновлює (керовано).
- * @param {{countries?: string[], currencies?: string[], force?: boolean}} opts
  */
-export async function getCuratedFromCache(opts = {}) {
-  const { countries, currencies, force = false } = opts;
+export async function getCuratedFromCache({ countries, currencies, force = false } = {}) {
 
   // 1) читаємо кеш
   const doc = await readCache();
@@ -89,11 +81,10 @@ export async function getCuratedFromCache(opts = {}) {
   })();
 
   // 6) Не блокуємо відповідь: віддаємо те, що є в кеші (або порожньо)
-  const data = doc?.data || { categories: {}, meta: {} };
   return {
     ok: true,
     source: doc ? "stale-cache-refreshing" : "empty-refreshing",
-    data,
+    data: doc?.data || { categories: {}, meta: {} },
     lastError,
     backoffUntil,
   };
@@ -102,13 +93,11 @@ export async function getCuratedFromCache(opts = {}) {
 /**
  * Примусове оновлення (адмін-дія або CRON).
  */
-export async function refreshCuratedNow(opts = {}) {
-  if (refreshing) {
-    await refreshing; // дочекаємось активного
-  }
+export async function refreshCuratedNow({ countries, currencies } = {}) {
+  if (refreshing) await refreshing;
   try {
     refreshing = (async () => {
-      const { categories, meta } = await fetchMatrix(opts);
+      const { categories, meta } = await fetchMatrix({ countries, currencies });
       const data = { categories, meta, updatedAt: new Date().toISOString() };
       await writeCache(data);
       lastError = null;

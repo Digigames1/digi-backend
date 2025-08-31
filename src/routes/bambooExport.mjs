@@ -20,6 +20,20 @@ function cacheKey(q) {
   return `dump:${parts.join("|")}`;
 }
 
+function parseQ(req) {
+  return {
+    CountryCode: req.query.CountryCode,
+    CurrencyCode: req.query.CurrencyCode,
+    Name: req.query.Name,
+    ModifiedDate: req.query.ModifiedDate,
+    ProductId: req.query.ProductId ? Number(req.query.ProductId) : undefined,
+    BrandId: req.query.BrandId ? Number(req.query.BrandId) : undefined,
+    TargetCurrency: req.query.TargetCurrency,
+    PageSize: req.query.PageSize ? Number(req.query.PageSize) : undefined,
+    maxPages: req.query.maxPages ? Number(req.query.maxPages) : undefined,
+  };
+}
+
 async function getRowsWithCache(q, force) {
   const key = cacheKey(q);
   if (!force) {
@@ -34,20 +48,6 @@ async function getRowsWithCache(q, force) {
     { upsert: true }
   );
   return { rows, cached: false, key };
-}
-
-function parseQ(req) {
-  return {
-    CountryCode: req.query.CountryCode,
-    CurrencyCode: req.query.CurrencyCode,
-    Name: req.query.Name,
-    ModifiedDate: req.query.ModifiedDate,
-    ProductId: req.query.ProductId ? Number(req.query.ProductId) : undefined,
-    BrandId: req.query.BrandId ? Number(req.query.BrandId) : undefined,
-    TargetCurrency: req.query.TargetCurrency,
-    PageSize: req.query.PageSize ? Number(req.query.PageSize) : undefined,
-    maxPages: req.query.maxPages ? Number(req.query.maxPages) : undefined,
-  };
 }
 
 bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
