@@ -19,12 +19,12 @@ const { bambooMatrixRouter } = await import("./src/routes/bamboo-matrix.mjs");
 const { catalogRouter } = await import("./src/routes/catalog.mjs");
 const cardsRouter = (await import("./routers/cards.js")).default;
 const searchRouter = (await import("./routers/search.js")).default;
+const { bambooExportRouter } = await import("./src/routes/bamboo-export.mjs");
 const { curatedRouter } = await import("./src/routes/curated.mjs");
 const fxUtils = await import("./src/utils/fx.mjs");
 const { fxRouter } = await import("./src/routes/fx.mjs");
 fxUtils.initFxWatcher?.();
 const { ordersRouter } = await import("./src/orders/router.mjs");
-const { bambooExportRouter } = await import("./src/routes/bambooExport.mjs");
 
 // JSON parser for all /api routes
 app.use("/api", express.json());
@@ -35,6 +35,9 @@ app.use("/api/diag", bambooMatrixRouter);
 app.use("/api", debugRouter);
 app.get("/api/health", (_req, res) => res.json({ ok: true, ts: new Date().toISOString() }));
 app.get("/healthz", (_req, res) => res.json({ ok: true }));
+
+app.use("/api", bambooExportRouter);
+app.use("/api", curatedRouter);
 
 const envDist = process.env.DIST_DIR && path.resolve(process.env.DIST_DIR);
 const candidates = [
@@ -61,10 +64,8 @@ app.use("/api/search", searchRouter);
 app.use("/api/cards", cardsRouter);
 // catalogRouter тепер включає і /api/catalog, і /api/diag/bamboo/*
 app.use("/api", catalogRouter);
-app.use("/api", curatedRouter);
 app.use("/api", fxRouter);
 app.use("/api", ordersRouter);
-app.use("/api", bambooExportRouter);
 
 app.get("*", (_req, res) => {
   const indexPath = found && path.join(found, "index.html");
