@@ -1,10 +1,13 @@
 import mongoose from "mongoose";
 
-const CuratedSchema = new mongoose.Schema({
-  key: { type: String, index: true, unique: true },
-  data: { type: Object, required: true },
-  updatedAt: { type: Date, default: Date.now },
-}, { collection: "curated_catalog" });
+const CuratedSchema = new mongoose.Schema(
+  {
+    key: { type: String, index: true, unique: true },
+    data: { type: Object, required: true }, // { categories, meta, updatedAt }
+    updatedAt: { type: Date, default: Date.now },
+  },
+  { collection: "curated_catalog" }
+);
 
 const existing =
   (mongoose.connection?.models?.CuratedCatalog) ||
