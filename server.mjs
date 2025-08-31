@@ -36,6 +36,7 @@ const fxUtils = await import("./src/utils/fx.mjs");
 const { fxRouter } = await import("./src/routes/fx.mjs");
 fxUtils.initFxWatcher?.();
 const { ordersRouter } = await import("./src/orders/router.mjs");
+const { bambooExportRouter } = await import("./src/routes/bambooExport.mjs");
 
 // ДІАГНОСТИКА — піднімаємо першою, без залежностей
 app.use("/api/diag", diagRouter);
@@ -70,6 +71,7 @@ app.use("/api", catalogRouter);
 app.use("/api", curatedRouter);
 app.use("/api", fxRouter);
 app.use("/api", ordersRouter);
+app.use("/api", bambooExportRouter);
 
 app.get("*", (_req, res) => {
   const indexPath = found && path.join(found, "index.html");
