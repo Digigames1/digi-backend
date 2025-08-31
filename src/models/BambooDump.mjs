@@ -10,9 +10,10 @@ const DumpSchema = new mongoose.Schema(
   { collection: "bamboo_dump" }
 );
 
-const Model =
+const BambooDumpModel =
   mongoose.models?.BambooDump ||
   (mongoose.connection?.models?.BambooDump) ||
   mongoose.model("BambooDump", DumpSchema);
 
-export default Model;
+export const BambooDump = BambooDumpModel;
+export default BambooDumpModel;

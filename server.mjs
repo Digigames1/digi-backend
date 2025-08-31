@@ -3,6 +3,7 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import mongoose from "mongoose";
+import { debugRouter } from "./src/routes/debug.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -26,7 +27,6 @@ if (!DB_URL) {
 
 // 2) Тільки тепер підключаємо роутери (які імпортують моделі)
 const { diagRouter } = await import("./src/routes/diag.mjs");
-const { debugRouter } = await import("./src/routes/debug.mjs");
 const { bambooMatrixRouter } = await import("./src/routes/bamboo-matrix.mjs");
 const { catalogRouter } = await import("./src/routes/catalog.mjs");
 const cardsRouter = (await import("./routers/cards.js")).default;
