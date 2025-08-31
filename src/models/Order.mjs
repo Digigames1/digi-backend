@@ -1,4 +1,6 @@
-import mongoose from "mongoose";
+import { getMongoose } from "../db/mongoose.mjs";
+
+const mongoose = getMongoose();
 
 const LineSchema = new mongoose.Schema({
   productId: String,
@@ -30,10 +32,10 @@ const OrderSchema = new mongoose.Schema(
   { collection: "orders" }
 );
 
-const existingModel =
-  (mongoose.connection && mongoose.connection.models && mongoose.connection.models.Order) ||
-  (mongoose.models && mongoose.models.Order) ||
-  null;
+const OrderModel =
+  mongoose.models?.Order ||
+  (mongoose.connection?.models?.Order) ||
+  mongoose.model("Order", OrderSchema);
 
-export const Order = existingModel || mongoose.model("Order", OrderSchema);
-export default Order;
+export const Order = OrderModel;
+export default OrderModel;

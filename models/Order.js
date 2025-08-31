@@ -1,4 +1,6 @@
-import mongoose from "mongoose";
+import { getMongoose } from "../src/db/mongoose.mjs";
+
+const mongoose = getMongoose();
 
 const OrderSchema = new mongoose.Schema(
   {
@@ -19,4 +21,10 @@ const OrderSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-export default mongoose.model("Order", OrderSchema);
+const OrderModel =
+  mongoose.models?.Order ||
+  (mongoose.connection?.models?.Order) ||
+  mongoose.model("Order", OrderSchema);
+
+export const Order = OrderModel;
+export default OrderModel;

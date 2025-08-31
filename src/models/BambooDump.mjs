@@ -1,4 +1,6 @@
-import mongoose from "mongoose";
+import { getMongoose } from "../db/mongoose.mjs";
+
+const mongoose = getMongoose();
 
 const DumpSchema = new mongoose.Schema(
   {

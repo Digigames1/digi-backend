@@ -2,8 +2,7 @@ import express from "express";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
-import mongoose from "mongoose";
-import { debugRouter } from "./src/routes/debug.mjs";
+import { connectMongo } from "./src/db/mongoose.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -11,21 +10,10 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 // 1) Конект до Mongo
-const DB_URL = process.env.DB_URL || process.env.MONGODB_URI;
-if (!DB_URL) {
-  console.warn("DB_URL/MONGODB_URI not set");
-} else {
-  console.log(`ℹ️  Mongo connecting to: ${DB_URL}`);
-  try {
-    const conn = await mongoose.connect(DB_URL);
-    console.log(`✅ Mongo connected: ${conn.connection?.name ?? "(unknown)"}`);
-  } catch (err) {
-    console.error(err);
-    process.exit(1);
-  }
-}
+await connectMongo();
 
 // 2) Тільки тепер підключаємо роутери (які імпортують моделі)
+const { debugRouter } = await import("./src/routes/debug.mjs");
 const { diagRouter } = await import("./src/routes/diag.mjs");
 const { bambooMatrixRouter } = await import("./src/routes/bamboo-matrix.mjs");
 const { catalogRouter } = await import("./src/routes/catalog.mjs");
