@@ -1,6 +1,6 @@
 import express from "express";
 import crypto from "crypto";
-import Order from "../models/Order.js";
+import Order from "../src/models/Order.mjs";
 
 const router = express.Router();
 

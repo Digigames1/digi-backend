@@ -11,12 +11,10 @@ const DumpSchema = new mongoose.Schema(
   { collection: "bamboo_dump" }
 );
 
-// РЕЄСТРАЦІЯ САМОЇ МОДЕЛІ
 const BambooDumpModel =
   mongoose.models?.BambooDump ||
   (mongoose.connection?.models?.BambooDump) ||
   mongoose.model("BambooDump", DumpSchema);
 
-// ЕКСПОРТУЄМО МОДЕЛЬ (default + named для сумісності)
 export default BambooDumpModel;
 export const BambooDump = BambooDumpModel;

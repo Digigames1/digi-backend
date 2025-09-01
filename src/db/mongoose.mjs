@@ -1,47 +1,42 @@
-// src/db/mongoose.mjs
-// Робимо сумісний імпорт для будь-якого бандлінгу (ESM/CJS)
-import * as M from "mongoose";
+import mongoose from "mongoose";
 
-// Визначаємо реальний інстанс mongoose
-const mg = (M?.default && (M.default.connect || M.default.set))
-  ? M.default
-  : M;
-
-// Сінглтон-флаг підключення
 let connected = false;
 
+/** Єдиний екземпляр mongoose для всього застосунку */
 export function getMongoose() {
-  return mg;
+  return mongoose;
 }
 
+/** Підключення до Mongo (викликається один раз на старті) */
 export async function connectMongo() {
-  if (connected) return mg;
-
   const uri =
     process.env.DB_URL ||
     process.env.MONGODB_URI ||
     process.env.DB_URI;
 
-  // 👇 правильна назва БД: digi (як в Atlas)
   const dbName = process.env.DB_NAME || "digi";
 
   if (!uri) {
-    console.warn("Mongo URI not set (DB_URL / MONGODB_URI / DB_URI). Skipping connect.");
-    return mg;
+    console.error("❌ Mongo URI missing (DB_URL / MONGODB_URI / DB_URI not set)");
+    return mongoose;
   }
 
-  try { mg.set?.("strictQuery", true); } catch {}
+  if (connected) return mongoose;
 
-  await mg.connect(uri, { dbName });
+  try {
+    mongoose.set?.("strictQuery", true);
+  } catch {}
 
+  await mongoose.connect(uri, { dbName });
   connected = true;
 
-  // 👇 коректне логування імені БД в різних версіях Mongoose/драйвера
   const name =
-    mg.connection?.name ||
-    mg.connection?.db?.databaseName ||
+    mongoose.connection?.name ||
+    mongoose.connection?.db?.databaseName ||
     dbName;
 
   console.log("✅ Mongo connected:", name);
-  return mg;
+  return mongoose;
 }
+
+export default mongoose;
