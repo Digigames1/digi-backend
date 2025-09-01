@@ -2,29 +2,31 @@ import express from "express";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
+
+// Mongo connection must be established before registering routes
 import { connectMongo } from "./src/db/mongoose.mjs";
+
+// Routers and utilities
+import { debugRouter } from "./src/routes/debug.mjs";
+import { diagRouter } from "./src/routes/diag.mjs";
+import { bambooMatrixRouter } from "./src/routes/bamboo-matrix.mjs";
+import { catalogRouter } from "./src/routes/catalog.mjs";
+import cardsRouter from "./routers/cards.js";
+import searchRouter from "./routers/search.js";
+import { bambooExportRouter } from "./src/routes/bamboo-export.mjs";
+import { curatedRouter } from "./src/routes/curated.mjs";
+import * as fxUtils from "./src/utils/fx.mjs";
+import { fxRouter } from "./src/routes/fx.mjs";
+import { ordersRouter } from "./src/orders/router.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// 1) Конект до Mongo
+// Wait for Mongo to connect before mounting routes
 await connectMongo();
-
-// 2) Тільки тепер підключаємо роутери (які імпортують моделі)
-const { debugRouter } = await import("./src/routes/debug.mjs");
-const { diagRouter } = await import("./src/routes/diag.mjs");
-const { bambooMatrixRouter } = await import("./src/routes/bamboo-matrix.mjs");
-const { catalogRouter } = await import("./src/routes/catalog.mjs");
-const cardsRouter = (await import("./routers/cards.js")).default;
-const searchRouter = (await import("./routers/search.js")).default;
-const { bambooExportRouter } = await import("./src/routes/bamboo-export.mjs");
-const { curatedRouter } = await import("./src/routes/curated.mjs");
-const fxUtils = await import("./src/utils/fx.mjs");
-const { fxRouter } = await import("./src/routes/fx.mjs");
 fxUtils.initFxWatcher?.();
-const { ordersRouter } = await import("./src/orders/router.mjs");
 
 // JSON parser for all /api routes
 app.use("/api", express.json());
