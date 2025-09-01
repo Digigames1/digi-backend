@@ -1,36 +1,28 @@
-// server.mjs — unified startup with guaranteed Mongo init before routes
-
 import path from "node:path";
+import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import express from "express";
-
-// 1) Mongo singleton
 import { connectMongo } from "./src/db/mongoose.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-
-// Basic JSON middleware for APIs
 app.use(express.json());
 
-// --- Health / ping early (no DB needed)
-app.get("/api/health", (_req, res) => {
-  res.json({ ok: true, ts: new Date().toISOString() });
-});
+// ранній пінг
+app.get("/api/health", (_req, res) => res.json({ ok: true, ts: new Date().toISOString() }));
 
-// 2) Connect Mongo BEFORE importing any routes that use mongoose
+// 1) Спочатку конектимось до Mongo
 try {
-  await connectMongo(); // <-- CRITICAL
+  await connectMongo();
 } catch (e) {
-  console.error("\u274c Mongo connect failed at startup:", e?.message || e);
-  // Не падаємо: API зможуть показати діагностику
+  console.error("❌ Mongo connect failed at startup:", e?.message || e);
 }
 
-// 3) Now import routers dynamically (after DB is ready)
-const { debugRouter } = await import("./src/routes/debug.mjs").catch(() => ({ debugRouter: null }));
-if (debugRouter) app.use("/api", debugRouter);
+// 2) Тепер імпортуємо роутери (щоб моделі реєструвались у вже підключеному інстансі)
+const { debugRouter } = await import("./src/routes/debug.mjs");
+app.use("/api", debugRouter);
 
 const { bambooExportRouter } = await import("./src/routes/bamboo-export.mjs").catch(() => ({ bambooExportRouter: null }));
 if (bambooExportRouter) app.use("/api", bambooExportRouter);
@@ -38,32 +30,27 @@ if (bambooExportRouter) app.use("/api", bambooExportRouter);
 const { curatedRouter } = await import("./src/routes/curated.mjs").catch(() => ({ curatedRouter: null }));
 if (curatedRouter) app.use("/api", curatedRouter);
 
-// 4) Static assets (after /api so SPA doesn't swallow API routes)
+// 3) Статика ПІСЛЯ /api
 const distCandidates = [
   path.join(__dirname, "dist"),
   path.join(__dirname, "frontend", "dist"),
   path.join(__dirname, "client", "dist"),
 ];
 
-const staticRoot = distCandidates.find(p => {
-  try { return require('node:fs').existsSync(p); } catch { return false; }
-});
-
-if (staticRoot) {
-  console.log(`\u2705 Serving static from: ${staticRoot}`);
-  app.use(express.static(staticRoot));
-} else {
-  console.warn("\u26a0\ufe0f  No static dist folder found");
+// лог-діагностика, які папки існують
+for (const p of distCandidates) {
+  console.log("🔎 DIST candidate:", p, "exists:", fs.existsSync(p));
 }
 
-// 5) SPA fallback (optional) — keep it AFTER API routes
-app.get("*", (_req, res, next) => {
-  if (!staticRoot) return next();
-  res.sendFile(path.join(staticRoot, "index.html"));
-});
+const staticRoot = distCandidates.find((p) => fs.existsSync(p));
+if (staticRoot) {
+  console.log(`✅ Serving static from: ${staticRoot}`);
+  app.use(express.static(staticRoot));
+  // SPA fallback
+  app.get("*", (_req, res) => res.sendFile(path.join(staticRoot, "index.html")));
+} else {
+  console.warn("⚠️  No static dist folder found");
+}
 
-// 6) Start server
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => {
-  console.log(`Server on :${PORT}`);
-});
+app.listen(PORT, () => console.log(`Server on :${PORT}`));

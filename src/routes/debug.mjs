@@ -38,25 +38,4 @@ debugRouter.get("/debug/mongoose", (_req, res) => {
   }
 });
 
-// Допоміжне: показати фізичні шляхи файлів моделі, щоб виключити імпорт «не того» файла
-debugRouter.get("/debug/paths", async (_req, res) => {
-  try {
-    const cc = await import.meta.url;
-    res.json({
-      ok: true,
-      files: {
-        curated: (await import("../models/CuratedCatalog.mjs")).default?.modelName || "(loaded)",
-        bamboo: (await import("../models/BambooDump.mjs")).default?.modelName || "(loaded)",
-      },
-      module: {
-        curatedUrl: new URL("../models/CuratedCatalog.mjs", import.meta.url).toString(),
-        bambooUrl: new URL("../models/BambooDump.mjs", import.meta.url).toString(),
-      },
-    });
-  } catch (e) {
-    res.json({ ok: false, error: e?.message || String(e) });
-  }
-});
-
 debugRouter.get("/debug/ping", (_req, res) => res.json({ ok: true, ts: new Date().toISOString() }));
-
