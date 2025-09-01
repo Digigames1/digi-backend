@@ -1,7 +1,7 @@
 import express from "express";
 import { getMongoose } from "../db/mongoose.mjs";
-import CuratedCatalog, { CuratedCatalog as CuratedCatalogNamed } from "../models/CuratedCatalog.mjs";
-import BambooDump, { BambooDump as BambooDumpNamed } from "../models/BambooDump.mjs";
+import CuratedCatalog from "../models/CuratedCatalog.mjs";
+import BambooDump from "../models/BambooDump.mjs";
 
 export const debugRouter = express.Router();
 
@@ -11,6 +11,7 @@ function inspectModel(m) {
     isFunction: typeof m === "function",
     hasFindOne: !!m?.findOne,
     hasUpdateOne: !!m?.updateOne,
+    modelName: m?.modelName || null,
   };
 }
 
@@ -28,8 +29,8 @@ debugRouter.get("/debug/mongoose", (_req, res) => {
         dbName: conn?.name ?? null,
       },
       registeredModels: registered,
-      curatedCatalog: { default: inspectModel(CuratedCatalog), named: inspectModel(CuratedCatalogNamed) },
-      bambooDump: { default: inspectModel(BambooDump), named: inspectModel(BambooDumpNamed) },
+      curatedCatalog: inspectModel(CuratedCatalog),
+      bambooDump: inspectModel(BambooDump),
     });
   } catch (e) {
     res.json({ ok: false, error: e?.message || String(e) });

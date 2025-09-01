@@ -39,6 +39,14 @@ app.get("/healthz", (_req, res) => res.json({ ok: true }));
 app.use("/api", bambooExportRouter);
 app.use("/api", curatedRouter);
 
+// далі — основні роутери
+app.use("/api/search", searchRouter);
+app.use("/api/cards", cardsRouter);
+// catalogRouter тепер включає і /api/catalog, і /api/diag/bamboo/*
+app.use("/api", catalogRouter);
+app.use("/api", fxRouter);
+app.use("/api", ordersRouter);
+
 const envDist = process.env.DIST_DIR && path.resolve(process.env.DIST_DIR);
 const candidates = [
   envDist,
@@ -58,14 +66,6 @@ if (found) {
 } else {
   console.error("❌ dist/index.html not found. Ensure build step creates it in the repo root or set DIST_DIR.");
 }
-
-// далі — основні роутери
-app.use("/api/search", searchRouter);
-app.use("/api/cards", cardsRouter);
-// catalogRouter тепер включає і /api/catalog, і /api/diag/bamboo/*
-app.use("/api", catalogRouter);
-app.use("/api", fxRouter);
-app.use("/api", ordersRouter);
 
 app.get("*", (_req, res) => {
   const indexPath = found && path.join(found, "index.html");
