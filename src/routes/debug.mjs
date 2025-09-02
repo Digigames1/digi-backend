@@ -1,5 +1,5 @@
 import express from "express";
-import { getMongoose } from "../db/mongoose.mjs";
+import { mongoose } from "../db/mongoose.mjs";
 import CuratedCatalog from "../models/CuratedCatalog.mjs";
 import BambooDump from "../models/BambooDump.mjs";
 
@@ -17,7 +17,7 @@ function inspectModel(m) {
 
 debugRouter.get("/debug/mongoose", (_req, res) => {
   try {
-    const mg = getMongoose();
+    const mg = mongoose;
     const conn = mg.connection || null;
     const registered = Object.keys(conn?.models || mg.models || {});
     res.json({
@@ -39,3 +39,5 @@ debugRouter.get("/debug/mongoose", (_req, res) => {
 });
 
 debugRouter.get("/debug/ping", (_req, res) => res.json({ ok: true, ts: new Date().toISOString() }));
+
+export default debugRouter;

@@ -2,41 +2,28 @@ import mongoose from "mongoose";
 
 let connected = false;
 
-/** Єдиний екземпляр mongoose для всього застосунку */
-export function getMongoose() {
-  return mongoose;
-}
-
-/** Підключення до Mongo (викликається один раз на старті) */
-export async function connectMongo() {
-  const uri =
-    process.env.DB_URL ||
-    process.env.MONGODB_URI ||
-    process.env.DB_URI;
-
-  const dbName = process.env.DB_NAME || "digi";
-
+export async function connectMongo(uri = process.env.DB_URL || process.env.MONGODB_URI) {
   if (!uri) {
-    console.error("❌ Mongo URI missing (DB_URL / MONGODB_URI / DB_URI not set)");
+    console.warn("⚠️  No DB connection string provided (DB_URL / MONGODB_URI). Skipping connect.");
     return mongoose;
   }
-
   if (connected) return mongoose;
 
+  mongoose.set("strictQuery", true);
+
   try {
-    mongoose.set?.("strictQuery", true);
-  } catch {}
-
-  await mongoose.connect(uri, { dbName });
-  connected = true;
-
-  const name =
-    mongoose.connection?.name ||
-    mongoose.connection?.db?.databaseName ||
-    dbName;
-
-  console.log("✅ Mongo connected:", name);
+    const conn = await mongoose.connect(uri, {
+      // сучасні опції вже за замовчуванням у mongoose v7
+    });
+    connected = true;
+    const dbName = conn.connection?.name || conn.connections?.[0]?.name || "(unknown)";
+    console.log(`✅ Mongo connected: ${dbName}`);
+  } catch (err) {
+    console.error("❌ Mongo connect failed:", err?.message || err);
+  }
   return mongoose;
 }
 
+export { mongoose };
 export default mongoose;
+
