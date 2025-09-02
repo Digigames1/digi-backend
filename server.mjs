@@ -17,6 +17,8 @@ app.get("/api/health", (_req, res) => res.json({ ok: true, ts: new Date().toISOS
 // 1) Спочатку БД
 await connectMongo();
 
+await import("./src/models/index.mjs"); // прогріваємо/реєструємо моделі у singleton
+
 // 2) Потім динамічно роутери (щоб моделі піднялись на вже підключеному інстансі)
 const { debugRouter } = await import("./src/routes/debug.mjs");
 app.use("/api", debugRouter);

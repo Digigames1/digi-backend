@@ -1,43 +1,56 @@
-import express from "express";
-import mongoose from "../db/mongoose.mjs";
-import CuratedCatalog from "../models/CuratedCatalog.mjs";
-import BambooDump from "../models/BambooDump.mjs";
+// src/routes/debug.mjs
+import { Router } from "express";
+import * as mg from "../db/mongoose.mjs";
 
-export const debugRouter = express.Router();
+// беремо той самий singleton, незалежно від типу імпорту
+const mongoose = mg.default || mg.mongoose || mg;
 
-function inspectModel(m) {
-  return {
-    typeof: typeof m,
-    isFunction: typeof m === "function",
-    hasFindOne: !!m?.findOne,
-    hasUpdateOne: !!m?.updateOne,
-    modelName: m?.modelName || null,
-  };
-}
+export const debugRouter = Router();
 
-debugRouter.get("/debug/mongoose", (_req, res) => {
+debugRouter.get("/debug/ping", (req, res) => {
+  res.json({ ok: true, ts: new Date().toISOString() });
+});
+
+debugRouter.get("/debug/mongoose", async (req, res) => {
   try {
-    const mg = mongoose;
-    const conn = mg.connection || null;
-    const registered = Object.keys(conn?.models || mg.models || {});
+    const ready = mongoose.connection?.readyState ?? null;
+    const name =
+      mongoose.connection?.name ||
+      mongoose.connection?.db?.databaseName ||
+      null;
+    const version = mongoose.version ?? null;
+
+    // modelNames існує у реальному mongoose; захищаємося на всяк випадок
+    const names =
+      typeof mongoose.modelNames === "function" ? mongoose.modelNames() : [];
+
+    const hasCurated =
+      !!mongoose.models?.CuratedCatalog &&
+      typeof mongoose.models.CuratedCatalog.findOne === "function";
+
+    const hasDump =
+      !!mongoose.models?.BambooDump &&
+      typeof mongoose.models.BambooDump.findOne === "function";
+
     res.json({
       ok: true,
       runtime: {
-        hasModel: !!mg?.model,
-        hasModels: !!mg?.models,
-        connectionReadyState: conn?.readyState ?? null, // 1 = connected
-        dbName: conn?.name ?? conn?.db?.databaseName ?? null,
-        version: mg?.version || null,
+        connectionReadyState: ready,
+        dbName: name,
+        version,
       },
-      registeredModels: registered,
-      curatedCatalog: inspectModel(CuratedCatalog),
-      bambooDump: inspectModel(BambooDump),
+      registeredModels: names,
+      curatedCatalog: {
+        registered: !!mongoose.models?.CuratedCatalog,
+        hasFindOne: hasCurated,
+      },
+      bambooDump: {
+        registered: !!mongoose.models?.BambooDump,
+        hasFindOne: hasDump,
+      },
     });
   } catch (e) {
-    res.json({ ok: false, error: e?.message || String(e) });
+    res.status(500).json({ ok: false, error: e?.message || String(e) });
   }
 });
 
-debugRouter.get("/debug/ping", (_req, res) => res.json({ ok: true, ts: new Date().toISOString() }));
-
-export default debugRouter;
