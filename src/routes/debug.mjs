@@ -1,17 +1,33 @@
-// src/routes/debug.mjs
 import { Router } from "express";
 import * as mg from "../db/mongoose.mjs";
 
-// беремо той самий singleton, незалежно від типу імпорту
+// get the exact same singleton
 const mongoose = mg.default || mg.mongoose || mg;
 
 export const debugRouter = Router();
 
-debugRouter.get("/debug/ping", (req, res) => {
+debugRouter.get("/debug/ping", (_req, res) => {
   res.json({ ok: true, ts: new Date().toISOString() });
 });
 
-debugRouter.get("/debug/mongoose", async (req, res) => {
+// force-load models (in case anything imported routes too early)
+debugRouter.get("/debug/force-models", async (_req, res) => {
+  try {
+    const idx = await import("../models/index.mjs");
+    const names = typeof mongoose.modelNames === "function"
+      ? mongoose.modelNames()
+      : Object.keys(mongoose.models || {});
+    res.json({
+      ok: true,
+      forced: Array.isArray(idx.default) ? idx.default : [],
+      modelNames: names,
+    });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e?.message || String(e) });
+  }
+});
+
+debugRouter.get("/debug/mongoose", (_req, res) => {
   try {
     const ready = mongoose.connection?.readyState ?? null;
     const name =
@@ -19,38 +35,29 @@ debugRouter.get("/debug/mongoose", async (req, res) => {
       mongoose.connection?.db?.databaseName ||
       null;
     const version = mongoose.version ?? null;
+    const names = typeof mongoose.modelNames === "function"
+      ? mongoose.modelNames()
+      : Object.keys(mongoose.models || {});
 
-    // modelNames існує у реальному mongoose; захищаємося на всяк випадок
-    const names =
-      typeof mongoose.modelNames === "function" ? mongoose.modelNames() : [];
-
-    const hasCurated =
-      !!mongoose.models?.CuratedCatalog &&
-      typeof mongoose.models.CuratedCatalog.findOne === "function";
-
-    const hasDump =
-      !!mongoose.models?.BambooDump &&
-      typeof mongoose.models.BambooDump.findOne === "function";
+    const curated = mongoose.models?.CuratedCatalog;
+    const dump = mongoose.models?.BambooDump;
 
     res.json({
       ok: true,
-      runtime: {
-        connectionReadyState: ready,
-        dbName: name,
-        version,
-      },
+      runtime: { connectionReadyState: ready, dbName: name, version },
       registeredModels: names,
       curatedCatalog: {
-        registered: !!mongoose.models?.CuratedCatalog,
-        hasFindOne: hasCurated,
+        registered: !!curated,
+        hasFindOne: !!curated?.findOne,
+        hasUpdateOne: !!curated?.updateOne,
       },
       bambooDump: {
-        registered: !!mongoose.models?.BambooDump,
-        hasFindOne: hasDump,
+        registered: !!dump,
+        hasFindOne: !!dump?.findOne,
+        hasUpdateOne: !!dump?.updateOne,
       },
     });
   } catch (e) {
     res.status(500).json({ ok: false, error: e?.message || String(e) });
   }
 });
-
