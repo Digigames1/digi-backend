@@ -1,5 +1,11 @@
 // src/models/BambooDump.mjs
-import mongoose from "../db/mongoose.mjs";
+import * as mg from "../db/mongoose.mjs";
+
+const mongoose = mg.default || mg.mongoose || mg;
+if (!mongoose || typeof mongoose.Schema !== "function") {
+  throw new Error("Mongoose import failed in BambooDump.mjs");
+}
+if (!mongoose.models) mongoose.models = {};
 
 const DumpItemSchema = new mongoose.Schema(
   {
@@ -35,4 +41,3 @@ const BambooDump =
 
 export default BambooDump;
 export { BambooDump };
-
