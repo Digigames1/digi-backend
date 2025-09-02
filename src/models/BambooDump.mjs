@@ -1,30 +1,35 @@
 // src/models/BambooDump.mjs
-import * as mg from "../db/mongoose.mjs";
-const mongoose = mg.default || mg.mongoose || mg;
+import { getMongoose } from "../db/mongoose.mjs";
 
-if (!mongoose || typeof mongoose.Schema !== "function") {
-  throw new Error("Mongoose import failed in BambooDump.mjs");
-}
-if (!mongoose.models) mongoose.models = {};
+const mongoose = getMongoose();
+
+const BambooProductSchema = new mongoose.Schema(
+  {
+    id: { type: Number, index: true },
+    name: String,
+    brand: String,
+    countryCode: String,
+    currencyCode: String,
+    priceMin: Number,
+    priceMax: Number,
+    modifiedDate: Date,
+    raw: {}
+  },
+  { _id: false }
+);
 
 const BambooDumpSchema = new mongoose.Schema(
   {
-    // параметри запиту до каталогу, щоб ідентифікувати дамп
-    query: { type: Object, default: {} },
-
-    // сира відповідь (список сторінок / brands / products)
-    items: { type: Array, default: [] },
-
-    // службові
-    pagesFetched: { type: Number, default: 0 },
-    total: { type: Number, default: 0 },
-    updatedAt: { type: Date, default: Date.now },
+    page: { type: Number, index: true },
+    pageSize: Number,
+    count: Number,
+    fetchedAt: { type: Date, default: Date.now, index: true },
+    products: [BambooProductSchema]
   },
-  { collection: "bamboo_dump" } // ФІКСУЄМО назву колекції
+  { collection: "bamboo_dump" }
 );
 
-const BambooDump =
-  mongoose.models.BambooDump ||
+export const BambooDump =
+  (mongoose.models && mongoose.models.BambooDump) ||
   mongoose.model("BambooDump", BambooDumpSchema);
 
-export default BambooDump;

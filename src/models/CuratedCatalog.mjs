@@ -1,35 +1,32 @@
 // src/models/CuratedCatalog.mjs
-import * as mg from "../db/mongoose.mjs";
-const mongoose = mg.default || mg.mongoose || mg;
+import { getMongoose } from "../db/mongoose.mjs";
 
-if (!mongoose || typeof mongoose.Schema !== "function") {
-  throw new Error("Mongoose import failed in CuratedCatalog.mjs");
-}
-if (!mongoose.models) mongoose.models = {};
+const mongoose = getMongoose();
+
+const CuratedItemSchema = new mongoose.Schema(
+  {
+    productId: { type: Number, index: true },
+    name: String,
+    brand: String,
+    countryCode: String,
+    currencyCode: String,
+    price: Number,
+    logos: [String],
+    raw: {} // повний сирий bamboo item
+  },
+  { _id: false }
+);
 
 const CuratedSchema = new mongoose.Schema(
   {
-    // ключ кешу (категорія/валюти тощо)
-    key: { type: String, required: true, index: true, unique: true },
-
-    // масив товарів, що показуємо на фронті
-    items: { type: Array, default: [] },
-
-    // метадані побудови
-    currencies: { type: [String], default: [] },
-    groups: { type: Object, default: {} }, // gaming/streaming/shopping/... -> масиви
-    updatedAt: { type: Date, default: Date.now },
-    source: {
-      bambooPages: { type: Number, default: 0 },
-      bambooCount: { type: Number, default: 0 },
-    },
+    key: { type: String, required: true, unique: true }, // наприклад "gaming"
+    updatedAt: { type: Date, default: Date.now, index: true },
+    items: [CuratedItemSchema]
   },
-  { collection: "curated_catalog" } // ФІКСУЄМО назву колекції
+  { collection: "curated_catalog" }
 );
 
-// реєструємо МОДЕЛЬ (оце і додає її в mongoose.modelNames())
-const CuratedCatalog =
-  mongoose.models.CuratedCatalog ||
+export const CuratedCatalog =
+  (mongoose.models && mongoose.models.CuratedCatalog) ||
   mongoose.model("CuratedCatalog", CuratedSchema);
 
-export default CuratedCatalog;

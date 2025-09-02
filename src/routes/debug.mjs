@@ -1,63 +1,57 @@
-import { Router } from "express";
-import * as mg from "../db/mongoose.mjs";
+// src/routes/debug.mjs
+import express from "express";
+import { getMongoose } from "../db/mongoose.mjs";
+import { CuratedCatalog } from "../models/CuratedCatalog.mjs";
+import { BambooDump } from "../models/BambooDump.mjs";
 
-// get the exact same singleton
-const mongoose = mg.default || mg.mongoose || mg;
+export const debugRouter = express.Router();
 
-export const debugRouter = Router();
-
-debugRouter.get("/debug/ping", (_req, res) => {
+debugRouter.get("/ping", (_, res) => {
   res.json({ ok: true, ts: new Date().toISOString() });
 });
 
-// force-load models (in case anything imported routes too early)
-debugRouter.get("/debug/force-models", async (_req, res) => {
-  try {
-    const idx = await import("../models/index.mjs");
-    const names = typeof mongoose.modelNames === "function"
-      ? mongoose.modelNames()
-      : Object.keys(mongoose.models || {});
-    res.json({
-      ok: true,
-      forced: Array.isArray(idx.default) ? idx.default : [],
-      modelNames: names,
-    });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: e?.message || String(e) });
-  }
+debugRouter.get("/mongoose", async (_req, res) => {
+  const mongoose = getMongoose();
+  const modelNames = typeof mongoose.modelNames === "function"
+    ? mongoose.modelNames()
+    : [];
+
+  const hasCurated =
+    !!CuratedCatalog &&
+    typeof CuratedCatalog.findOne === "function" &&
+    typeof CuratedCatalog.updateOne === "function";
+
+  const hasDump =
+    !!BambooDump &&
+    typeof BambooDump.findOne === "function" &&
+    typeof BambooDump.updateOne === "function";
+
+  res.json({
+    ok: true,
+    runtime: {
+      connectionReadyState: mongoose.connection?.readyState ?? null,
+      dbName:
+        mongoose.connection?.name ??
+        mongoose.connections?.[0]?.name ??
+        null,
+      version: mongoose.version ?? null
+    },
+    modelNames,
+    curatedCatalog: { registered: hasCurated },
+    bambooDump: { registered: hasDump }
+  });
 });
 
-debugRouter.get("/debug/mongoose", (_req, res) => {
-  try {
-    const ready = mongoose.connection?.readyState ?? null;
-    const name =
-      mongoose.connection?.name ||
-      mongoose.connection?.db?.databaseName ||
-      null;
-    const version = mongoose.version ?? null;
-    const names = typeof mongoose.modelNames === "function"
-      ? mongoose.modelNames()
-      : Object.keys(mongoose.models || {});
-
-    const curated = mongoose.models?.CuratedCatalog;
-    const dump = mongoose.models?.BambooDump;
-
-    res.json({
-      ok: true,
-      runtime: { connectionReadyState: ready, dbName: name, version },
-      registeredModels: names,
-      curatedCatalog: {
-        registered: !!curated,
-        hasFindOne: !!curated?.findOne,
-        hasUpdateOne: !!curated?.updateOne,
-      },
-      bambooDump: {
-        registered: !!dump,
-        hasFindOne: !!dump?.findOne,
-        hasUpdateOne: !!dump?.updateOne,
-      },
-    });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: e?.message || String(e) });
-  }
+// Форс-імпорт (корисно для діагностики кешу/холодного старту)
+debugRouter.get("/force-models", (_req, res) => {
+  const mongoose = getMongoose();
+  const modelNames = typeof mongoose.modelNames === "function"
+    ? mongoose.modelNames()
+    : [];
+  res.json({
+    ok: true,
+    forced: ["CuratedCatalog", "BambooDump"],
+    modelNames
+  });
 });
+
