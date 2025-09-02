@@ -26,7 +26,7 @@ export async function connectMongo(uri = process.env.DB_URL) {
     process.env.DB_NAME ||
     "digi";
 
-  console.log(`✅ Mongo connected: ${dbName}`);
+  console.log(`Mongo connected: ${dbName}`);
   return mongoose;
 }
 

@@ -85,7 +85,7 @@ async function tryOAuth(catalogPath, tokenPath, scope) {
   }
 }
 
-bambooMatrixRouter.get("/bamboo-matrix", async (_req, res) => {
+bambooMatrixRouter.get("/matrix", async (_req, res) => {
   const results = [];
 
   // SECRET варіанти заголовків
