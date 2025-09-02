@@ -1,33 +1,45 @@
-import mongoose from "mongoose";
+import mongoosePkg from "mongoose";
 
-/** ЄДИНИЙ інстанс mongoose у всьому застосунку — default export */
-export default mongoose;
+/**
+ * Make sure we have ONE global mongoose instance across the whole app,
+ * regardless of how files import it (default/named) or module cache quirks.
+ */
+const M = globalThis.__MONGOOSE_SINGLETON__ || mongoosePkg;
+globalThis.__MONGOOSE_SINGLETON__ = M;
 
-/** Підключення до Mongo — викликаємо один раз на старті */
+// ensure models map exists (defensive for odd bundlers)
+if (!M.models) M.models = {};
+
+/** Connect once; re-use afterwards */
 export async function connectMongo() {
   const uri =
     process.env.DB_URL ||
     process.env.MONGODB_URI ||
     process.env.DB_URI;
 
+  const dbName = process.env.DB_NAME || "digi";
+
   if (!uri) {
     console.warn("⚠️  No Mongo URI (DB_URL/MONGODB_URI/DB_URI) — skipping connect");
-    return mongoose;
+    return M;
   }
 
-  // На деяких збірках .set може бути відсутній як функція — підстрахуємось
-  try { if (typeof mongoose.set === "function") mongoose.set("strictQuery", true); } catch {}
+  // mongoose.set may be absent on some stubs—guard it
+  try { if (typeof M.set === "function") M.set("strictQuery", true); } catch {}
 
-  // Якщо вже підключені — нічого не робимо
-  if (mongoose.connection?.readyState === 1) return mongoose;
+  if (M.connection?.readyState === 1) return M;
 
-  const conn = await mongoose.connect(uri, {
-    // опції за замовчуванням у v7+
-  });
-
-  const name = conn.connection?.name || conn.connections?.[0]?.name || "(unknown)";
+  const conn = await M.connect(uri, { dbName });
+  const name =
+    conn?.connection?.name ||
+    conn?.connections?.[0]?.name ||
+    dbName ||
+    "(unknown)";
   console.log("✅ Mongo connected:", name);
-
-  return mongoose;
+  return M;
 }
 
+/** Default export = the singleton instance */
+export default M;
+/** Named export for safety */
+export { M as mongoose };

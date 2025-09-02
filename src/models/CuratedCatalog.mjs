@@ -1,5 +1,14 @@
 // src/models/CuratedCatalog.mjs
-import mongoose from "../db/mongoose.mjs";
+import * as mg from "../db/mongoose.mjs";
+
+// Ultra-robust way to get the singleton mongoose
+const mongoose = mg.default || mg.mongoose || mg;
+if (!mongoose || typeof mongoose.Schema !== "function") {
+  throw new Error("Mongoose import failed in CuratedCatalog.mjs");
+}
+
+// defensive: make sure models map exists
+if (!mongoose.models) mongoose.models = {};
 
 const PriceSchema = new mongoose.Schema(
   { currency: String, amount: Number },
@@ -21,10 +30,10 @@ const ProductSchema = new mongoose.Schema(
 
 const CategorySchema = new mongoose.Schema(
   {
-    key: { type: String, required: true },
+    key: { type: String, required: true }, // gaming / streaming / shopping / music / food / travel ...
     brands: [
       {
-        brand: { type: String, required: true },
+        brand: { type: String, required: true }, // Playstation / Xbox / Steam / Nintendo / ...
         items: [ProductSchema],
       },
     ],
@@ -48,4 +57,3 @@ const CuratedCatalog =
 
 export default CuratedCatalog;
 export { CuratedCatalog };
-
