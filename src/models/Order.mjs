@@ -1,4 +1,4 @@
-import { mongoose } from "../db/mongoose.mjs";
+import mongoose from "../db/mongoose.mjs";
 
 const LineSchema = new mongoose.Schema({
   productId: String,

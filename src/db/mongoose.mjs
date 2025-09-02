@@ -1,29 +1,33 @@
 import mongoose from "mongoose";
 
-let connected = false;
+/** ЄДИНИЙ інстанс mongoose у всьому застосунку — default export */
+export default mongoose;
 
-export async function connectMongo(uri = process.env.DB_URL || process.env.MONGODB_URI) {
+/** Підключення до Mongo — викликаємо один раз на старті */
+export async function connectMongo() {
+  const uri =
+    process.env.DB_URL ||
+    process.env.MONGODB_URI ||
+    process.env.DB_URI;
+
   if (!uri) {
-    console.warn("⚠️  No DB connection string provided (DB_URL / MONGODB_URI). Skipping connect.");
+    console.warn("⚠️  No Mongo URI (DB_URL/MONGODB_URI/DB_URI) — skipping connect");
     return mongoose;
   }
-  if (connected) return mongoose;
 
-  mongoose.set("strictQuery", true);
+  // На деяких збірках .set може бути відсутній як функція — підстрахуємось
+  try { if (typeof mongoose.set === "function") mongoose.set("strictQuery", true); } catch {}
 
-  try {
-    const conn = await mongoose.connect(uri, {
-      // сучасні опції вже за замовчуванням у mongoose v7
-    });
-    connected = true;
-    const dbName = conn.connection?.name || conn.connections?.[0]?.name || "(unknown)";
-    console.log(`✅ Mongo connected: ${dbName}`);
-  } catch (err) {
-    console.error("❌ Mongo connect failed:", err?.message || err);
-  }
+  // Якщо вже підключені — нічого не робимо
+  if (mongoose.connection?.readyState === 1) return mongoose;
+
+  const conn = await mongoose.connect(uri, {
+    // опції за замовчуванням у v7+
+  });
+
+  const name = conn.connection?.name || conn.connections?.[0]?.name || "(unknown)";
+  console.log("✅ Mongo connected:", name);
+
   return mongoose;
 }
-
-export { mongoose };
-export default mongoose;
 

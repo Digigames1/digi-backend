@@ -1,5 +1,5 @@
 // src/models/BambooDump.mjs
-import { mongoose } from "../db/mongoose.mjs";
+import mongoose from "../db/mongoose.mjs";
 
 const DumpItemSchema = new mongoose.Schema(
   {
@@ -11,28 +11,28 @@ const DumpItemSchema = new mongoose.Schema(
     currencyCode: String,
     priceMin: Number,
     priceMax: Number,
-    raw: Object,             // сирі дані з Bamboo на випадок потреби
+    raw: Object,
   },
   { _id: false }
 );
 
 const BambooDumpSchema = new mongoose.Schema(
   {
-    key: { type: String, required: true, unique: true, index: true }, // наприклад "catalog:v2:page:0"
+    key: { type: String, required: true, unique: true, index: true },
     pageIndex: { type: Number, default: 0 },
     pageSize: { type: Number, default: 100 },
     count: { type: Number, default: 0 },
     items: [DumpItemSchema],
     fetchedAt: { type: Date, default: Date.now },
-    meta: { type: Object },
+    meta: Object,
   },
-  { timestamps: true }
+  { timestamps: true, collection: "bamboo_dump" }
 );
 
-// ЕКСПОРТУЄМО САМЕ МОДЕЛЬ!
-export const BambooDump =
+const BambooDump =
   mongoose.models.BambooDump ||
   mongoose.model("BambooDump", BambooDumpSchema);
 
 export default BambooDump;
+export { BambooDump };
 
