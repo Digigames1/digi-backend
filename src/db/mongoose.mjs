@@ -1,45 +1,37 @@
-import mongoosePkg from "mongoose";
+// src/db/mongoose.mjs
+import mongoose from "mongoose";
 
-/**
- * Make sure we have ONE global mongoose instance across the whole app,
- * regardless of how files import it (default/named) or module cache quirks.
- */
-const M = globalThis.__MONGOOSE_SINGLETON__ || mongoosePkg;
-globalThis.__MONGOOSE_SINGLETON__ = M;
+let connected = false;
 
-// ensure models map exists (defensive for odd bundlers)
-if (!M.models) M.models = {};
+export async function connectMongo(uri = process.env.DB_URL) {
+  if (!uri) throw new Error("DB_URL is not set");
+  if (connected) return mongoose;
 
-/** Connect once; re-use afterwards */
-export async function connectMongo() {
-  const uri =
-    process.env.DB_URL ||
-    process.env.MONGODB_URI ||
-    process.env.DB_URI;
-
-  const dbName = process.env.DB_NAME || "digi";
-
-  if (!uri) {
-    console.warn("⚠️  No Mongo URI (DB_URL/MONGODB_URI/DB_URI) — skipping connect");
-    return M;
+  // Опціональний строгий режим
+  if (typeof mongoose.set === "function") {
+    mongoose.set("strictQuery", true);
   }
 
-  // mongoose.set may be absent on some stubs—guard it
-  try { if (typeof M.set === "function") M.set("strictQuery", true); } catch {}
+  const conn = await mongoose.connect(uri, {
+    maxPoolSize: 10,
+    serverSelectionTimeoutMS: 15000,
+    appName: process.env.DB_NAME || "Digi",
+    dbName: process.env.DB_NAME || "digi",
+  });
 
-  if (M.connection?.readyState === 1) return M;
+  connected = true;
+  const dbName =
+    conn.connection?.name ||
+    conn.connections?.[0]?.name ||
+    process.env.DB_NAME ||
+    "digi";
 
-  const conn = await M.connect(uri, { dbName });
-  const name =
-    conn?.connection?.name ||
-    conn?.connections?.[0]?.name ||
-    dbName ||
-    "(unknown)";
-  console.log("✅ Mongo connected:", name);
-  return M;
+  console.log(`✅ Mongo connected: ${dbName}`);
+  return mongoose;
 }
 
-/** Default export = the singleton instance */
-export default M;
-/** Named export for safety */
-export { M as mongoose };
+// Єдиний експорт доступу до того самого інстансу
+export function getMongoose() {
+  return mongoose;
+}
+
