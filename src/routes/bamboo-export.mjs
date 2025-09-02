@@ -1,6 +1,6 @@
 import express from "express";
 import axios from "axios";
-import BambooDump from "../models/BambooDump.mjs";
+import { BambooDump } from "../models/BambooDump.mjs";
 
 export const bambooExportRouter = express.Router();
 
@@ -48,7 +48,7 @@ async function fetchCatalogPage({ PageSize = 100, PageIndex = 0, params = {} }) 
 }
 
 /** GET /api/bamboo/export.json?PageSize=100&maxPages=30&force=1 */
-bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
+bambooExportRouter.get("/export.json", async (req, res) => {
   try {
     const PageSize = Math.max(1, Math.min(500, Number(req.query.PageSize) || 100));
     const maxPages = Math.max(1, Math.min(100, Number(req.query.maxPages) || 30));

@@ -2,7 +2,7 @@
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
-import { connectMongo } from "./src/db/mongoose.mjs";
+import { connectMongo, getMongoose } from "./src/db/mongoose.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -40,13 +40,16 @@ const PORT = process.env.PORT || 10000;
 
     // ІМПОРТИ РОУТІВ ПІСЛЯ КОНЕКТУ
     const { debugRouter } = await import("./src/routes/debug.mjs");
+    const { bambooRouter } = await import("./src/routes/bamboo.mjs");
+    const { curatedRouter } = await import("./src/routes/curated.mjs");
     app.use("/api/debug", debugRouter);
+    app.use("/api/bamboo", bambooRouter);
+    app.use("/api/curated", curatedRouter);
 
-    // інші роутери:
-    // const { bambooRouter } = await import("./src/routes/bamboo.mjs");
-    // const { curatedRouter } = await import("./src/routes/curated.mjs");
-    // app.use("/api/bamboo", bambooRouter);
-    // app.use("/api/curated", curatedRouter);
+    console.log(
+      "\uD83E\uDDE9 Models registered:",
+      getMongoose().modelNames?.() || []
+    );
 
     app.listen(PORT, () => {
       console.log(`Server on :${PORT}`);

@@ -1,8 +1,6 @@
 // src/routes/debug.mjs
 import express from "express";
 import { getMongoose } from "../db/mongoose.mjs";
-import { CuratedCatalog } from "../models/CuratedCatalog.mjs";
-import { BambooDump } from "../models/BambooDump.mjs";
 
 export const debugRouter = express.Router();
 
@@ -10,22 +8,23 @@ debugRouter.get("/ping", (_, res) => {
   res.json({ ok: true, ts: new Date().toISOString() });
 });
 
-debugRouter.get("/mongoose", async (_req, res) => {
+debugRouter.get("/wire", async (_req, res) => {
+  const m1 = getMongoose();
+  const m2 = (await import("mongoose")).default;
+  res.json({
+    ok: true,
+    sameInstance: m1 === m2,
+    version: m1?.version ?? null,
+    readyState: m1?.connection?.readyState ?? null,
+    modelNames:
+      typeof m1.modelNames === "function" ? m1.modelNames() : []
+  });
+});
+
+debugRouter.get("/mongoose", (_req, res) => {
   const mongoose = getMongoose();
-  const modelNames = typeof mongoose.modelNames === "function"
-    ? mongoose.modelNames()
-    : [];
-
-  const hasCurated =
-    !!CuratedCatalog &&
-    typeof CuratedCatalog.findOne === "function" &&
-    typeof CuratedCatalog.updateOne === "function";
-
-  const hasDump =
-    !!BambooDump &&
-    typeof BambooDump.findOne === "function" &&
-    typeof BambooDump.updateOne === "function";
-
+  const names =
+    typeof mongoose.modelNames === "function" ? mongoose.modelNames() : [];
   res.json({
     ok: true,
     runtime: {
@@ -36,22 +35,13 @@ debugRouter.get("/mongoose", async (_req, res) => {
         null,
       version: mongoose.version ?? null
     },
-    modelNames,
-    curatedCatalog: { registered: hasCurated },
-    bambooDump: { registered: hasDump }
-  });
-});
-
-// Форс-імпорт (корисно для діагностики кешу/холодного старту)
-debugRouter.get("/force-models", (_req, res) => {
-  const mongoose = getMongoose();
-  const modelNames = typeof mongoose.modelNames === "function"
-    ? mongoose.modelNames()
-    : [];
-  res.json({
-    ok: true,
-    forced: ["CuratedCatalog", "BambooDump"],
-    modelNames
+    modelNames: names,
+    curatedCatalog: {
+      registered: !!names.includes("CuratedCatalog")
+    },
+    bambooDump: {
+      registered: !!names.includes("BambooDump")
+    }
   });
 });
 

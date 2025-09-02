@@ -1,4 +1,4 @@
-import CuratedCatalog from "../models/CuratedCatalog.mjs";
+import { CuratedCatalog } from "../models/CuratedCatalog.mjs";
 import { fetchMatrix } from "./bambooMatrix.mjs";
 
 let refreshing = null;     // лок проти паралельних оновлень

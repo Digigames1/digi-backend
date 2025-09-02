@@ -1,6 +1,6 @@
 import express from "express";
-import BambooDump from "../models/BambooDump.mjs";
-import CuratedCatalog from "../models/CuratedCatalog.mjs";
+import { BambooDump } from "../models/BambooDump.mjs";
+import { CuratedCatalog } from "../models/CuratedCatalog.mjs";
 
 export const curatedRouter = express.Router();
 
@@ -96,7 +96,7 @@ function buildCurated(rows, wantedCurrencies = []) {
 }
 
 /** GET /api/curated/refresh?currencies=USD,EUR,CAD,AUD&dumpKey=... */
-curatedRouter.get("/curated/refresh", async (req, res) => {
+curatedRouter.get("/refresh", async (req, res) => {
   try {
     const currencies = String(req.query.currencies || "")
       .split(",")
@@ -137,7 +137,7 @@ curatedRouter.get("/curated/refresh", async (req, res) => {
 });
 
 /** GET /api/curated/:key  (key ∈ gaming|streaming|shopping|music|food|travel) */
-curatedRouter.get("/curated/:key", async (req, res) => {
+curatedRouter.get("/:key", async (req, res) => {
   try {
     const key = String(req.params.key || "").toLowerCase();
     if (!CATEGORY_KEYS.includes(key)) {
@@ -152,7 +152,7 @@ curatedRouter.get("/curated/:key", async (req, res) => {
 });
 
 /** Статус кешу */
-curatedRouter.get("/curated/status", async (_req, res) => {
+curatedRouter.get("/status", async (_req, res) => {
   try {
     const docs = await CuratedCatalog.find({}).select({ key: 1, updatedAt: 1, "data.count": 1 }).lean();
     res.json({ ok: true, items: docs || [] });
@@ -161,4 +161,3 @@ curatedRouter.get("/curated/status", async (_req, res) => {
   }
 });
 
-export default curatedRouter;
