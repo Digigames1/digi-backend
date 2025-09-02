@@ -1,56 +1,35 @@
 // src/models/CuratedCatalog.mjs
 import * as mg from "../db/mongoose.mjs";
 const mongoose = mg.default || mg.mongoose || mg;
+
 if (!mongoose || typeof mongoose.Schema !== "function") {
-  throw new Error("Mongoose import failed");
+  throw new Error("Mongoose import failed in CuratedCatalog.mjs");
 }
 if (!mongoose.models) mongoose.models = {};
 
-
-const PriceSchema = new mongoose.Schema(
-  { currency: String, amount: Number },
-  { _id: false }
-);
-
-const ProductSchema = new mongoose.Schema(
-  {
-    productId: { type: Number, required: true },
-    name: { type: String, required: true },
-    countryCode: String,
-    currencyCode: String,
-    logoUrl: String,
-    prices: [PriceSchema],
-    raw: Object,
-  },
-  { _id: false }
-);
-
-const CategorySchema = new mongoose.Schema(
-  {
-    key: { type: String, required: true }, // gaming / streaming / shopping / music / food / travel ...
-    brands: [
-      {
-        brand: { type: String, required: true }, // Playstation / Xbox / Steam / Nintendo / ...
-        items: [ProductSchema],
-      },
-    ],
-  },
-  { _id: false }
-);
-
 const CuratedSchema = new mongoose.Schema(
   {
-    slug: { type: String, default: "default", unique: true, index: true },
-    currencies: [String],
-    categories: [CategorySchema],
+    // ключ кешу (категорія/валюти тощо)
+    key: { type: String, required: true, index: true, unique: true },
+
+    // масив товарів, що показуємо на фронті
+    items: { type: Array, default: [] },
+
+    // метадані побудови
+    currencies: { type: [String], default: [] },
+    groups: { type: Object, default: {} }, // gaming/streaming/shopping/... -> масиви
     updatedAt: { type: Date, default: Date.now },
+    source: {
+      bambooPages: { type: Number, default: 0 },
+      bambooCount: { type: Number, default: 0 },
+    },
   },
-  { timestamps: true, collection: "curated_catalog" }
+  { collection: "curated_catalog" } // ФІКСУЄМО назву колекції
 );
 
+// реєструємо МОДЕЛЬ (оце і додає її в mongoose.modelNames())
 const CuratedCatalog =
   mongoose.models.CuratedCatalog ||
   mongoose.model("CuratedCatalog", CuratedSchema);
 
 export default CuratedCatalog;
-export { CuratedCatalog };
