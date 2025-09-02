@@ -1,9 +1,8 @@
 // src/models/BambooDump.mjs
 import * as mg from "../db/mongoose.mjs";
-
 const mongoose = mg.default || mg.mongoose || mg;
 if (!mongoose || typeof mongoose.Schema !== "function") {
-  throw new Error("Mongoose import failed in BambooDump.mjs");
+  throw new Error("Mongoose import failed");
 }
 if (!mongoose.models) mongoose.models = {};
 

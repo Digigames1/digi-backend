@@ -1,14 +1,11 @@
 // src/models/CuratedCatalog.mjs
 import * as mg from "../db/mongoose.mjs";
-
-// Ultra-robust way to get the singleton mongoose
 const mongoose = mg.default || mg.mongoose || mg;
 if (!mongoose || typeof mongoose.Schema !== "function") {
-  throw new Error("Mongoose import failed in CuratedCatalog.mjs");
+  throw new Error("Mongoose import failed");
 }
-
-// defensive: make sure models map exists
 if (!mongoose.models) mongoose.models = {};
+
 
 const PriceSchema = new mongoose.Schema(
   { currency: String, amount: Number },
