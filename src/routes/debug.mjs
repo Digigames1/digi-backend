@@ -1,5 +1,5 @@
 import express from "express";
-import { mongoose } from "../db/mongoose.mjs";
+import mongoose from "../db/mongoose.mjs";
 import CuratedCatalog from "../models/CuratedCatalog.mjs";
 import BambooDump from "../models/BambooDump.mjs";
 
