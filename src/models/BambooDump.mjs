@@ -1,7 +1,5 @@
 // src/models/BambooDump.mjs
-import { getMongoose } from "../db/mongoose.mjs";
-
-const mongoose = getMongoose();
+import { mongoose } from "../db/mongoose.mjs";
 
 const BambooProductSchema = new mongoose.Schema(
   {
@@ -30,6 +28,6 @@ const BambooDumpSchema = new mongoose.Schema(
 );
 
 export const BambooDump =
-  (mongoose.models && mongoose.models.BambooDump) ||
+  (mongoose.models?.BambooDump) ||
   mongoose.model("BambooDump", BambooDumpSchema);
 

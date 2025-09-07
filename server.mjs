@@ -2,7 +2,7 @@
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
-import { connectMongo, getMongoose } from "./src/db/mongoose.mjs";
+import { connectMongo, mongoose } from "./src/db/mongoose.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -34,11 +34,15 @@ for (const p of distCandidates) {
 const PORT = process.env.PORT || 10000;
 
 // Старт з'єднання і роутів
-(async () => {
+async function bootstrap() {
   try {
     await connectMongo();
 
-    // ІМПОРТИ РОУТІВ ПІСЛЯ КОНЕКТУ
+    // Реєструємо моделі після підключення
+    const { CuratedCatalog } = await import("./src/models/CuratedCatalog.mjs");
+    const { BambooDump } = await import("./src/models/BambooDump.mjs");
+
+    // Імпортуємо роутери
     const { debugRouter } = await import("./src/routes/debug.mjs");
     const { bambooRouter } = await import("./src/routes/bamboo.mjs");
     const { curatedRouter } = await import("./src/routes/curated.mjs");
@@ -46,10 +50,9 @@ const PORT = process.env.PORT || 10000;
     app.use("/api/bamboo", bambooRouter);
     app.use("/api/curated", curatedRouter);
 
-    console.log(
-      "\uD83E\uDDE9 Models registered:",
-      getMongoose().modelNames?.() || []
-    );
+    const modelNames =
+      typeof mongoose.modelNames === "function" ? mongoose.modelNames() : [];
+    console.log("\uD83E\uDDE9 Models registered:", modelNames.join(", ") || "[]");
 
     app.listen(PORT, () => {
       console.log(`Server on :${PORT}`);
@@ -58,5 +61,10 @@ const PORT = process.env.PORT || 10000;
     console.error("❌ Startup failed:", err?.message || err);
     process.exit(1);
   }
-})();
+}
+
+bootstrap().catch((e) => {
+  console.error("❌ Bootstrap failed:", e?.message || e);
+  process.exit(1);
+});
 

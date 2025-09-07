@@ -1,7 +1,5 @@
 // src/models/CuratedCatalog.mjs
-import { getMongoose } from "../db/mongoose.mjs";
-
-const mongoose = getMongoose();
+import { mongoose } from "../db/mongoose.mjs";
 
 const CuratedItemSchema = new mongoose.Schema(
   {
@@ -27,6 +25,6 @@ const CuratedSchema = new mongoose.Schema(
 );
 
 export const CuratedCatalog =
-  (mongoose.models && mongoose.models.CuratedCatalog) ||
+  (mongoose.models?.CuratedCatalog) ||
   mongoose.model("CuratedCatalog", CuratedSchema);
 

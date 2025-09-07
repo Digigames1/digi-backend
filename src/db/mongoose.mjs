@@ -1,36 +1,37 @@
 // src/db/mongoose.mjs
-import mongoose from "mongoose";
+import _mongoose from "mongoose";
 
-let connected = false;
+// ЄДИНА інстанція mongoose, яку використовують всі моделі
+export const mongoose = _mongoose;
 
-export async function connectMongo(uri = process.env.DB_URL) {
-  if (!uri) throw new Error("DB_URL is not set");
-  if (connected) return mongoose;
-
-  // Опціональний строгий режим
-  if (typeof mongoose.set === "function") {
+/**
+ * Підключення до MongoDB та повернення інстансу mongoose.
+ * Викликається один раз під час старту серверу.
+ */
+export async function connectMongo() {
+  // Страхуємося від подвійного set у деяких оточеннях
+  try {
     mongoose.set("strictQuery", true);
-  }
+  } catch {}
 
-  const conn = await mongoose.connect(uri, {
-    maxPoolSize: 10,
-    serverSelectionTimeoutMS: 15000,
-    appName: process.env.DB_NAME || "Digi",
-    dbName: process.env.DB_NAME || "digi",
-  });
+  const uri = process.env.DB_URL || process.env.MONGODB_URI;
+  const dbName = process.env.DB_NAME || "digi";
+  if (!uri) throw new Error("DB_URL/MONGODB_URI is not set");
 
-  connected = true;
-  const dbName =
+  // Якщо вже підключені – повертаємо існуючий інстанс
+  if (mongoose.connection?.readyState === 1) return mongoose;
+
+  const conn = await mongoose.connect(uri, { dbName });
+
+  const name =
     conn.connection?.name ||
     conn.connections?.[0]?.name ||
-    process.env.DB_NAME ||
-    "digi";
-
-  console.log(`Mongo connected: ${dbName}`);
+    dbName;
+  console.log(`Mongo connected: ${name}`);
   return mongoose;
 }
 
-// Єдиний експорт доступу до того самого інстансу
+// Зворотна сумісність – деякі старі модулі могли викликати getMongoose
 export function getMongoose() {
   return mongoose;
 }
