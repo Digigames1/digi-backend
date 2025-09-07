@@ -1,4 +1,4 @@
-import mongoose, { connectMongo } from "../db/mongoose.mjs";
+import { mongoose, connectMongo } from "../db/mongoose.mjs";
 
 export { connectMongo };
 
