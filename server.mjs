@@ -35,21 +35,21 @@ const PORT = process.env.PORT || 10000;
 
 // Старт з'єднання і роутів
 async function bootstrap() {
-  await connectMongo();
+  const m = await connectMongo();
 
   // РЕЄСТРУЄМО моделі ПІСЛЯ конекту і з нашою інстанцією
-  await import("./src/models/CuratedCatalog.mjs");
-  await import("./src/models/BambooDump.mjs");
+  await import(new URL("./src/models/CuratedCatalog.mjs", import.meta.url));
+  await import(new URL("./src/models/BambooDump.mjs", import.meta.url));
 
   // Імпортуємо роутери
-  const { debugRouter } = await import("./src/routes/debug.mjs");
+  const debugRouter = (await import(new URL("./src/routes/debug.mjs", import.meta.url))).default;
   const { bambooRouter } = await import("./src/routes/bamboo.mjs");
   const { curatedRouter } = await import("./src/routes/curated.mjs");
   app.use("/api/debug", debugRouter);
   app.use("/api/bamboo", bambooRouter);
   app.use("/api/curated", curatedRouter);
 
-  const names = typeof mongoose.modelNames === 'function' ? mongoose.modelNames() : [];
+  const names = typeof m.modelNames === 'function' ? m.modelNames() : [];
   console.log('🧩 Models registered:', names.join(', ') || '[]');
 
   app.listen(PORT, () => {
