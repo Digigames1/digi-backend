@@ -35,36 +35,30 @@ const PORT = process.env.PORT || 10000;
 
 // Старт з'єднання і роутів
 async function bootstrap() {
-  try {
-    await connectMongo();
+  await connectMongo();
 
-    // Реєструємо моделі після підключення
-    const { CuratedCatalog } = await import("./src/models/CuratedCatalog.mjs");
-    const { BambooDump } = await import("./src/models/BambooDump.mjs");
+  // РЕЄСТРУЄМО моделі ПІСЛЯ конекту і з нашою інстанцією
+  await import("./src/models/CuratedCatalog.mjs");
+  await import("./src/models/BambooDump.mjs");
 
-    // Імпортуємо роутери
-    const { debugRouter } = await import("./src/routes/debug.mjs");
-    const { bambooRouter } = await import("./src/routes/bamboo.mjs");
-    const { curatedRouter } = await import("./src/routes/curated.mjs");
-    app.use("/api/debug", debugRouter);
-    app.use("/api/bamboo", bambooRouter);
-    app.use("/api/curated", curatedRouter);
+  // Імпортуємо роутери
+  const { debugRouter } = await import("./src/routes/debug.mjs");
+  const { bambooRouter } = await import("./src/routes/bamboo.mjs");
+  const { curatedRouter } = await import("./src/routes/curated.mjs");
+  app.use("/api/debug", debugRouter);
+  app.use("/api/bamboo", bambooRouter);
+  app.use("/api/curated", curatedRouter);
 
-    const modelNames =
-      typeof mongoose.modelNames === "function" ? mongoose.modelNames() : [];
-    console.log("\uD83E\uDDE9 Models registered:", modelNames.join(", ") || "[]");
+  const names = typeof mongoose.modelNames === 'function' ? mongoose.modelNames() : [];
+  console.log('🧩 Models registered:', names.join(', ') || '[]');
 
-    app.listen(PORT, () => {
-      console.log(`Server on :${PORT}`);
-    });
-  } catch (err) {
-    console.error("❌ Startup failed:", err?.message || err);
-    process.exit(1);
-  }
+  app.listen(PORT, () => {
+    console.log(`Server on :${PORT}`);
+  });
 }
 
-bootstrap().catch((e) => {
-  console.error("❌ Bootstrap failed:", e?.message || e);
+bootstrap().catch(err => {
+  console.error('❌ Bootstrap failed:', err?.message || err);
   process.exit(1);
 });
 
