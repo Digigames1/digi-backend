@@ -1,14 +1,14 @@
 // src/routes/debug.mjs
-import express from "express";
+import { Router } from "express";
 import { mongoose } from "../db/mongoose.mjs";
 
-export const debugRouter = express.Router();
+const router = Router();
 
-debugRouter.get("/ping", (_, res) => {
+router.get("/ping", (_req, res) => {
   res.json({ ok: true, ts: new Date().toISOString() });
 });
 
-debugRouter.get("/wire", async (_req, res) => {
+router.get("/wire", async (_req, res) => {
   const m1 = mongoose;
   const m2 = (await import("mongoose")).default;
   res.json({
@@ -20,18 +20,34 @@ debugRouter.get("/wire", async (_req, res) => {
   });
 });
 
-debugRouter.get("/mongoose", (_req, res) => {
-  const names = typeof mongoose.modelNames === "function" ? mongoose.modelNames() : [];
+router.get("/mongoose", (_req, res) => {
+  const modelNames = typeof mongoose.modelNames === "function" ? mongoose.modelNames() : [];
   res.json({
     ok: true,
     runtime: {
       connectionReadyState: mongoose.connection?.readyState ?? null,
       dbName: mongoose.connection?.name ?? null,
       version: mongoose?.version ?? null,
-      modelNames: names,
+      modelNames,
     },
     curatedCatalog: { registered: Boolean(mongoose.models?.CuratedCatalog) },
     bambooDump: { registered: Boolean(mongoose.models?.BambooDump) },
   });
 });
+
+// гаряча перереєстрація моделей
+router.post("/reload-models", async (_req, res) => {
+  try {
+    if (mongoose.models?.CuratedCatalog) delete mongoose.models.CuratedCatalog;
+    if (mongoose.models?.BambooDump) delete mongoose.models.BambooDump;
+    await import(new URL("../models/CuratedCatalog.mjs", import.meta.url));
+    await import(new URL("../models/BambooDump.mjs", import.meta.url));
+    const names = mongoose.modelNames?.() ?? [];
+    res.json({ ok: true, modelNames: names });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e?.message || String(e) });
+  }
+});
+
+export default router;
 

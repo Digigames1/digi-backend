@@ -27,4 +27,5 @@ const CuratedSchema = new mongoose.Schema(
 export const CuratedCatalog =
   (mongoose.models?.CuratedCatalog) ||
   mongoose.model("CuratedCatalog", CuratedSchema);
+console.log('[model] CuratedCatalog registered');
 

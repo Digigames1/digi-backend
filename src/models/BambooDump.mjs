@@ -30,4 +30,5 @@ const BambooDumpSchema = new mongoose.Schema(
 export const BambooDump =
   (mongoose.models?.BambooDump) ||
   mongoose.model("BambooDump", BambooDumpSchema);
+console.log('[model] BambooDump registered');
 
