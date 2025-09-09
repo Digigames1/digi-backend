@@ -20,7 +20,11 @@ debugRouter.get("/wire", async (_req, res) => {
   });
 });
 
-debugRouter.get("/mongoose", (_req, res) => {
+debugRouter.get("/mongoose", async (_req, res) => {
+  // Ensure models are registered before listing names
+  try {
+    await import("../models/index.mjs");
+  } catch {}
   const names = typeof mongoose.modelNames === "function" ? mongoose.modelNames() : [];
   res.json({
     ok: true,

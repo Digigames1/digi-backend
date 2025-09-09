@@ -37,10 +37,6 @@ const PORT = process.env.PORT || 10000;
 async function bootstrap() {
   await connectMongo();
 
-  // РЕЄСТРУЄМО моделі ПІСЛЯ конекту і з нашою інстанцією
-  await import("./src/models/CuratedCatalog.mjs");
-  await import("./src/models/BambooDump.mjs");
-
   // Імпортуємо роутери
   const { debugRouter } = await import("./src/routes/debug.mjs");
   const { bambooRouter } = await import("./src/routes/bamboo.mjs");

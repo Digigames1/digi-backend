@@ -17,6 +17,12 @@ export async function connectMongo() {
     globalThis.__DG_MONGOOSE__.connected = true;
     const name = mongoose.connection?.name || dbName;
     console.log(`Mongo connected: ${name}`);
+    // Ensure all models are registered with this mongoose instance
+    try {
+      await import("../models/index.mjs");
+    } catch (err) {
+      console.error('Failed to register models:', err?.message || err);
+    }
   }
   return mongoose;
 }
