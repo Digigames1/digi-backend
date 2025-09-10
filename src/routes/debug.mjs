@@ -20,7 +20,10 @@ router.get("/wire", async (_req, res) => {
   });
 });
 
-router.get("/mongoose", (_req, res) => {
+router.get("/mongoose", async (_req, res) => {
+  if (!mongoose.models?.CuratedCatalog || !mongoose.models?.BambooDump) {
+    try { await import("../models/index.mjs"); } catch {}
+  }
   const modelNames = typeof mongoose.modelNames === "function" ? mongoose.modelNames() : [];
   res.json({
     ok: true,
