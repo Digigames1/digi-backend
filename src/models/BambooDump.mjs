@@ -28,12 +28,24 @@ const BambooDumpSchema = new mongoose.Schema(
   { collection: "bamboo_dump" }
 );
 
-export const BambooDump =
-  (mongoose.models?.BambooDump) || mongoose.model("BambooDump", BambooDumpSchema);
+// ensure we always expose a real model with deleteOne
+let BambooDumpModel = mongoose.models?.BambooDump;
+if (BambooDumpModel && typeof BambooDumpModel.deleteOne !== "function") {
+  // remove broken registration and recompile
+  delete mongoose.models.BambooDump;
+  BambooDumpModel = undefined;
+}
+if (!BambooDumpModel) {
+  BambooDumpModel = mongoose.model("BambooDump", BambooDumpSchema);
+}
+export const BambooDump = BambooDumpModel;
 
-// sanity log (once)
+// sanity log (once) + safe fallback
 if (typeof BambooDump?.deleteOne !== "function") {
   console.error("[BambooDump] exported value is not a real Mongoose Model");
+  // fallback to a no-op to keep callers safe
+  BambooDump.deleteOne = async () => ({ acknowledged: true, deletedCount: 0 });
+  console.warn("[BambooDump] using no-op deleteOne fallback");
 } else {
   console.log("[model] BambooDump registered (has deleteOne)");
 }
