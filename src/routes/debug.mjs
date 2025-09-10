@@ -24,17 +24,29 @@ router.get("/mongoose", async (_req, res) => {
   if (!mongoose.models?.CuratedCatalog || !mongoose.models?.BambooDump) {
     try { await import("../models/index.mjs"); } catch {}
   }
-  const modelNames = typeof mongoose.modelNames === "function" ? mongoose.modelNames() : [];
+  const bd = mongoose.models?.BambooDump;
+  const cc = mongoose.models?.CuratedCatalog;
+
   res.json({
     ok: true,
     runtime: {
       connectionReadyState: mongoose.connection?.readyState ?? null,
       dbName: mongoose.connection?.name ?? null,
       version: mongoose?.version ?? null,
-      modelNames,
+      modelNames: (typeof mongoose.modelNames === "function") ? mongoose.modelNames() : [],
     },
-    curatedCatalog: { registered: Boolean(mongoose.models?.CuratedCatalog) },
-    bambooDump: { registered: Boolean(mongoose.models?.BambooDump) },
+    curatedCatalog: {
+      registered: !!cc,
+      hasFindOne: typeof cc?.findOne === "function",
+      hasFindOneAndUpdate: typeof cc?.findOneAndUpdate === "function",
+      hasDeleteOne: typeof cc?.deleteOne === "function",
+    },
+    bambooDump: {
+      registered: !!bd,
+      hasFindOne: typeof bd?.findOne === "function",
+      hasFindOneAndUpdate: typeof bd?.findOneAndUpdate === "function",
+      hasDeleteOne: typeof bd?.deleteOne === "function",
+    },
   });
 });
 
@@ -53,4 +65,3 @@ router.post("/reload-models", async (_req, res) => {
 });
 
 export default router;
-

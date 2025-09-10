@@ -17,17 +17,20 @@ const CuratedItemSchema = new mongoose.Schema(
 
 const CuratedSchema = new mongoose.Schema(
   {
-    key: { type: String, required: true, unique: true },
+    key: { type: String, required: true, unique: true, index: true },
     updatedAt: { type: Date, default: Date.now, index: true },
-    items: [CuratedItemSchema],
-    currencies: [String],
-    source: {},
+    items: { type: [CuratedItemSchema], default: [] },
+    currencies: { type: [String], default: [] },
+    source: { type: Object, default: {} },
   },
   { collection: "curated_catalog" }
 );
 
 export const CuratedCatalog =
-  (mongoose.models?.CuratedCatalog) ||
-  mongoose.model("CuratedCatalog", CuratedSchema);
-console.log('[model] CuratedCatalog registered');
+  (mongoose.models?.CuratedCatalog) || mongoose.model("CuratedCatalog", CuratedSchema);
 
+if (typeof CuratedCatalog?.findOne !== "function") {
+  console.error("[CuratedCatalog] exported value is not a real Mongoose Model");
+} else {
+  console.log("[model] CuratedCatalog registered (has findOne)");
+}
