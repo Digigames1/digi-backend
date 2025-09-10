@@ -37,12 +37,12 @@ const PORT = process.env.PORT || 10000;
 async function bootstrap() {
   const m = await connectMongo();
   // Імпортуємо роутери
-  const debugRouter = (await import(new URL("./src/routes/debug.mjs", import.meta.url))).default;
-  const { bambooRouter } = await import("./src/routes/bamboo.mjs");
+  const { default: debugRouter } = await import("./src/routes/debug.mjs");
+  const { bambooExportRouter } = await import("./src/routes/bamboo-export.mjs");
   const { curatedRouter } = await import("./src/routes/curated.mjs");
-  app.use("/api/debug", debugRouter);
-  app.use("/api/bamboo", bambooRouter);
-  app.use("/api/curated", curatedRouter);
+  app.use("/api", debugRouter);
+  app.use("/api", bambooExportRouter);
+  app.use("/api", curatedRouter);
 
   const names = typeof m.modelNames === 'function' ? m.modelNames() : [];
   console.log('🧩 Models registered:', names.join(', ') || '[]');
@@ -50,6 +50,23 @@ async function bootstrap() {
   app.listen(PORT, () => {
     console.log(`Server on :${PORT}`);
   });
+
+  // Auto-refresh curated cache on interval (optional)
+  if ((process.env.BAMBOO_AUTO_REFRESH_CRON || "disabled") === "enabled") {
+    const minutes = Math.max(5, parseInt(process.env.BAMBOO_AUTO_REFRESH_INTERVAL_MIN || "60", 10));
+    const currencies = (process.env.BAMBOO_AUTO_REFRESH_CURRENCIES || "USD,EUR,CAD,AUD").split(",").map(s=>s.trim());
+    const tick = async () => {
+      try {
+        const { buildCurated } = await import("./src/services/curate.mjs");
+        await buildCurated({ currencies });
+        console.log(`[auto-refresh] curated updated for ${currencies.join(",")}`);
+      } catch (e) {
+        console.warn("[auto-refresh] failed:", e?.message || e);
+      }
+    };
+    setInterval(tick, minutes * 60 * 1000);
+    tick();
+  }
 }
 
 bootstrap().catch(err => {

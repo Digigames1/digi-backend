@@ -10,16 +10,18 @@ const CuratedItemSchema = new mongoose.Schema(
     currencyCode: String,
     price: Number,
     logos: [String],
-    raw: {} // повний сирий bamboo item
+    raw: {},
   },
   { _id: false }
 );
 
 const CuratedSchema = new mongoose.Schema(
   {
-    key: { type: String, required: true, unique: true }, // наприклад "gaming"
+    key: { type: String, required: true, unique: true },
     updatedAt: { type: Date, default: Date.now, index: true },
-    items: [CuratedItemSchema]
+    items: [CuratedItemSchema],
+    currencies: [String],
+    source: {},
   },
   { collection: "curated_catalog" }
 );
