@@ -1,11 +1,11 @@
 // src/models/BambooDump.mjs
 import { mongoose } from "../db/mongoose.mjs";
 
-const BambooDumpItemSchema = new mongoose.Schema(
+const BambooProductSchema = new mongoose.Schema(
   {
-    brand: String,
     id: { type: Number, index: true },
     name: String,
+    brand: String,
     countryCode: String,
     currencyCode: String,
     priceMin: Number,
@@ -18,18 +18,22 @@ const BambooDumpItemSchema = new mongoose.Schema(
 
 const BambooDumpSchema = new mongoose.Schema(
   {
-    key: { type: String, index: true, unique: true },
-    items: [BambooDumpItemSchema],
-    pagesFetched: Number,
-    total: Number,
+    key: { type: String, required: true, index: true, unique: true },
+    query: { type: Object, default: {} },
+    items: { type: [BambooProductSchema], default: [] },
+    pagesFetched: { type: Number, default: 0 },
+    total: { type: Number, default: 0 },
     updatedAt: { type: Date, default: Date.now, index: true },
-    query: {},
   },
   { collection: "bamboo_dump" }
 );
 
 export const BambooDump =
-  (mongoose.models?.BambooDump) ||
-  mongoose.model("BambooDump", BambooDumpSchema);
-console.log('[model] BambooDump registered');
+  (mongoose.models?.BambooDump) || mongoose.model("BambooDump", BambooDumpSchema);
 
+// sanity log (once)
+if (typeof BambooDump?.deleteOne !== "function") {
+  console.error("[BambooDump] exported value is not a real Mongoose Model");
+} else {
+  console.log("[model] BambooDump registered (has deleteOne)");
+}

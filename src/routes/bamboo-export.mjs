@@ -6,29 +6,35 @@ import { fetchCatalogPaged } from "../services/bambooClient.mjs";
 
 export const bambooExportRouter = Router();
 
+function assertModelHas(model, methods = []) {
+  for (const m of methods) {
+    if (typeof model?.[m] !== "function") {
+      throw new Error(`BambooDump model missing method: ${m}`);
+    }
+  }
+}
+
 let running = false;
 
-/**
- * GET /api/bamboo/export.json?PageSize=100&maxPages=30&force=1[&CurrencyCode=USD&CountryCode=US&ModifiedDate=YYYY-MM-DD&Name=...&BrandId=...]
- * Downloads pages from Bamboo (respecting rate limit), stores into BambooDump.
- */
 bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
-  if (running) return res.status(429).json({ ok: false, error: "Export already running" });
-
-  const PageSize = parseInt(req.query.PageSize ?? process.env.CATALOG_PAGE_SIZE ?? "100", 10);
-  const maxPages = parseInt(req.query.maxPages ?? process.env.CATALOG_MAX_PAGES ?? "30", 10);
-  const PageIndex = parseInt(req.query.PageIndex ?? "0", 10);
-  const force = req.query.force == 1 || req.query.force === "1";
-
-  // Optional filters from query passthrough
-  const passthrough = {};
-  ["CurrencyCode", "CountryCode", "Name", "ModifiedDate", "ProductId", "BrandId", "TargetCurrency"].forEach(k => {
-    if (req.query[k] != null) passthrough[k] = req.query[k];
-  });
-
-  const key = JSON.stringify({ PageSize, maxPages, PageIndex, ...passthrough });
-
   try {
+    // sanity check: we really have a Mongoose Model
+    assertModelHas(BambooDump, ["findOneAndUpdate", "deleteOne", "findOne"]);
+
+    if (running) return res.status(429).json({ ok: false, error: "Export already running" });
+
+    const PageSize = parseInt(req.query.PageSize ?? process.env.CATALOG_PAGE_SIZE ?? "100", 10);
+    const maxPages = parseInt(req.query.maxPages ?? process.env.CATALOG_MAX_PAGES ?? "30", 10);
+    const PageIndex = parseInt(req.query.PageIndex ?? "0", 10);
+    const force = req.query.force == 1 || req.query.force === "1";
+
+    const passthrough = {};
+    ["CurrencyCode", "CountryCode", "Name", "ModifiedDate", "ProductId", "BrandId", "TargetCurrency"].forEach(k => {
+      if (req.query[k] != null) passthrough[k] = req.query[k];
+    });
+
+    const key = JSON.stringify({ PageSize, maxPages, PageIndex, ...passthrough });
+
     running = true;
 
     if (force) {
@@ -39,7 +45,7 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
     let pagesFetched = 0;
     const itemsAcc = [];
 
-    await fetchCatalogPaged({ PageSize, maxPages, PageIndex, ...passthrough }, async (data, idx) => {
+    await fetchCatalogPaged({ PageSize, maxPages, PageIndex, ...passthrough }, async (data) => {
       pagesFetched++;
       for (const brand of data.items || []) {
         const brandName = brand.name;
@@ -58,10 +64,17 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
         }
       }
       totalItems = itemsAcc.length;
-      // upsert after each page (safe to resume)
       await BambooDump.findOneAndUpdate(
         { key },
-        { $set: { items: itemsAcc, pagesFetched, total: totalItems, updatedAt: new Date(), query: { PageSize, maxPages, PageIndex, ...passthrough } } },
+        {
+          $set: {
+            query: { PageSize, maxPages, PageIndex, ...passthrough },
+            items: itemsAcc,
+            pagesFetched,
+            total: totalItems,
+            updatedAt: new Date(),
+          },
+        },
         { upsert: true, new: true }
       );
     });
@@ -81,4 +94,3 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
     running = false;
   }
 });
-
