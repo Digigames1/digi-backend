@@ -1,91 +1,84 @@
-import express from "express";
-import axios from "axios";
+// src/routes/bamboo-export.mjs
+import { Router } from "express";
+import { mongoose } from "../db/mongoose.mjs";
 import { BambooDump } from "../models/BambooDump.mjs";
+import { fetchCatalogPaged } from "../services/bambooClient.mjs";
 
-export const bambooExportRouter = express.Router();
+export const bambooExportRouter = Router();
 
-/** Побудова BASIC заголовка з ENV */
-function basicAuthHeader() {
-  const id = process.env.BAMBOO_CLIENT_ID;
-  const secret = process.env.BAMBOO_CLIENT_SECRET;
-  if (!id || !secret) throw new Error("BAMBOO_CLIENT_ID / BAMBOO_CLIENT_SECRET not set");
-  const token = Buffer.from(`${id}:${secret}`).toString("base64");
-  return `Basic ${token}`;
-}
+let running = false;
 
-/** Читаємо базові URL-и з ENV */
-function bambooBase() {
-  const base = process.env.BAMBOO_BASE_URL || process.env.BAMBOO_API_URL || "https://api.bamboocardportal.com";
-  const path = process.env.BAMBOO_CATALOG_PATH || "/api/integration/v2.0/catalog";
-  return { base, path };
-}
+/**
+ * GET /api/bamboo/export.json?PageSize=100&maxPages=30&force=1[&CurrencyCode=USD&CountryCode=US&ModifiedDate=YYYY-MM-DD&Name=...&BrandId=...]
+ * Downloads pages from Bamboo (respecting rate limit), stores into BambooDump.
+ */
+bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
+  if (running) return res.status(429).json({ ok: false, error: "Export already running" });
 
-/** Запит однієї сторінки каталогу */
-async function fetchCatalogPage({ PageSize = 100, PageIndex = 0, params = {} }) {
-  const { base, path } = bambooBase();
-  const url = new URL(path, base);
-  url.searchParams.set("PageSize", String(PageSize));
-  url.searchParams.set("PageIndex", String(PageIndex));
-  // Додаткові фільтри за потребою:
-  for (const [k, v] of Object.entries(params)) {
-    if (v != null && v !== "") url.searchParams.set(k, String(v));
-  }
+  const PageSize = parseInt(req.query.PageSize ?? process.env.CATALOG_PAGE_SIZE ?? "100", 10);
+  const maxPages = parseInt(req.query.maxPages ?? process.env.CATALOG_MAX_PAGES ?? "30", 10);
+  const PageIndex = parseInt(req.query.PageIndex ?? "0", 10);
+  const force = req.query.force == 1 || req.query.force === "1";
 
-  const res = await axios.get(url.toString(), {
-    timeout: 20000,
-    headers: {
-      Authorization: basicAuthHeader(),
-      "Content-Type": "application/json",
-    },
-    validateStatus: (s) => s >= 200 && s < 500,
+  // Optional filters from query passthrough
+  const passthrough = {};
+  ["CurrencyCode", "CountryCode", "Name", "ModifiedDate", "ProductId", "BrandId", "TargetCurrency"].forEach(k => {
+    if (req.query[k] != null) passthrough[k] = req.query[k];
   });
 
-  if (res.status === 401) throw new Error("Bamboo 401: Unauthorized (check client id/secret)");
-  if (res.status === 429) throw new Error("Bamboo 429: Too many requests");
-  if (res.status >= 400) throw new Error(`Bamboo ${res.status}: ${res.statusText}`);
+  const key = JSON.stringify({ PageSize, maxPages, PageIndex, ...passthrough });
 
-  return res.data; // очікуємо shape: { pageIndex, pageSize, count, items: [{ name, products: [...] }...] }
-}
-
-/** GET /api/bamboo/export.json?PageSize=100&maxPages=30&force=1 */
-bambooExportRouter.get("/export.json", async (req, res) => {
   try {
-    const PageSize = Math.max(1, Math.min(500, Number(req.query.PageSize) || 100));
-    const maxPages = Math.max(1, Math.min(100, Number(req.query.maxPages) || 30));
-    const force = String(req.query.force || "") === "1";
+    running = true;
 
-    const dumpKey = `catalog:v2:ps${PageSize}:mp${maxPages}`;
-    const existing = await BambooDump.findOne({ key: dumpKey }).lean();
-    if (existing && !force) {
-      return res.json({ ok: true, cached: true, key: dumpKey, rows: existing.rows.length, updatedAt: existing.updatedAt });
+    if (force) {
+      await BambooDump.deleteOne({ key }).catch(() => {});
     }
 
-    let allItems = [];
-    let total = 0;
+    let totalItems = 0;
+    let pagesFetched = 0;
+    const itemsAcc = [];
 
-    for (let page = 0; page < maxPages; page++) {
-      const data = await fetchCatalogPage({ PageSize, PageIndex: page });
-      const items = Array.isArray(data?.items) ? data.items : [];
-      allItems.push(...items);
-      total = Number.isFinite(+data?.count) ? +data.count : total;
+    await fetchCatalogPaged({ PageSize, maxPages, PageIndex, ...passthrough }, async (data, idx) => {
+      pagesFetched++;
+      for (const brand of data.items || []) {
+        const brandName = brand.name;
+        for (const p of brand.products || []) {
+          itemsAcc.push({
+            brand: brandName,
+            id: p.id,
+            name: p.name,
+            countryCode: p.countryCode,
+            currencyCode: p.currencyCode || p?.price?.currencyCode,
+            priceMin: p.price?.min,
+            priceMax: p.price?.max,
+            modifiedDate: p.modifiedDate ? new Date(p.modifiedDate) : null,
+            raw: p,
+          });
+        }
+      }
+      totalItems = itemsAcc.length;
+      // upsert after each page (safe to resume)
+      await BambooDump.findOneAndUpdate(
+        { key },
+        { $set: { items: itemsAcc, pagesFetched, total: totalItems, updatedAt: new Date(), query: { PageSize, maxPages, PageIndex, ...passthrough } } },
+        { upsert: true, new: true }
+      );
+    });
 
-      // якщо повернули менше, ніж PageSize — значить це остання
-      if (items.length < PageSize) break;
-
-      // маленька пауза, щоб не відловлювати 429
-      await new Promise((r) => setTimeout(r, 400));
-    }
-
-    await BambooDump.updateOne(
-      { key: dumpKey },
-      { $set: { key: dumpKey, filters: { PageSize, maxPages }, rows: allItems, updatedAt: new Date() } },
-      { upsert: true }
-    );
-
-    res.json({ ok: true, cached: false, key: dumpKey, rows: allItems.length, total });
+    const doc = await BambooDump.findOne({ key }).lean();
+    return res.json({
+      ok: true,
+      pagesFetched,
+      totalItems,
+      key,
+      sample: doc?.items?.slice(0, 3) || [],
+    });
   } catch (e) {
-    res.status(500).json({ ok: false, error: e?.message || String(e) });
+    const status = e?.status || 500;
+    return res.status(status).json({ ok: false, error: e?.message || String(e) });
+  } finally {
+    running = false;
   }
 });
 
-export default bambooExportRouter;
