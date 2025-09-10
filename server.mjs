@@ -36,11 +36,6 @@ const PORT = process.env.PORT || 10000;
 // Старт з'єднання і роутів
 async function bootstrap() {
   const m = await connectMongo();
-
-  // РЕЄСТРУЄМО моделі ПІСЛЯ конекту і з нашою інстанцією
-  await import(new URL("./src/models/CuratedCatalog.mjs", import.meta.url));
-  await import(new URL("./src/models/BambooDump.mjs", import.meta.url));
-
   // Імпортуємо роутери
   const debugRouter = (await import(new URL("./src/routes/debug.mjs", import.meta.url))).default;
   const { bambooRouter } = await import("./src/routes/bamboo.mjs");

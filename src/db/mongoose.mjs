@@ -18,6 +18,16 @@ export async function connectMongo() {
     globalThis.__DG_MONGOOSE__.connected = true;
     const name = mongoose.connection?.name || dbName;
     console.log(`Mongo connected: ${name}`);
+
+    // register models once after successful connection
+    if (!globalThis.__DG_MONGO_MODELS_REGISTERED__) {
+      try {
+        await import("../models/index.mjs");
+        globalThis.__DG_MONGO_MODELS_REGISTERED__ = true;
+      } catch (e) {
+        console.error("Failed to register models", e);
+      }
+    }
   }
   return mongoose;
 }
