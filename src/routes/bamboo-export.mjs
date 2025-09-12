@@ -1,96 +1,98 @@
 // src/routes/bamboo-export.mjs
 import { Router } from "express";
-import { mongoose } from "../db/mongoose.mjs";
+import { RateLimit } from "../models/RateLimit.mjs";
 import { BambooDump } from "../models/BambooDump.mjs";
-import { fetchCatalogPaged } from "../services/bambooClient.mjs";
+import { fetchCatalogPageWithRetry } from "../services/bambooClient.mjs";
 
 export const bambooExportRouter = Router();
 
-function assertModelHas(model, methods = []) {
-  for (const m of methods) {
-    if (typeof model?.[m] !== "function") {
-      throw new Error(`BambooDump model missing method: ${m}`);
-    }
-  }
-}
-
-let running = false;
+const RL_KEY = "bamboo:catalog";
 
 bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
-  try {
-    // sanity check: we really have a Mongoose Model
-    assertModelHas(BambooDump, ["findOneAndUpdate", "deleteOne", "findOne"]);
+  const PageSize = parseInt(req.query.PageSize ?? process.env.CATALOG_PAGE_SIZE ?? "100", 10);
+  const maxPages = parseInt(req.query.maxPages ?? process.env.CATALOG_MAX_PAGES ?? "30", 10);
+  const resume = req.query.resume == 1;
+  const force = req.query.force == 1;
 
-    if (running) return res.status(429).json({ ok: false, error: "Export already running" });
+  const passthrough = {};
+  ["CurrencyCode","CountryCode","Name","ModifiedDate","ProductId","BrandId","TargetCurrency"].forEach(k=>{
+    if (req.query[k] != null) passthrough[k] = req.query[k];
+  });
 
-    const PageSize = parseInt(req.query.PageSize ?? process.env.CATALOG_PAGE_SIZE ?? "100", 10);
-    const maxPages = parseInt(req.query.maxPages ?? process.env.CATALOG_MAX_PAGES ?? "30", 10);
-    const PageIndex = parseInt(req.query.PageIndex ?? "0", 10);
-    const force = req.query.force == 1 || req.query.force === "1";
+  const key = JSON.stringify({ PageSize, ...passthrough });
 
-    const passthrough = {};
-    ["CurrencyCode", "CountryCode", "Name", "ModifiedDate", "ProductId", "BrandId", "TargetCurrency"].forEach(k => {
-      if (req.query[k] != null) passthrough[k] = req.query[k];
-    });
+  const rl = await RateLimit.findOne({ key: RL_KEY }).lean();
+  if (rl?.nextRetryAt && rl.nextRetryAt > new Date()) {
+    return res.status(429).json({ ok:false, rateLimited:true, nextRetryAt: rl.nextRetryAt });
+  }
 
-    const key = JSON.stringify({ PageSize, maxPages, PageIndex, ...passthrough });
+  let dump = await BambooDump.findOne({ key }).lean();
+  let startPage = 0;
+  const itemsAcc = dump?.items ? [...dump.items] : [];
 
-    running = true;
+  if (force) {
+    await BambooDump.deleteOne({ key }).catch(()=>{});
+    dump = null;
+  } else if (resume && dump?.lastPage != null) {
+    startPage = dump.lastPage + 1;
+  }
 
-    if (force) {
-      await BambooDump.deleteOne({ key }).catch(() => {});
+  let pagesFetched = dump?.pagesFetched || 0;
+  let totalItems = itemsAcc.length;
+
+  for (let i = 0; i < maxPages; i++) {
+    const pageIndex = startPage + i;
+    const resp = await fetchCatalogPageWithRetry({ ...passthrough, PageSize, PageIndex: pageIndex });
+
+    if (resp?.__rateLimited) {
+      await RateLimit.findOneAndUpdate(
+        { key: RL_KEY },
+        { $set: { nextRetryAt: resp.nextRetryAt, updatedAt: new Date() } },
+        { upsert: true }
+      );
+      break;
     }
 
-    let totalItems = 0;
-    let pagesFetched = 0;
-    const itemsAcc = [];
+    if (!resp || !Array.isArray(resp.items) || resp.items.length === 0) break;
 
-    await fetchCatalogPaged({ PageSize, maxPages, PageIndex, ...passthrough }, async (data) => {
-      pagesFetched++;
-      for (const brand of data.items || []) {
-        const brandName = brand.name;
-        for (const p of brand.products || []) {
-          itemsAcc.push({
-            brand: brandName,
-            id: p.id,
-            name: p.name,
-            countryCode: p.countryCode,
-            currencyCode: p.currencyCode || p?.price?.currencyCode,
-            priceMin: p.price?.min,
-            priceMax: p.price?.max,
-            modifiedDate: p.modifiedDate ? new Date(p.modifiedDate) : null,
-            raw: p,
-          });
-        }
+    for (const brand of resp.items) {
+      for (const p of brand.products || []) {
+        itemsAcc.push({
+          brand: brand.name,
+          id: p.id,
+          name: p.name,
+          countryCode: p.countryCode,
+          currencyCode: p.currencyCode || p?.price?.currencyCode,
+          priceMin: p.price?.min,
+          priceMax: p.price?.max,
+          modifiedDate: p.modifiedDate ? new Date(p.modifiedDate) : null,
+          raw: p,
+        });
       }
-      totalItems = itemsAcc.length;
-      await BambooDump.findOneAndUpdate(
-        { key },
-        {
-          $set: {
-            query: { PageSize, maxPages, PageIndex, ...passthrough },
-            items: itemsAcc,
-            pagesFetched,
-            total: totalItems,
-            updatedAt: new Date(),
-          },
-        },
-        { upsert: true, new: true }
-      );
-    });
+    }
 
-    const doc = await BambooDump.findOne({ key }).lean();
-    return res.json({
-      ok: true,
-      pagesFetched,
-      totalItems,
-      key,
-      sample: doc?.items?.slice(0, 3) || [],
-    });
-  } catch (e) {
-    const status = e?.status || 500;
-    return res.status(status).json({ ok: false, error: e?.message || String(e) });
-  } finally {
-    running = false;
+    pagesFetched++;
+    totalItems = itemsAcc.length;
+
+    await BambooDump.findOneAndUpdate(
+      { key },
+      { $set: {
+          key, query: { PageSize, ...passthrough },
+          items: itemsAcc, pagesFetched, total: totalItems,
+          lastPage: pageIndex, pageSize: PageSize, updatedAt: new Date()
+        }},
+      { upsert: true, new: true }
+    );
   }
+
+  const nextRl = await RateLimit.findOne({ key: RL_KEY }).lean();
+  const doc = await BambooDump.findOne({ key }).lean();
+  res.json({
+    ok: true,
+    pagesFetched,
+    totalItems,
+    lastPage: doc?.lastPage ?? null,
+    rateLimit: nextRl?.nextRetryAt ? { nextRetryAt: nextRl.nextRetryAt } : null,
+    sample: doc?.items?.slice(0, 3) || [],
+  });
 });

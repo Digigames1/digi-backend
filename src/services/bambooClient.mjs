@@ -40,6 +40,19 @@ export async function fetchCatalogPage(params = {}) {
   return res.data; // expected shape: { pageindex, pageSize, count, items: [ { name, products: [...] } ] }
 }
 
+export async function fetchCatalogPageWithRetry(params = {}, { retries = 0, minRetrySec = 1800 } = {}) {
+  try {
+    return await fetchCatalogPage(params);
+  } catch (e) {
+    if (e?.status === 429) {
+      const retrySec = Math.max(minRetrySec, 1800); // 30 хв за замовчуванням
+      const next = new Date(Date.now() + retrySec * 1000);
+      return { __rateLimited: true, nextRetryAt: next };
+    }
+    throw e;
+  }
+}
+
 /** Paged fetch with guard and early-stop by empty pages */
 export async function fetchCatalogPaged({ PageSize = 100, maxPages = 30, PageIndex = 0, ...filters } = {}, onPage) {
   let pageIndex = +PageIndex || 0;
