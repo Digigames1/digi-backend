@@ -22,6 +22,8 @@ const BambooDumpSchema = new mongoose.Schema(
     query: { type: Object, default: {} },
     items: { type: [BambooProductSchema], default: [] },
     pagesFetched: { type: Number, default: 0 },
+    lastPage: { type: Number, default: null },
+    pageSize: { type: Number, default: 0 },
     total: { type: Number, default: 0 },
     updatedAt: { type: Date, default: Date.now, index: true },
   },
