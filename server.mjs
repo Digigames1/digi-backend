@@ -39,10 +39,12 @@ async function bootstrap() {
   // Імпортуємо роутери
   const { default: debugRouter } = await import("./src/routes/debug.mjs");
   const { bambooExportRouter } = await import("./src/routes/bamboo-export.mjs");
+  const { bambooItemsRouter } = await import("./src/routes/bamboo-items.mjs");
   const { bambooStatusRouter } = await import("./src/routes/bamboo-status.mjs");
   const { curatedRouter } = await import("./src/routes/curated.mjs");
   app.use("/api", debugRouter);
   app.use("/api", bambooExportRouter);
+  app.use("/api", bambooItemsRouter);
   app.use("/api", bambooStatusRouter);
   app.use("/api", curatedRouter);
 
