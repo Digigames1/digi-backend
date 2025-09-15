@@ -63,8 +63,11 @@ function normalizeBrand(name) {
 export async function buildCurated({ currencies = ["USD", "EUR", "CAD", "AUD"] } = {}) {
   // беремо будь-який останній дамп
   const dump = await BambooDump.findOne({}, {}, { sort: { updatedAt: -1 } }).lean();
-  if (!dump?.items?.length) {
-    return { ok: false, reason: "No BambooDump data yet" };
+  if (!dump) {
+    return { ok: false, reason: "No BambooDump document found" };
+  }
+  if (!Array.isArray(dump.items) || dump.items.length === 0) {
+    return { ok: false, reason: `Dump has no items (pagesFetched=${dump.pagesFetched ?? 0}, total=${dump.total ?? 0})` };
   }
 
   const byCategory = {
@@ -120,7 +123,15 @@ export async function buildCurated({ currencies = ["USD", "EUR", "CAD", "AUD"] }
     { upsert: true, new: true }
   );
 
-  return { ok: true, counts: payload.source.groups };
+  return {
+    ok: true,
+    counts: payload.source.groups,
+    bamboo: {
+      pages: dump.pagesFetched ?? 0,
+      total: dump.total ?? dump.items.length,
+      lastPage: dump.lastPage ?? null,
+    },
+  };
 }
 
 export async function getCuratedSection(section = "gaming") {

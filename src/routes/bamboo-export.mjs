@@ -74,25 +74,37 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
     pagesFetched++;
     totalItems = itemsAcc.length;
 
-    await BambooDump.findOneAndUpdate(
-      { key },
-      { $set: {
-          key, query: { PageSize, ...passthrough },
-          items: itemsAcc, pagesFetched, total: totalItems,
-          lastPage: pageIndex, pageSize: PageSize, updatedAt: new Date()
-        }},
-      { upsert: true, new: true }
-    );
+    const update = {
+      $set: {
+        query: { PageSize, maxPages, PageIndex: pageIndex, ...passthrough },
+        items: itemsAcc,
+        pagesFetched,
+        total: totalItems,
+        lastPage: pageIndex,
+        pageSize: PageSize,
+        updatedAt: new Date(),
+      },
+    };
+    const doc = await BambooDump.findOneAndUpdate({ key }, update, { upsert: true, new: true });
+    console.log("[export] page persisted", {
+      pageIndex,
+      pagesFetched,
+      total: totalItems,
+      savedItems: doc?.items?.length ?? null,
+      key,
+    });
   }
 
   const nextRl = await RateLimit.findOne({ key: RL_KEY }).lean();
   const doc = await BambooDump.findOne({ key }).lean();
+  const saved = Array.isArray(doc?.items) ? doc.items.length : 0;
   res.json({
     ok: true,
     pagesFetched,
     totalItems,
     lastPage: doc?.lastPage ?? null,
     rateLimit: nextRl?.nextRetryAt ? { nextRetryAt: nextRl.nextRetryAt } : null,
-    sample: doc?.items?.slice(0, 3) || [],
+    sample: (doc?.items && doc.items.slice(0, 3)) || [],
+    savedItems: saved,
   });
 });
