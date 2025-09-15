@@ -50,6 +50,36 @@ router.get("/mongoose", async (_req, res) => {
   });
 });
 
+// GET /api/debug/models
+router.get("/debug/models", async (_req, res) => {
+  if (!mongoose.models?.CuratedCatalog || !mongoose.models?.BambooDump) {
+    try { await import("../models/index.mjs"); } catch {}
+  }
+  const names = typeof mongoose.modelNames === "function" ? mongoose.modelNames() : [];
+  res.json({ ok: true, modelNames: names });
+});
+
+// GET /api/debug/routes
+router.get("/debug/routes", (req, res) => {
+  const routes = [];
+  const collect = (stack, prefix = "") => {
+    for (const layer of stack) {
+      if (layer.route?.path) {
+        const methods = Object.keys(layer.route.methods).filter(m => layer.route.methods[m]);
+        routes.push({ path: prefix + layer.route.path, methods });
+      } else if (layer.name === "router" && layer.handle?.stack) {
+        const src = layer.regexp?.source;
+        const base = src && src !== "^\\/?(?=\\/|$)"
+          ? src.replace("^\\/", "/").replace("\\/?(?=\\/|$)", "").replace(/\\\\\//g, "/")
+          : "";
+        collect(layer.handle.stack, prefix + base);
+      }
+    }
+  };
+  collect(req.app._router.stack);
+  res.json({ ok: true, routes });
+});
+
 // гаряча перереєстрація моделей
 router.post("/reload-models", async (_req, res) => {
   try {
