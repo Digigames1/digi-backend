@@ -26,8 +26,11 @@ const CuratedSchema = new mongoose.Schema(
   { collection: "curated_catalog" }
 );
 
-export const CuratedCatalog =
+const _Model =
   (mongoose.models?.CuratedCatalog) || mongoose.model("CuratedCatalog", CuratedSchema);
+
+export const CuratedCatalog = _Model;
+export default _Model;
 
 if (typeof CuratedCatalog?.findOne !== "function") {
   console.error("[CuratedCatalog] exported value is not a real Mongoose Model");

@@ -30,17 +30,16 @@ const BambooDumpSchema = new mongoose.Schema(
   { collection: "bamboo_dump" }
 );
 
-// ensure we always expose a real model with deleteOne
-let BambooDumpModel = mongoose.models?.BambooDump;
-if (BambooDumpModel && typeof BambooDumpModel.deleteOne !== "function") {
-  // remove broken registration and recompile
+let existing = mongoose.models?.BambooDump;
+if (existing && typeof existing.deleteOne !== "function") {
   delete mongoose.models.BambooDump;
-  BambooDumpModel = undefined;
+  existing = undefined;
 }
-if (!BambooDumpModel) {
-  BambooDumpModel = mongoose.model("BambooDump", BambooDumpSchema);
-}
-export const BambooDump = BambooDumpModel;
+
+const _Model = existing || mongoose.model("BambooDump", BambooDumpSchema);
+
+export const BambooDump = _Model;
+export default _Model;
 
 // sanity log (once) + safe fallback
 if (typeof BambooDump?.deleteOne !== "function") {
