@@ -17,7 +17,7 @@ const BambooProductSchema = new mongoose.Schema(
 
 const BambooPageSchema = new mongoose.Schema(
   {
-    key: { type: String, index: true, required: true },
+    key: { type: String, required: true, index: true },
     pageIndex: { type: Number, required: true, index: true },
     items: { type: [BambooProductSchema], default: [] },
     updatedAt: { type: Date, default: Date.now, index: true },
@@ -27,12 +27,17 @@ const BambooPageSchema = new mongoose.Schema(
 
 BambooPageSchema.index({ key: 1, pageIndex: 1 }, { unique: true });
 
+// SINGLE SOURCE OF TRUTH: named + default посилаються на той самий _Model
 const _Model =
-  mongoose.models?.BambooPage || mongoose.model("BambooPage", BambooPageSchema);
+  (mongoose.models && mongoose.models.BambooPage) ||
+  mongoose.model("BambooPage", BambooPageSchema);
 
 export const BambooPage = _Model;
 export default _Model;
 
+// sanity log
 console.log("[model] BambooPage ready:", {
+  modelName: BambooPage?.modelName || null,
+  hasFind: typeof BambooPage?.find === "function",
   hasFindOneAndUpdate: typeof BambooPage?.findOneAndUpdate === "function",
 });

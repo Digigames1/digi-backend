@@ -2,6 +2,7 @@
 import { Router } from "express";
 import { BambooDump } from "../models/BambooDump.mjs";
 import { BambooPage } from "../models/BambooPage.mjs";
+import { sumSavedItemsByKey } from "./bamboo-export.mjs";
 
 export const bambooItemsRouter = Router();
 
@@ -19,11 +20,12 @@ bambooItemsRouter.get("/bamboo/items", async (req, res) => {
       ? await BambooPage.findOne({ key, pageIndex: dump.lastPage }, {}).lean()
       : null) || (await BambooPage.findOne({ key }, {}).sort({ pageIndex: 1 }).lean());
 
-  const allCount = await BambooPage.aggregate([
-    { $match: { key } },
-    { $project: { count: { $size: "$items" } } },
-    { $group: { _id: null, total: { $sum: "$count" } } },
-  ]).then((r) => r?.[0]?.total || 0);
+  let allCount = 0;
+  try {
+    allCount = await sumSavedItemsByKey(key);
+  } catch (error) {
+    console.warn("[items] sumSavedItemsByKey failed:", error?.message || error);
+  }
 
   const sample = page?.items?.slice(0, limit) || [];
   res.json({
