@@ -1,6 +1,6 @@
 // src/routes/bamboo-export.mjs
 import { Router } from "express";
-import { mongoose } from "../db/mongoose.mjs";
+import { mongoose, getNativeCollection } from "../db/mongoose.mjs";
 import { RateLimit } from "../models/RateLimit.mjs";
 import { BambooDump } from "../models/BambooDump.mjs";
 import { BambooPage } from "../models/BambooPage.mjs";
@@ -12,7 +12,7 @@ const RL_KEY = "bamboo:catalog";
 
 // Повертає загальну кількість айтемів у всіх сторінках для key
 export async function sumSavedItemsByKey(key) {
-  // ВАРІАНТ A: якщо це реальна модель з aggregate
+  // A) Mongoose aggregate — якщо це справжня модель
   if (BambooPage && typeof BambooPage.aggregate === "function") {
     try {
       const r = await BambooPage.aggregate([
@@ -22,13 +22,13 @@ export async function sumSavedItemsByKey(key) {
       ]);
       return r?.[0]?.total || 0;
     } catch (e) {
-      console.warn("[export] BambooPage.aggregate failed, fallback to native:", e?.message || e);
+      console.warn("[export] aggregate(model) failed:", e?.message || e);
     }
   }
 
-  // ВАРІАНТ B: native collection aggregate (навіть якщо модель не «жива»)
+  // B) Native aggregate через connection.db.collection(...)
   try {
-    const coll = mongoose.connection.collection("bamboo_pages");
+    const coll = getNativeCollection("bamboo_pages");
     const r = await coll
       .aggregate([
         { $match: { key } },
@@ -38,14 +38,19 @@ export async function sumSavedItemsByKey(key) {
       .toArray();
     return r?.[0]?.total || 0;
   } catch (e) {
-    console.warn("[export] native aggregate failed, fallback to client sum:", e?.message || e);
+    console.warn("[export] aggregate(native) failed:", e?.message || e);
   }
 
-  // ВАРІАНТ C: без aggregate — витягнути сторінки та скласти довжину масивів
-  const pages = await BambooPage.find({ key }, { items: 1 }).lean();
-  let total = 0;
-  for (const p of pages) total += Array.isArray(p.items) ? p.items.length : 0;
-  return total;
+  // C) Клієнтське сумування як останній фолбек
+  try {
+    const pages = await BambooPage.find({ key }, { items: 1 }).lean();
+    let total = 0;
+    for (const p of pages) total += Array.isArray(p.items) ? p.items.length : 0;
+    return total;
+  } catch (e) {
+    console.warn("[export] client-sum failed:", e?.message || e);
+    return 0;
+  }
 }
 
 bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
@@ -91,15 +96,14 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
         if (BambooPage && typeof BambooPage.countDocuments === "function") {
           pagesFetched = await BambooPage.countDocuments({ key });
         } else {
-          pagesFetched = await mongoose.connection.collection("bamboo_pages").countDocuments({ key });
+          const coll = getNativeCollection("bamboo_pages");
+          pagesFetched = await coll.countDocuments({ key });
         }
       } catch (e) {
         console.warn("[export] countDocuments fallback for resume:", e?.message || e);
         try {
-          const docs = await mongoose.connection
-            .collection("bamboo_pages")
-            .find({ key }, { projection: { _id: 1 } })
-            .toArray();
+          const coll = getNativeCollection("bamboo_pages");
+          const docs = await coll.find({ key }, { projection: { _id: 1 } }).toArray();
           pagesFetched = Array.isArray(docs) ? docs.length : 0;
         } catch (err) {
           console.warn("[export] resume fallback using dump stats:", err?.message || err);

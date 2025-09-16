@@ -1,33 +1,31 @@
 // src/db/mongoose.mjs
+import mongoose from "mongoose";
 
-// --- GLOBAL SINGLETON (щоб ВСІ файли отримували ту саму інстанцію)
-if (!globalThis.__DG_MONGOOSE__) {
-  // динамічний імпорт гарантує єдину інстанцію mongoose у всьому застосунку
-  const _mongoose = (await import('mongoose')).default ?? (await import('mongoose'));
-  globalThis.__DG_MONGOOSE__ = { mongoose: _mongoose, connected: false };
-}
-export const mongoose = globalThis.__DG_MONGOOSE__.mongoose;
+let connected = false;
 
 export async function connectMongo() {
-  const uri = process.env.DB_URL || process.env.MONGODB_URI;
-  const dbName = process.env.DB_NAME || 'digi';
-  if (!uri) throw new Error('DB_URL/MONGODB_URI is not set');
-  if (!globalThis.__DG_MONGOOSE__.connected) {
-    try { mongoose.set?.('strictQuery', true); } catch {}
-    await mongoose.connect(uri, { dbName });
-    globalThis.__DG_MONGOOSE__.connected = true;
-    const name = mongoose.connection?.name || dbName;
-    console.log(`Mongo connected: ${name}`);
+  if (connected) return mongoose.connection;
+  const uri = process.env.MONGODB_URI;
+  if (!uri) throw new Error("MONGODB_URI not set");
 
-    // register models once after successful connection
-    if (!globalThis.__DG_MONGO_MODELS_REGISTERED__) {
-      try {
-        await import("../models/index.mjs");
-        globalThis.__DG_MONGO_MODELS_REGISTERED__ = true;
-      } catch (e) {
-        console.error("Failed to register models", e);
-      }
-    }
-  }
-  return mongoose;
+  // Безпечні опції для Mongoose >=7
+  await mongoose.connect(uri, {
+    // bufferCommands за замовчуванням true; залишаємо як є
+    // serverSelectionTimeoutMS: 10000,
+  });
+
+  connected = true;
+  console.log(`Mongo connected: ${mongoose.connection?.name || "(unknown)"}`);
+  return mongoose.connection;
+}
+
+// ЄДИНИЙ екземпляр — і named, і default
+export { mongoose };
+export default mongoose;
+
+// Безпечний доступ до нативної колекції
+export function getNativeCollection(name) {
+  const db = mongoose.connection?.db;
+  if (!db) throw new Error("Mongo connection DB is not ready");
+  return db.collection(name);
 }
