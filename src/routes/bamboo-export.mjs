@@ -2,6 +2,7 @@
 import { Router } from "express";
 import { RateLimit } from "../models/RateLimit.mjs";
 import { BambooDump } from "../models/BambooDump.mjs";
+import { BambooPage } from "../models/BambooPage.mjs";
 import { fetchCatalogPageWithRetry } from "../services/bambooClient.mjs";
 
 export const bambooExportRouter = Router();
@@ -28,17 +29,32 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
 
   let dump = await BambooDump.findOne({ key }).lean();
   let startPage = 0;
-  const itemsAcc = dump?.items ? [...dump.items] : [];
+  let pagesFetched = 0;
+  let totalItems = 0;
 
   if (force) {
-    await BambooDump.deleteOne({ key }).catch(()=>{});
+    await Promise.all([
+      BambooDump.deleteOne({ key }).catch(() => {}),
+      BambooPage.deleteMany({ key }).catch(() => {}),
+    ]);
     dump = null;
   } else if (resume && dump?.lastPage != null) {
     startPage = dump.lastPage + 1;
+    const stats = await BambooPage.aggregate([
+      { $match: { key } },
+      { $project: { count: { $size: "$items" } } },
+      { $group: { _id: null, total: { $sum: "$count" }, pages: { $sum: 1 } } },
+    ]);
+    if (stats?.[0]) {
+      pagesFetched = stats[0].pages || 0;
+      totalItems = stats[0].total || 0;
+    } else {
+      pagesFetched = dump?.pagesFetched || 0;
+      totalItems = dump?.total || 0;
+    }
+  } else if (dump) {
+    await BambooPage.deleteMany({ key }).catch(() => {});
   }
-
-  let pagesFetched = dump?.pagesFetched || 0;
-  let totalItems = itemsAcc.length;
 
   for (let i = 0; i < maxPages; i++) {
     const pageIndex = startPage + i;
@@ -55,9 +71,10 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
 
     if (!resp || !Array.isArray(resp.items) || resp.items.length === 0) break;
 
-    for (const brand of resp.items) {
+    const pageItems = [];
+    for (const brand of resp.items || []) {
       for (const p of brand.products || []) {
-        itemsAcc.push({
+        pageItems.push({
           brand: brand.name,
           id: p.id,
           name: p.name,
@@ -71,13 +88,18 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
       }
     }
 
+    await BambooPage.findOneAndUpdate(
+      { key, pageIndex },
+      { $set: { items: pageItems, updatedAt: new Date() } },
+      { upsert: true, new: true }
+    );
+
     pagesFetched++;
-    totalItems = itemsAcc.length;
+    totalItems += pageItems.length;
 
     const update = {
       $set: {
         query: { PageSize, maxPages, PageIndex: pageIndex, ...passthrough },
-        items: itemsAcc,
         pagesFetched,
         total: totalItems,
         lastPage: pageIndex,
@@ -85,26 +107,31 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
         updatedAt: new Date(),
       },
     };
-    const doc = await BambooDump.findOneAndUpdate({ key }, update, { upsert: true, new: true });
+    await BambooDump.findOneAndUpdate({ key }, update, { upsert: true, new: true });
     console.log("[export] page persisted", {
       pageIndex,
       pagesFetched,
+      pageItems: pageItems.length,
       total: totalItems,
-      savedItems: doc?.items?.length ?? null,
       key,
     });
   }
 
   const nextRl = await RateLimit.findOne({ key: RL_KEY }).lean();
   const doc = await BambooDump.findOne({ key }).lean();
-  const saved = Array.isArray(doc?.items) ? doc.items.length : 0;
+  const pages = await BambooPage.find({ key }, { items: 0 }).sort({ pageIndex: 1 }).lean();
+  const saved = await BambooPage.aggregate([
+    { $match: { key } },
+    { $project: { count: { $size: "$items" } } },
+    { $group: { _id: null, total: { $sum: "$count" } } },
+  ]).then((r) => r?.[0]?.total || 0);
   res.json({
     ok: true,
     pagesFetched,
     totalItems,
     lastPage: doc?.lastPage ?? null,
     rateLimit: nextRl?.nextRetryAt ? { nextRetryAt: nextRl.nextRetryAt } : null,
-    sample: (doc?.items && doc.items.slice(0, 3)) || [],
+    pages,
     savedItems: saved,
   });
 });

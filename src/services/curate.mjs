@@ -1,5 +1,6 @@
 import { CuratedCatalog } from "../models/CuratedCatalog.mjs";
 import { BambooDump } from "../models/BambooDump.mjs";
+import { BambooPage } from "../models/BambooPage.mjs";
 
 const BRAND_TO_CATEGORY = {
   // Gaming
@@ -66,8 +67,12 @@ export async function buildCurated({ currencies = ["USD", "EUR", "CAD", "AUD"] }
   if (!dump) {
     return { ok: false, reason: "No BambooDump document found" };
   }
-  if (!Array.isArray(dump.items) || dump.items.length === 0) {
-    return { ok: false, reason: `Dump has no items (pagesFetched=${dump.pagesFetched ?? 0}, total=${dump.total ?? 0})` };
+
+  const dumpKey = dump.key;
+  const pages = await BambooPage.find({ key: dumpKey }, {}).sort({ pageIndex: 1 }).lean();
+  const allItems = pages.flatMap((p) => p.items || []);
+  if (!allItems.length) {
+    return { ok: false, reason: `No items across pages (pagesFetched=${dump.pagesFetched ?? 0})` };
   }
 
   const byCategory = {
@@ -79,7 +84,7 @@ export async function buildCurated({ currencies = ["USD", "EUR", "CAD", "AUD"] }
     travel: [],
   };
 
-  for (const it of dump.items) {
+  for (const it of allItems) {
     const brand = normalizeBrand(it.brand);
     const category = BRAND_TO_CATEGORY[brand];
     if (!category) continue;
@@ -102,23 +107,23 @@ export async function buildCurated({ currencies = ["USD", "EUR", "CAD", "AUD"] }
     }
   }
 
-  const key = "default";
+  const curatedKey = "default";
   const payload = {
-    key,
+    key: curatedKey,
     items: [
       // Можна зберігати плоский масив або додати groups — зараз збережемо групи в source
     ],
     currencies,
     source: {
-      bambooPages: dump.pagesFetched || 0,
-      bambooCount: dump.total || dump.items.length,
+      bambooPages: pages.length || dump.pagesFetched || 0,
+      bambooCount: dump.total || allItems.length,
       groups: Object.fromEntries(Object.entries(byCategory).map(([k, v]) => [k, v.length])),
     },
     updatedAt: new Date(),
   };
 
   await CuratedCatalog.findOneAndUpdate(
-    { key },
+    { key: curatedKey },
     { $set: payload },
     { upsert: true, new: true }
   );
@@ -126,9 +131,10 @@ export async function buildCurated({ currencies = ["USD", "EUR", "CAD", "AUD"] }
   return {
     ok: true,
     counts: payload.source.groups,
+    totalItems: allItems.length,
     bamboo: {
-      pages: dump.pagesFetched ?? 0,
-      total: dump.total ?? dump.items.length,
+      pages: dump.pagesFetched ?? pages.length ?? 0,
+      total: dump.total ?? allItems.length,
       lastPage: dump.lastPage ?? null,
     },
   };
@@ -139,10 +145,14 @@ export async function getCuratedSection(section = "gaming") {
   if (!doc) return { ok: false, items: [] };
   // просто на основі останнього дампа повторно побудуємо секцію (щоб не тримати дубль)
   const dump = await BambooDump.findOne({}, {}, { sort: { updatedAt: -1 } }).lean();
-  if (!dump?.items?.length) return { ok: false, items: [] };
+  if (!dump) return { ok: false, items: [] };
+
+  const pages = await BambooPage.find({ key: dump.key }, {}).sort({ pageIndex: 1 }).lean();
+  const allItems = pages.flatMap((p) => p.items || []);
+  if (!allItems.length) return { ok: false, items: [] };
 
   const result = [];
-  for (const it of dump.items) {
+  for (const it of allItems) {
     const brand = normalizeBrand(it.brand);
     const category = BRAND_TO_CATEGORY[brand];
     if (category !== section) continue;
