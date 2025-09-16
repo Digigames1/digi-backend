@@ -1,5 +1,6 @@
 // src/routes/bamboo-export.mjs
 import { Router } from "express";
+import { mongoose } from "../db/mongoose.mjs";
 import { RateLimit } from "../models/RateLimit.mjs";
 import { BambooDump } from "../models/BambooDump.mjs";
 import { BambooPage } from "../models/BambooPage.mjs";
@@ -8,6 +9,44 @@ import { fetchCatalogPageWithRetry } from "../services/bambooClient.mjs";
 export const bambooExportRouter = Router();
 
 const RL_KEY = "bamboo:catalog";
+
+// Повертає загальну кількість айтемів у всіх сторінках для key
+export async function sumSavedItemsByKey(key) {
+  // ВАРІАНТ A: якщо це реальна модель з aggregate
+  if (BambooPage && typeof BambooPage.aggregate === "function") {
+    try {
+      const r = await BambooPage.aggregate([
+        { $match: { key } },
+        { $project: { count: { $size: "$items" } } },
+        { $group: { _id: null, total: { $sum: "$count" } } },
+      ]);
+      return r?.[0]?.total || 0;
+    } catch (e) {
+      console.warn("[export] BambooPage.aggregate failed, fallback to native:", e?.message || e);
+    }
+  }
+
+  // ВАРІАНТ B: native collection aggregate (навіть якщо модель не «жива»)
+  try {
+    const coll = mongoose.connection.collection("bamboo_pages");
+    const r = await coll
+      .aggregate([
+        { $match: { key } },
+        { $project: { count: { $size: "$items" } } },
+        { $group: { _id: null, total: { $sum: "$count" } } },
+      ])
+      .toArray();
+    return r?.[0]?.total || 0;
+  } catch (e) {
+    console.warn("[export] native aggregate failed, fallback to client sum:", e?.message || e);
+  }
+
+  // ВАРІАНТ C: без aggregate — витягнути сторінки та скласти довжину масивів
+  const pages = await BambooPage.find({ key }, { items: 1 }).lean();
+  let total = 0;
+  for (const p of pages) total += Array.isArray(p.items) ? p.items.length : 0;
+  return total;
+}
 
 bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
   try {
@@ -41,18 +80,35 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
       dump = null;
     } else if (resume && dump?.lastPage != null) {
       startPage = dump.lastPage + 1;
-      const stats = await BambooPage.aggregate([
-        { $match: { key } },
-        { $project: { count: { $size: "$items" } } },
-        { $group: { _id: null, total: { $sum: "$count" }, pages: { $sum: 1 } } },
-      ]);
-      if (stats?.[0]) {
-        pagesFetched = stats[0].pages || 0;
-        totalItems = stats[0].total || 0;
-      } else {
-        pagesFetched = dump?.pagesFetched || 0;
+      try {
+        totalItems = await sumSavedItemsByKey(key);
+      } catch (e) {
+        console.warn("[export] sumSavedItemsByKey failed during resume:", e?.message || e);
         totalItems = dump?.total || 0;
       }
+
+      try {
+        if (BambooPage && typeof BambooPage.countDocuments === "function") {
+          pagesFetched = await BambooPage.countDocuments({ key });
+        } else {
+          pagesFetched = await mongoose.connection.collection("bamboo_pages").countDocuments({ key });
+        }
+      } catch (e) {
+        console.warn("[export] countDocuments fallback for resume:", e?.message || e);
+        try {
+          const docs = await mongoose.connection
+            .collection("bamboo_pages")
+            .find({ key }, { projection: { _id: 1 } })
+            .toArray();
+          pagesFetched = Array.isArray(docs) ? docs.length : 0;
+        } catch (err) {
+          console.warn("[export] resume fallback using dump stats:", err?.message || err);
+          pagesFetched = dump?.pagesFetched || 0;
+        }
+      }
+
+      if (!pagesFetched) pagesFetched = dump?.pagesFetched || 0;
+      if (!totalItems) totalItems = dump?.total || 0;
     } else if (dump) {
       await BambooPage.deleteMany({ key }).catch(() => {});
     }
@@ -121,11 +177,7 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
     const nextRl = await RateLimit.findOne({ key: RL_KEY }).lean();
     const doc = await BambooDump.findOne({ key }).lean();
     const pages = await BambooPage.find({ key }, { items: 0 }).sort({ pageIndex: 1 }).lean();
-    const saved = await BambooPage.aggregate([
-      { $match: { key } },
-      { $project: { count: { $size: "$items" } } },
-      { $group: { _id: null, total: { $sum: "$count" } } },
-    ]).then((r) => r?.[0]?.total || 0);
+    const saved = await sumSavedItemsByKey(key);
     res.json({
       ok: true,
       pagesFetched,

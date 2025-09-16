@@ -2,7 +2,7 @@
 import { Router } from "express";
 import { RateLimit } from "../models/RateLimit.mjs";
 import { BambooDump } from "../models/BambooDump.mjs";
-import { BambooPage } from "../models/BambooPage.mjs";
+import { sumSavedItemsByKey } from "./bamboo-export.mjs";
 
 export const bambooStatusRouter = Router();
 
@@ -13,12 +13,19 @@ bambooStatusRouter.get("/bamboo/status", async (req, res) => {
   const keys = dumps.map(d => d.key).filter(Boolean);
   let countsByKey = new Map();
   if (keys.length) {
-    const agg = await BambooPage.aggregate([
-      { $match: { key: { $in: keys } } },
-      { $project: { key: "$key", count: { $size: "$items" } } },
-      { $group: { _id: "$key", total: { $sum: "$count" } } },
-    ]);
-    countsByKey = new Map(agg.map(row => [row._id, row.total || 0]));
+    const uniqueKeys = [...new Set(keys)];
+    const entries = await Promise.all(
+      uniqueKeys.map(async (key) => {
+        try {
+          const total = await sumSavedItemsByKey(key);
+          return [key, total || 0];
+        } catch (error) {
+          console.warn("[status] sumSavedItemsByKey failed:", error?.message || error);
+          return [key, 0];
+        }
+      })
+    );
+    countsByKey = new Map(entries);
   }
   dumps = dumps.map(d => ({
     key: d.key,
