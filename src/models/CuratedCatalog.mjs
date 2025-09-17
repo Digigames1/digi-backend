@@ -1,39 +1,22 @@
-// src/models/CuratedCatalog.mjs
 import { mongoose } from "../db/mongoose.mjs";
 
-const CuratedItemSchema = new mongoose.Schema(
+const Schema = new mongoose.Schema(
   {
-    productId: { type: Number, index: true },
-    name: String,
-    brand: String,
-    countryCode: String,
-    currencyCode: String,
-    price: Number,
-    logos: [String],
-    raw: {},
-  },
-  { _id: false }
-);
-
-const CuratedSchema = new mongoose.Schema(
-  {
-    key: { type: String, required: true, unique: true, index: true },
+    key: { type: String, required: true, index: true },
+    payload: {},
     updatedAt: { type: Date, default: Date.now, index: true },
-    items: { type: [CuratedItemSchema], default: [] },
-    currencies: { type: [String], default: [] },
-    source: { type: Object, default: {} },
   },
   { collection: "curated_catalog" }
 );
 
+Schema.index({ key: 1 }, { unique: true });
+
 const _Model =
-  (mongoose.models?.CuratedCatalog) || mongoose.model("CuratedCatalog", CuratedSchema);
+  (mongoose.models?.CuratedCatalog) || mongoose.model("CuratedCatalog", Schema);
 
 export const CuratedCatalog = _Model;
 export default _Model;
 
-if (typeof CuratedCatalog?.findOne !== "function") {
-  console.error("[CuratedCatalog] exported value is not a real Mongoose Model");
-} else {
-  console.log("[model] CuratedCatalog registered (has findOne)");
-}
+console.log("[model] CuratedCatalog registered (has findOne)", {
+  hasFindOne: typeof CuratedCatalog?.findOne === "function",
+});

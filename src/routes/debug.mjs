@@ -8,24 +8,36 @@ router.get("/ping", (_req, res) => {
   res.json({ ok: true, ts: new Date().toISOString() });
 });
 
-router.get("/wire", async (_req, res) => {
-  const m1 = mongoose;
-  const m2 = (await import("mongoose")).default;
+router.get("/wire", (_req, res) => {
+  const modelNames = typeof mongoose.modelNames === "function" ? mongoose.modelNames() : [];
   res.json({
     ok: true,
-    sameInstance: m1 === m2,
-    version: m1?.version ?? null,
-    readyState: m1?.connection?.readyState ?? null,
-    modelNames: typeof m1.modelNames === "function" ? m1.modelNames() : []
+    sameInstance: true,
+    version: mongoose?.version ?? null,
+    readyState: mongoose?.connection?.readyState ?? null,
+    modelNames,
   });
 });
 
-router.get("/mongoose", async (_req, res) => {
-  if (!mongoose.models?.CuratedCatalog || !mongoose.models?.BambooDump) {
-    try { await import("../models/index.mjs"); } catch {}
+async function ensureModelsLoaded() {
+  const loaders = [];
+  if (!mongoose.models?.CuratedCatalog) loaders.push(import("../models/CuratedCatalog.mjs"));
+  if (!mongoose.models?.BambooDump) loaders.push(import("../models/BambooDump.mjs"));
+  if (!mongoose.models?.BambooPage) loaders.push(import("../models/BambooPage.mjs"));
+  if (loaders.length) {
+    try {
+      await Promise.all(loaders);
+    } catch (err) {
+      console.warn("[debug] ensureModelsLoaded failed", err?.message || err);
+    }
   }
+}
+
+router.get("/mongoose", async (_req, res) => {
+  await ensureModelsLoaded();
   const bd = mongoose.models?.BambooDump;
   const cc = mongoose.models?.CuratedCatalog;
+  const bp = mongoose.models?.BambooPage;
 
   res.json({
     ok: true,
@@ -33,7 +45,7 @@ router.get("/mongoose", async (_req, res) => {
       connectionReadyState: mongoose.connection?.readyState ?? null,
       dbName: mongoose.connection?.name ?? null,
       version: mongoose?.version ?? null,
-      modelNames: (typeof mongoose.modelNames === "function") ? mongoose.modelNames() : [],
+      modelNames: typeof mongoose.modelNames === "function" ? mongoose.modelNames() : [],
     },
     curatedCatalog: {
       registered: !!cc,
@@ -47,16 +59,20 @@ router.get("/mongoose", async (_req, res) => {
       hasFindOneAndUpdate: typeof bd?.findOneAndUpdate === "function",
       hasDeleteOne: typeof bd?.deleteOne === "function",
     },
+    bambooPage: {
+      registered: !!bp,
+      hasFindOne: typeof bp?.findOne === "function",
+      hasFindOneAndUpdate: typeof bp?.findOneAndUpdate === "function",
+      hasAggregate: typeof bp?.aggregate === "function",
+    },
   });
 });
 
 // GET /api/debug/models
 router.get("/debug/models", async (_req, res) => {
-  if (!mongoose.models?.CuratedCatalog || !mongoose.models?.BambooDump) {
-    try { await import("../models/index.mjs"); } catch {}
-  }
+  await ensureModelsLoaded();
   const names = typeof mongoose.modelNames === "function" ? mongoose.modelNames() : [];
-  res.json({ ok: true, modelNames: names });
+  res.json(names);
 });
 
 // GET /api/debug/routes
@@ -85,8 +101,8 @@ router.post("/reload-models", async (_req, res) => {
   try {
     if (mongoose.models?.CuratedCatalog) delete mongoose.models.CuratedCatalog;
     if (mongoose.models?.BambooDump) delete mongoose.models.BambooDump;
-    await import(new URL("../models/CuratedCatalog.mjs", import.meta.url));
-    await import(new URL("../models/BambooDump.mjs", import.meta.url));
+    if (mongoose.models?.BambooPage) delete mongoose.models.BambooPage;
+    await ensureModelsLoaded();
     const names = mongoose.modelNames?.() ?? [];
     res.json({ ok: true, modelNames: names });
   } catch (e) {

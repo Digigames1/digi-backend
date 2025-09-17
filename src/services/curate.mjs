@@ -108,6 +108,7 @@ export async function buildCurated({ currencies = ["USD", "EUR", "CAD", "AUD"] }
   }
 
   const curatedKey = "default";
+  const now = new Date();
   const payload = {
     key: curatedKey,
     items: [
@@ -119,12 +120,12 @@ export async function buildCurated({ currencies = ["USD", "EUR", "CAD", "AUD"] }
       bambooCount: dump.total || allItems.length,
       groups: Object.fromEntries(Object.entries(byCategory).map(([k, v]) => [k, v.length])),
     },
-    updatedAt: new Date(),
+    updatedAt: now,
   };
 
   await CuratedCatalog.findOneAndUpdate(
     { key: curatedKey },
-    { $set: payload },
+    { $set: { payload, updatedAt: now } },
     { upsert: true, new: true }
   );
 
