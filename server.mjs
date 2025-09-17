@@ -43,12 +43,14 @@ async function bootstrap() {
   await import("./src/models/CuratedCatalog.mjs");
 
   // Імпортуємо роутери
+  const { debugModelRouter } = await import("./src/routes/debug-model.mjs");
   const { default: debugRouter } = await import("./src/routes/debug.mjs");
   const { bambooExportRouter } = await import("./src/routes/bamboo-export.mjs");
   const { bambooItemsRouter } = await import("./src/routes/bamboo-items.mjs");
   const { bambooPagesRouter } = await import("./src/routes/bamboo-pages.mjs");
   const { bambooStatusRouter } = await import("./src/routes/bamboo-status.mjs");
   const { curatedRouter } = await import("./src/routes/curated.mjs");
+  app.use("/api", debugModelRouter);
   app.use("/api", debugRouter);
   app.use("/api", bambooExportRouter);
   app.use("/api", bambooItemsRouter);
@@ -56,9 +58,8 @@ async function bootstrap() {
   app.use("/api", bambooStatusRouter);
   app.use("/api", curatedRouter);
 
-  // Log what's registered
-  const names = typeof mongoose.modelNames === "function" ? mongoose.modelNames() : [];
-  console.log("🧩 Models registered:", names);
+  // Лог зареєстрованих моделей на singleton-інстансі
+  console.log("🧩 Models registered:", mongoose.modelNames());
 
   app.listen(PORT, () => {
     console.log(`Server on :${PORT}`);
