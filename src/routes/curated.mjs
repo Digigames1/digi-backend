@@ -16,11 +16,12 @@ curatedRouter.get("/curated/refresh", async (req, res) => {
 /** GET /api/curated/status */
 curatedRouter.get("/curated/status", async (_req, res) => {
   const doc = await CuratedCatalog.findOne({ key: "default" }).lean();
+  const payload = doc?.payload || {};
   res.json({
     ok: true,
-    updatedAt: doc?.updatedAt || null,
-    currencies: doc?.currencies || [],
-    source: doc?.source || {},
+    updatedAt: doc?.updatedAt || payload?.updatedAt || null,
+    currencies: payload?.currencies || [],
+    source: payload?.source || {},
   });
 });
 
@@ -31,4 +32,3 @@ curatedRouter.get("/curated/gaming", async (_req, res) => {
 });
 
 export default curatedRouter;
-

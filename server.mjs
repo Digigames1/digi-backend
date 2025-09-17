@@ -35,7 +35,13 @@ const PORT = process.env.PORT || 10000;
 
 // Старт з'єднання і роутів
 async function bootstrap() {
-  const m = await connectMongo();
+  await connectMongo();
+
+  // Force-load models so they compile on the single mongoose instance
+  await import("./src/models/BambooDump.mjs");
+  await import("./src/models/BambooPage.mjs");
+  await import("./src/models/CuratedCatalog.mjs");
+
   // Імпортуємо роутери
   const { default: debugRouter } = await import("./src/routes/debug.mjs");
   const { bambooExportRouter } = await import("./src/routes/bamboo-export.mjs");
@@ -50,8 +56,9 @@ async function bootstrap() {
   app.use("/api", bambooStatusRouter);
   app.use("/api", curatedRouter);
 
-  const names = typeof m.modelNames === 'function' ? m.modelNames() : [];
-  console.log('🧩 Models registered:', names.join(', ') || '[]');
+  // Log what's registered
+  const names = typeof mongoose.modelNames === "function" ? mongoose.modelNames() : [];
+  console.log("🧩 Models registered:", names);
 
   app.listen(PORT, () => {
     console.log(`Server on :${PORT}`);

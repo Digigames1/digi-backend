@@ -11,13 +11,16 @@ const KEY = "curated:v1";
 const now = () => Date.now();
 
 async function readCache() {
-  return CuratedCatalog.findOne({ key: KEY }).lean();
+  const doc = await CuratedCatalog.findOne({ key: KEY }).lean();
+  if (!doc) return null;
+  const payload = doc.payload || {};
+  return { ...payload, updatedAt: doc.updatedAt };
 }
 
 async function writeCache(data) {
   await CuratedCatalog.updateOne(
     { key: KEY },
-    { $set: { data, updatedAt: new Date() } },
+    { $set: { payload: { data }, updatedAt: new Date() } },
     { upsert: true }
   );
 }
