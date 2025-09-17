@@ -178,18 +178,24 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
       });
     }
 
-    const nextRl = await RateLimit.findOne({ key: RL_KEY }).lean();
-    const doc = await BambooDump.findOne({ key }).lean();
-    const pages = await BambooPage.find({ key }, { items: 0 }).sort({ pageIndex: 1 }).lean();
-    const saved = await sumSavedItemsByKey(key);
-    res.json({
+    const pagesDocs = await BambooPage.find({ key }, { items: 0 })
+      .sort({ pageIndex: 1 })
+      .lean();
+    return res.json({
       ok: true,
       pagesFetched,
       totalItems,
-      lastPage: doc?.lastPage ?? null,
-      rateLimit: nextRl?.nextRetryAt ? { nextRetryAt: nextRl.nextRetryAt } : null,
-      pages,
-      savedItems: saved,
+      lastPage: pagesDocs?.length ? pagesDocs.at(-1).pageIndex : null,
+      rateLimit: null,
+      pages: pagesDocs.map(p => ({ pageIndex: p.pageIndex, updatedAt: p.updatedAt })),
+      savedItems: await (async () => {
+        let sum = 0;
+        for (const p of pagesDocs) {
+          const doc = await BambooPage.findOne({ key, pageIndex: p.pageIndex }, { items: 1 }).lean();
+          sum += Array.isArray(doc?.items) ? doc.items.length : 0;
+        }
+        return sum;
+      })(),
     });
   } catch (error) {
     console.error("[export] handler failed", error);

@@ -1,8 +1,9 @@
+// src/models/BambooPage.mjs
 import { mongoose } from "../db/mongoose.mjs";
 
-const ItemSchema = new mongoose.Schema(
+const BambooProductSchema = new mongoose.Schema(
   {
-    id: Number,
+    id: { type: Number, index: true },
     name: String,
     brand: String,
     countryCode: String,
@@ -15,26 +16,30 @@ const ItemSchema = new mongoose.Schema(
   { _id: false }
 );
 
-const Schema = new mongoose.Schema(
+const BambooPageSchema = new mongoose.Schema(
   {
     key: { type: String, required: true, index: true },
     pageIndex: { type: Number, required: true, index: true },
-    items: { type: [ItemSchema], default: [] },
+    items: { type: [BambooProductSchema], default: [] },
     updatedAt: { type: Date, default: Date.now, index: true },
   },
   { collection: "bamboo_pages" }
 );
 
-Schema.index({ key: 1, pageIndex: 1 }, { unique: true });
+BambooPageSchema.index({ key: 1, pageIndex: 1 }, { unique: true });
 
-const _Model =
-  (mongoose.models?.BambooPage) || mongoose.model("BambooPage", Schema);
+// IMPORTANT: compile once on the singleton mongoose instance
+const Model =
+  (mongoose.models && mongoose.models.BambooPage) ||
+  mongoose.model("BambooPage", BambooPageSchema);
 
-export const BambooPage = _Model;
-export default _Model;
+// Named + default exports MUST point to the SAME object
+export const BambooPage = Model;
+export default Model;
 
+// Log AFTER model is created so modelName is not null
 console.log("[model] BambooPage ready:", {
   modelName: BambooPage?.modelName || null,
   hasFind: typeof BambooPage?.find === "function",
-  hasFindOneAndUpdate: typeof BambooPage?.findOneAndUpdate === "function",
+  hasF1U: typeof BambooPage?.findOneAndUpdate === "function",
 });
