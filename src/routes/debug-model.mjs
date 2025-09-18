@@ -11,5 +11,6 @@ debugModelRouter.get("/debug/model/BambooPage", (_req, res) => {
     hasFind: typeof BambooPage?.find === "function",
     hasF1U: typeof BambooPage?.findOneAndUpdate === "function",
     registered: mongoose.modelNames(),
+    moduleUrl: import.meta.url,
   });
 });
