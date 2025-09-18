@@ -31,7 +31,6 @@ BambooPageSchema.index({ key: 1, pageIndex: 1 }, { unique: true });
 const Model =
   (mongoose.models?.BambooPage) || mongoose.model("BambooPage", BambooPageSchema);
 
-// named + default = той самий об’єкт (РЕАЛЬНА модель!)
 export const BambooPage = Model;
 export default Model;
 
