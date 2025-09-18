@@ -28,15 +28,13 @@ const BambooPageSchema = new mongoose.Schema(
 
 BambooPageSchema.index({ key: 1, pageIndex: 1 }, { unique: true });
 
-// compile on the singleton mongoose instance
 const Model =
   (mongoose.models?.BambooPage) || mongoose.model("BambooPage", BambooPageSchema);
 
-// named + default must point to the SAME object (the real model)
+// named + default = той самий об’єкт (РЕАЛЬНА модель!)
 export const BambooPage = Model;
 export default Model;
 
-// sanity log AFTER model creation
 console.log("[model] BambooPage ready:", {
   modelName: BambooPage?.modelName || null,
   hasFind: typeof BambooPage?.find === "function",
