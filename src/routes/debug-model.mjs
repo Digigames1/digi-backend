@@ -10,6 +10,6 @@ debugModelRouter.get("/debug/model/BambooPage", (_req, res) => {
     modelName: BambooPage?.modelName || null,
     hasFind: typeof BambooPage?.find === "function",
     hasF1U: typeof BambooPage?.findOneAndUpdate === "function",
-    registered: typeof mongoose.modelNames === "function" ? mongoose.modelNames() : [],
+    registered: mongoose.modelNames(),
   });
 });

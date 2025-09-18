@@ -42,6 +42,16 @@ async function bootstrap() {
   await import("./src/models/BambooPage.mjs");
   await import("./src/models/CuratedCatalog.mjs");
 
+  const modelNames = mongoose.modelNames();
+  console.log("🧩 Models registered:", modelNames);
+
+  const { BambooPage } = await import("./src/models/BambooPage.mjs");
+  if (!BambooPage?.modelName || typeof BambooPage.find !== "function") {
+    throw new Error(
+      "[fatal] BambooPage is not a real Mongoose model (modelName is null or find missing)."
+    );
+  }
+
   // Імпортуємо роутери
   const { debugModelRouter } = await import("./src/routes/debug-model.mjs");
   const { default: debugRouter } = await import("./src/routes/debug.mjs");
@@ -57,9 +67,6 @@ async function bootstrap() {
   app.use("/api", bambooPagesRouter);
   app.use("/api", bambooStatusRouter);
   app.use("/api", curatedRouter);
-
-  // Лог зареєстрованих моделей на singleton-інстансі
-  console.log("🧩 Models registered:", mongoose.modelNames());
 
   app.listen(PORT, () => {
     console.log(`Server on :${PORT}`);
