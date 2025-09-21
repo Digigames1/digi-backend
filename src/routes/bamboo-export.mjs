@@ -1,6 +1,6 @@
 // src/routes/bamboo-export.mjs
 import { Router } from "express";
-import { mongoose, getNativeCollection } from "../db/mongoose.mjs";
+import { getNativeCollection } from "../db/mongoose.mjs";
 import { RateLimit } from "../models/RateLimit.mjs";
 import { BambooDump } from "../models/BambooDump.mjs";
 import { BambooPage } from "../models/BambooPage.mjs";
@@ -55,17 +55,43 @@ export async function sumSavedItemsByKey(key) {
 
 bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
   try {
-    const PageSize = parseInt(req.query.PageSize ?? process.env.CATALOG_PAGE_SIZE ?? "100", 10);
-    const maxPages = parseInt(req.query.maxPages ?? process.env.CATALOG_MAX_PAGES ?? "30", 10);
-    const resume = req.query.resume == 1;
-    const force = req.query.force == 1;
+    const rawQuery = { ...req.query };
+    const {
+      PageSize: PageSizeParam,
+      PageIndex: _ignoredPageIndex,
+      maxPages: maxPagesParam,
+      resume: resumeParam,
+      force: forceParam,
+      ...restQuery
+    } = rawQuery;
 
-    const passthrough = {};
-    ["CurrencyCode","CountryCode","Name","ModifiedDate","ProductId","BrandId","TargetCurrency"].forEach(k=>{
-      if (req.query[k] != null) passthrough[k] = req.query[k];
-    });
+    const defaultPageSize = parseInt(process.env.CATALOG_PAGE_SIZE ?? "100", 10);
+    const parsedPageSize = parseInt(PageSizeParam ?? "", 10);
+    const PageSize = Number.isFinite(parsedPageSize)
+      ? parsedPageSize
+      : Number.isFinite(defaultPageSize)
+        ? defaultPageSize
+        : 100;
 
-    const key = JSON.stringify({ PageSize, ...passthrough });
+    const defaultMaxPages = parseInt(process.env.CATALOG_MAX_PAGES ?? "30", 10);
+    const parsedMaxPages = parseInt(maxPagesParam ?? "", 10);
+    const maxPages = Number.isFinite(parsedMaxPages)
+      ? parsedMaxPages
+      : Number.isFinite(defaultMaxPages)
+        ? defaultMaxPages
+        : 30;
+    const resume = resumeParam == 1;
+    const force = forceParam == 1;
+
+    const passthrough = { ...restQuery };
+    const keyPayload = { PageSize };
+    for (const k of Object.keys(passthrough).sort()) {
+      const value = passthrough[k];
+      if (value !== undefined) {
+        keyPayload[k] = value;
+      }
+    }
+    const key = JSON.stringify(keyPayload);
 
     const rl = await RateLimit.findOne({ key: RL_KEY }).lean();
     if (rl?.nextRetryAt && rl.nextRetryAt > new Date()) {
@@ -149,14 +175,21 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
         }
       }
 
-      await BambooPage.findOneAndUpdate(
+      const pageDoc = {
+        key,
+        pageIndex,
+        items: Array.isArray(pageItems) ? pageItems : [],
+        updatedAt: new Date(),
+      };
+
+      const saved = await BambooPage.findOneAndUpdate(
         { key, pageIndex },
-        { $set: { items: pageItems, updatedAt: new Date() } },
-        { upsert: true, new: true }
+        { $set: pageDoc },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
       );
 
       pagesFetched++;
-      totalItems += pageItems.length;
+      totalItems += Array.isArray(saved?.items) ? saved.items.length : pageItems.length;
 
       const update = {
         $set: {
@@ -175,12 +208,19 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
         pageItems: pageItems.length,
         total: totalItems,
         key,
+        docId: saved?._id?.toString?.() ?? saved?._id ?? null,
+        savedItems: Array.isArray(saved?.items) ? saved.items.length : null,
       });
     }
 
-    const pagesDocs = await BambooPage.find({ key }, { items: 0 })
-      .sort({ pageIndex: 1 })
-      .lean();
+    const pagesDocs = await BambooPage.find({ key }, { items: 0 }).sort({ pageIndex: 1 }).lean();
+
+    let savedItems = 0;
+    for (const p of pagesDocs) {
+      const full = await BambooPage.findOne({ key, pageIndex: p.pageIndex }, { items: 1 }).lean();
+      savedItems += Array.isArray(full?.items) ? full.items.length : 0;
+    }
+
     return res.json({
       ok: true,
       pagesFetched,
@@ -188,14 +228,7 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
       lastPage: pagesDocs?.length ? pagesDocs.at(-1).pageIndex : null,
       rateLimit: null,
       pages: pagesDocs.map(p => ({ pageIndex: p.pageIndex, updatedAt: p.updatedAt })),
-      savedItems: await (async () => {
-        let sum = 0;
-        for (const p of pagesDocs) {
-          const doc = await BambooPage.findOne({ key, pageIndex: p.pageIndex }, { items: 1 }).lean();
-          sum += Array.isArray(doc?.items) ? doc.items.length : 0;
-        }
-        return sum;
-      })(),
+      savedItems,
     });
   } catch (error) {
     console.error("[export] handler failed", error);
