@@ -83,15 +83,16 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
     const resume = resumeParam == 1;
     const force = forceParam == 1;
 
-    const passthrough = { ...restQuery };
-    const keyPayload = { PageSize };
-    for (const k of Object.keys(passthrough).sort()) {
-      const value = passthrough[k];
+    const passthrough = {};
+    for (const k of Object.keys(restQuery || {}).sort()) {
+      const value = restQuery[k];
       if (value !== undefined) {
-        keyPayload[k] = value;
+        passthrough[k] = value;
       }
     }
-    const key = JSON.stringify(keyPayload);
+    // сформуй стабільний ключ (мінімум PageSize; НЕ включай pageIndex у key)
+    const keyBase = Object.keys(passthrough).length ? { PageSize, ...passthrough } : { PageSize };
+    const key = JSON.stringify(keyBase);
 
     const rl = await RateLimit.findOne({ key: RL_KEY }).lean();
     if (rl?.nextRetryAt && rl.nextRetryAt > new Date()) {
@@ -189,7 +190,7 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
       );
 
       pagesFetched++;
-      totalItems += Array.isArray(saved?.items) ? saved.items.length : pageItems.length;
+      totalItems += Array.isArray(saved?.items) ? saved.items.length : pageDoc.items.length;
 
       const update = {
         $set: {
@@ -205,11 +206,10 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
       console.log("[export] page persisted", {
         pageIndex,
         pagesFetched,
-        pageItems: pageItems.length,
+        pageItems: pageDoc.items.length,
         total: totalItems,
         key,
-        docId: saved?._id?.toString?.() ?? saved?._id ?? null,
-        savedItems: Array.isArray(saved?.items) ? saved.items.length : null,
+        docId: saved?._id || null,
       });
     }
 
