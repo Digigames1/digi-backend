@@ -53,6 +53,26 @@ export async function sumSavedItemsByKey(key) {
   }
 }
 
+async function upsertBambooPage(filter, pageDoc) {
+  const update = { $set: pageDoc };
+  const baseOptions = { upsert: true, writeConcern: { w: 1 } };
+
+  if (BambooPage && typeof BambooPage.updateOne === "function") {
+    return BambooPage.updateOne(filter, update, baseOptions);
+  }
+
+  if (BambooPage && typeof BambooPage.findOneAndUpdate === "function") {
+    return BambooPage.findOneAndUpdate(filter, update, {
+      ...baseOptions,
+      returnDocument: "after",
+      setDefaultsOnInsert: true,
+    });
+  }
+
+  const coll = getNativeCollection("bamboo_pages");
+  return coll.updateOne(filter, update, baseOptions);
+}
+
 bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
   try {
     const rawQuery = { ...req.query };
@@ -185,11 +205,7 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
         updatedAt: new Date(),
       };
 
-      await BambooPage.updateOne(
-        { key, pageIndex },
-        { $set: pageDoc },
-        { upsert: true, writeConcern: { w: 1 } }
-      );
+      await upsertBambooPage({ key, pageIndex }, pageDoc);
 
       const saved = await BambooPage.findOne(
         { key, pageIndex },
