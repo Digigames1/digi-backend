@@ -53,24 +53,264 @@ export async function sumSavedItemsByKey(key) {
   }
 }
 
+function pickString(...values) {
+  for (const value of values) {
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (trimmed) return trimmed;
+    }
+    if (typeof value === "number" && !Number.isNaN(value)) {
+      return String(value);
+    }
+  }
+  return undefined;
+}
+
+function pickNumber(...values) {
+  for (const value of values) {
+    if (value === null || value === undefined) continue;
+    const num = Number(value);
+    if (Number.isFinite(num)) return num;
+  }
+  return undefined;
+}
+
+function pickDate(...values) {
+  for (const value of values) {
+    if (!value) continue;
+    if (value instanceof Date) {
+      const time = value.getTime?.();
+      if (!Number.isNaN(time)) return value;
+      continue;
+    }
+    const date = new Date(value);
+    if (!Number.isNaN(date.getTime())) return date;
+  }
+  return null;
+}
+
+function extractPageItems(response) {
+  const items = [];
+  const dedupe = new Set();
+  const visited = new WeakSet();
+  let rawCount = 0;
+
+  const isObjectArray = (value) =>
+    Array.isArray(value) && value.some((entry) => entry && typeof entry === "object");
+
+  const walk = (node, ctx) => {
+    if (!node) return;
+
+    if (Array.isArray(node)) {
+      if (visited.has(node)) return;
+      visited.add(node);
+      rawCount += node.length;
+      for (const entry of node) {
+        walk(entry, ctx);
+      }
+      return;
+    }
+
+    if (typeof node !== "object") return;
+    if (visited.has(node)) return;
+    visited.add(node);
+
+    let forwarded = false;
+    for (const value of Object.values(node)) {
+      if (isObjectArray(value)) {
+        forwarded = true;
+        walk(value, node);
+      }
+    }
+
+    if (forwarded) return;
+
+    const product = node;
+
+    const idKey = pickString(
+      product.id,
+      product.productId,
+      product.productID,
+      product.ProductId,
+      product.sku,
+      product.code,
+      product.itemId,
+      product.itemID,
+      product.programProductId
+    );
+    const nameKey = pickString(product.name, product.productName, product.title, product.displayName, product.itemName);
+    const brandName =
+      pickString(
+        product.brand,
+        product.brandName,
+        product.brand_title,
+        product.programBrand,
+        product.program,
+        product.vendor,
+        product.vendorName,
+        ctx?.name,
+        ctx?.brand,
+        ctx?.brandName,
+        ctx?.brand_title,
+        ctx?.programBrand,
+        ctx?.program
+      ) || null;
+
+    let dedupeKey;
+    if (idKey) {
+      dedupeKey = `${idKey}#${brandName || ""}`;
+    } else if (brandName && nameKey) {
+      dedupeKey = `${brandName}#${nameKey}`;
+    } else if (nameKey) {
+      dedupeKey = nameKey;
+    } else {
+      dedupeKey = `raw#${items.length}`;
+    }
+    if (dedupe.has(dedupeKey)) return;
+    dedupe.add(dedupeKey);
+
+    const productId = pickNumber(
+      product.id,
+      product.productId,
+      product.productID,
+      product.ProductId,
+      product.sku,
+      product.code,
+      product.itemId,
+      product.itemID,
+      product.programProductId
+    );
+
+    const productName =
+      nameKey ||
+      pickString(product.description, product.shortDescription) ||
+      brandName ||
+      idKey ||
+      null;
+
+    const countryCode =
+      pickString(
+        product.countryCode,
+        product.country,
+        product.countryIso,
+        product.countryIsoCode,
+        product.countryISO,
+        product.region,
+        ctx?.countryCode,
+        ctx?.country,
+        ctx?.countryIso,
+        ctx?.countryIsoCode,
+        ctx?.region
+      ) || null;
+
+    const currencyCode =
+      pickString(
+        product.currencyCode,
+        product.currency,
+        product.currencyIso,
+        product.currencyISO,
+        product.priceCurrency,
+        product.price?.currencyCode,
+        product.price?.currency,
+        ctx?.currencyCode,
+        ctx?.currency,
+        ctx?.currencyIso,
+        ctx?.currencyISO
+      ) || null;
+
+    const priceMin =
+      pickNumber(
+        product.price?.min,
+        product.priceMin,
+        product.minPrice,
+        product.lowestDenomination,
+        product.minDenomination,
+        product.minDenominationValue,
+        product.denominationMin,
+        product.denominationLow,
+        product.minimumAmount,
+        product.min
+      ) ?? null;
+
+    const priceMax =
+      pickNumber(
+        product.price?.max,
+        product.priceMax,
+        product.maxPrice,
+        product.highestDenomination,
+        product.maxDenomination,
+        product.maxDenominationValue,
+        product.denominationMax,
+        product.denominationHigh,
+        product.maximumAmount,
+        product.max
+      ) ?? null;
+
+    const modifiedDate =
+      pickDate(
+        product.modifiedDate,
+        product.lastModified,
+        product.updatedAt,
+        product.lastUpdate,
+        product.lastUpdateDate,
+        product.modifiedAt,
+        product.updatedOn,
+        product.lastModifiedDate
+      ) || null;
+
+    items.push({
+      brand: brandName,
+      id: productId ?? null,
+      name: productName || "Unnamed product",
+      countryCode,
+      currencyCode,
+      priceMin,
+      priceMax,
+      modifiedDate,
+      raw: product,
+    });
+  };
+
+  walk(response, null);
+
+  return { items, rawCount };
+}
+
 async function upsertBambooPage(filter, pageDoc) {
   const update = { $set: pageDoc };
   const baseOptions = { upsert: true, writeConcern: { w: 1 } };
-
-  if (BambooPage && typeof BambooPage.updateOne === "function") {
-    return BambooPage.updateOne(filter, update, baseOptions);
-  }
+  const projection = { _id: 1, pageIndex: 1, updatedAt: 1 };
 
   if (BambooPage && typeof BambooPage.findOneAndUpdate === "function") {
-    return BambooPage.findOneAndUpdate(filter, update, {
+    const query = BambooPage.findOneAndUpdate(filter, update, {
       ...baseOptions,
-      returnDocument: "after",
       setDefaultsOnInsert: true,
+      returnDocument: "after",
+      new: true,
+      projection,
     });
+    if (typeof query.lean === "function") {
+      return await query.lean();
+    }
+    const doc = await query;
+    return doc?.toObject?.() || doc;
+  }
+
+  if (BambooPage && typeof BambooPage.updateOne === "function") {
+    await BambooPage.updateOne(filter, update, baseOptions);
+    if (typeof BambooPage.findOne === "function") {
+      return BambooPage.findOne(filter, projection).lean();
+    }
   }
 
   const coll = getNativeCollection("bamboo_pages");
-  return coll.updateOne(filter, update, baseOptions);
+  const native = await coll.findOneAndUpdate(filter, update, {
+    ...baseOptions,
+    returnDocument: "after",
+    projection,
+  });
+  if (native?.value) return native.value;
+  return coll.findOne(filter, { projection });
 }
 
 bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
@@ -177,26 +417,19 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
         break;
       }
 
-      if (!resp || !Array.isArray(resp.items) || resp.items.length === 0) break;
+      const { items: pageItems, rawCount } = extractPageItems(resp);
 
-      const pageItems = [];
-      for (const brand of resp.items || []) {
-        for (const p of brand.products || []) {
-          pageItems.push({
-            brand: brand.name,
-            id: p.id,
-            name: p.name,
-            countryCode: p.countryCode,
-            currencyCode: p.currencyCode || p?.price?.currencyCode,
-            priceMin: p.price?.min,
-            priceMax: p.price?.max,
-            modifiedDate: p.modifiedDate ? new Date(p.modifiedDate) : null,
-            raw: p,
-          });
-        }
+      if (!Array.isArray(pageItems) || pageItems.length === 0) {
+        if (!rawCount) break;
+        console.warn("[export] no catalog items extracted", {
+          pageIndex,
+          rawCount,
+          keys: Object.keys(resp || {}),
+        });
+        continue;
       }
 
-      const items = Array.isArray(pageItems) ? pageItems : [];
+      const items = pageItems;
 
       const pageDoc = {
         key,
@@ -205,12 +438,7 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
         updatedAt: new Date(),
       };
 
-      await upsertBambooPage({ key, pageIndex }, pageDoc);
-
-      const saved = await BambooPage.findOne(
-        { key, pageIndex },
-        { _id: 1, pageIndex: 1, updatedAt: 1 }
-      ).lean();
+      const saved = await upsertBambooPage({ key, pageIndex }, pageDoc);
 
       pagesFetched++;
       totalItems += items.length;
@@ -232,16 +460,21 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
         pageItems: items.length,
         total: totalItems,
         key,
-        docId: saved?._id || null,
+        docId: saved?._id ? String(saved._id) : null,
       });
     }
 
     const pagesDocs = await BambooPage.find({ key }, { items: 0 }).sort({ pageIndex: 1 }).lean();
 
     let savedItems = 0;
-    for (const p of pagesDocs) {
-      const full = await BambooPage.findOne({ key, pageIndex: p.pageIndex }, { items: 1 }).lean();
-      savedItems += Array.isArray(full?.items) ? full.items.length : 0;
+    try {
+      savedItems = await sumSavedItemsByKey(key);
+    } catch (err) {
+      console.warn("[export] sumSavedItemsByKey failed at finalize:", err?.message || err);
+      for (const p of pagesDocs) {
+        const full = await BambooPage.findOne({ key, pageIndex: p.pageIndex }, { items: 1 }).lean();
+        savedItems += Array.isArray(full?.items) ? full.items.length : 0;
+      }
     }
 
     return res.json({
