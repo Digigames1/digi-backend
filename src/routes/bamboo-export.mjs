@@ -176,21 +176,28 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
         }
       }
 
+      const items = Array.isArray(pageItems) ? pageItems : [];
+
       const pageDoc = {
         key,
         pageIndex,
-        items: Array.isArray(pageItems) ? pageItems : [],
+        items,
         updatedAt: new Date(),
       };
 
-      const saved = await BambooPage.findOneAndUpdate(
+      await BambooPage.updateOne(
         { key, pageIndex },
         { $set: pageDoc },
-        { upsert: true, new: true, setDefaultsOnInsert: true }
+        { upsert: true, writeConcern: { w: 1 } }
       );
 
+      const saved = await BambooPage.findOne(
+        { key, pageIndex },
+        { _id: 1, pageIndex: 1, updatedAt: 1 }
+      ).lean();
+
       pagesFetched++;
-      totalItems += Array.isArray(saved?.items) ? saved.items.length : pageDoc.items.length;
+      totalItems += items.length;
 
       const update = {
         $set: {
@@ -206,7 +213,7 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
       console.log("[export] page persisted", {
         pageIndex,
         pagesFetched,
-        pageItems: pageDoc.items.length,
+        pageItems: items.length,
         total: totalItems,
         key,
         docId: saved?._id || null,

@@ -58,6 +58,7 @@ async function bootstrap() {
   const { bambooExportRouter } = await import("./src/routes/bamboo-export.mjs");
   const { bambooItemsRouter } = await import("./src/routes/bamboo-items.mjs");
   const { bambooPagesRouter } = await import("./src/routes/bamboo-pages.mjs");
+  const { bambooPeekRouter } = await import("./src/routes/bamboo-peek.mjs");
   const { bambooStatusRouter } = await import("./src/routes/bamboo-status.mjs");
   const { curatedRouter } = await import("./src/routes/curated.mjs");
   app.use("/api", debugModelRouter);
@@ -65,6 +66,7 @@ async function bootstrap() {
   app.use("/api", bambooExportRouter);
   app.use("/api", bambooItemsRouter);
   app.use("/api", bambooPagesRouter);
+  app.use("/api", bambooPeekRouter);
   app.use("/api", bambooStatusRouter);
   app.use("/api", curatedRouter);
 
