@@ -53,24 +53,361 @@ export async function sumSavedItemsByKey(key) {
   }
 }
 
+function pickString(...values) {
+  for (const value of values) {
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (trimmed) return trimmed;
+    }
+    if (typeof value === "number" && !Number.isNaN(value)) {
+      return String(value);
+    }
+  }
+  return undefined;
+}
+
+function pickNumber(...values) {
+  for (const value of values) {
+    if (value === null || value === undefined) continue;
+    const num = Number(value);
+    if (Number.isFinite(num)) return num;
+  }
+  return undefined;
+}
+
+function pickDate(...values) {
+  for (const value of values) {
+    if (!value) continue;
+    if (value instanceof Date) {
+      const time = value.getTime?.();
+      if (!Number.isNaN(time)) return value;
+      continue;
+    }
+    const date = new Date(value);
+    if (!Number.isNaN(date.getTime())) return date;
+  }
+  return null;
+}
+
+const PRODUCT_CONTAINER_KEYS = [
+  "products",
+  "Products",
+  "catalogItems",
+  "CatalogItems",
+  "productList",
+  "ProductList",
+];
+
+const PRODUCT_NAME_KEYS = [
+  "name",
+  "productName",
+  "title",
+  "displayName",
+  "itemName",
+  "Name",
+  "ProductName",
+  "Title",
+  "DisplayName",
+  "ItemName",
+];
+const BRAND_KEYS = [
+  "brand",
+  "brandName",
+  "brand_title",
+  "programBrand",
+  "program",
+  "vendor",
+  "vendorName",
+  "Brand",
+  "BrandName",
+  "Brand_title",
+  "ProgramBrand",
+  "Program",
+  "Vendor",
+  "VendorName",
+];
+const COUNTRY_KEYS = [
+  "countryCode",
+  "country",
+  "countryIso",
+  "countryIsoCode",
+  "countryISO",
+  "region",
+  "CountryCode",
+  "Country",
+  "CountryIso",
+  "CountryIsoCode",
+  "CountryISO",
+  "Region",
+];
+const CURRENCY_KEYS = [
+  "currencyCode",
+  "currency",
+  "currencyIso",
+  "currencyISO",
+  "priceCurrency",
+  "CurrencyCode",
+  "Currency",
+  "CurrencyIso",
+  "CurrencyISO",
+  "PriceCurrency",
+];
+const MODIFIED_DATE_KEYS = [
+  "modifiedDate",
+  "lastModified",
+  "updatedAt",
+  "lastUpdate",
+  "lastUpdateDate",
+  "modifiedAt",
+  "updatedOn",
+  "lastModifiedDate",
+  "ModifiedDate",
+  "LastModified",
+  "UpdatedAt",
+  "LastUpdate",
+  "LastUpdateDate",
+  "ModifiedAt",
+  "UpdatedOn",
+  "LastModifiedDate",
+];
+
+function gatherContextValues(contexts, keys) {
+  const values = [];
+  if (!Array.isArray(contexts)) return values;
+  for (let i = contexts.length - 1; i >= 0; i--) {
+    const ctx = contexts[i];
+    if (!ctx || typeof ctx !== "object") continue;
+    for (const key of keys) {
+      if (Object.prototype.hasOwnProperty.call(ctx, key)) {
+        values.push(ctx[key]);
+      }
+    }
+  }
+  return values;
+}
+
+function buildProductRecord(node, contexts) {
+  if (!node || typeof node !== "object") return null;
+
+  for (const key of PRODUCT_CONTAINER_KEYS) {
+    const value = node[key];
+    if (Array.isArray(value) && value.some((entry) => entry && typeof entry === "object")) {
+      return null;
+    }
+  }
+
+  const idKey = pickString(
+    node.id,
+    node.productId,
+    node.productID,
+    node.ProductId,
+    node.sku,
+    node.code,
+    node.itemId,
+    node.itemID,
+    node.programProductId
+  );
+  const productId = pickNumber(
+    node.id,
+    node.productId,
+    node.productID,
+    node.ProductId,
+    node.sku,
+    node.code,
+    node.itemId,
+    node.itemID,
+    node.programProductId
+  );
+
+  const nameKey = pickString(...PRODUCT_NAME_KEYS.map((k) => node[k]));
+  const descriptionName = pickString(node.description, node.shortDescription, node.longDescription);
+
+  const brandName =
+    pickString(
+      ...BRAND_KEYS.map((k) => node[k]),
+      ...gatherContextValues(contexts, [...BRAND_KEYS, "name", "title"])
+    ) || null;
+
+  const countryCode =
+    pickString(...COUNTRY_KEYS.map((k) => node[k]), ...gatherContextValues(contexts, COUNTRY_KEYS)) || null;
+
+  const currencyCode =
+    pickString(
+      node.currencyCode,
+      node.currency,
+      node.currencyIso,
+      node.currencyISO,
+      node.priceCurrency,
+      node.price?.currencyCode,
+      node.price?.currency,
+      ...gatherContextValues(contexts, CURRENCY_KEYS)
+    ) || null;
+
+  const priceMinRaw = pickNumber(
+    node.price?.min,
+    node.priceMin,
+    node.minPrice,
+    node.lowestDenomination,
+    node.minDenomination,
+    node.minDenominationValue,
+    node.denominationMin,
+    node.denominationLow,
+    node.minimumAmount,
+    node.min
+  );
+
+  const priceMaxRaw = pickNumber(
+    node.price?.max,
+    node.priceMax,
+    node.maxPrice,
+    node.highestDenomination,
+    node.maxDenomination,
+    node.maxDenominationValue,
+    node.denominationMax,
+    node.denominationHigh,
+    node.maximumAmount,
+    node.max
+  );
+
+  const modifiedDate =
+    pickDate(
+      ...MODIFIED_DATE_KEYS.map((k) => node[k]),
+      ...gatherContextValues(contexts, MODIFIED_DATE_KEYS)
+    ) || null;
+
+  const primaryName = nameKey || descriptionName;
+  const resolvedName = primaryName || brandName || idKey || null;
+
+  if (!idKey && !primaryName) return null;
+  if (!idKey && !(currencyCode || priceMinRaw !== undefined || priceMaxRaw !== undefined)) {
+    return null;
+  }
+
+  return {
+    item: {
+      brand: brandName,
+      id: productId ?? null,
+      name: resolvedName || "Unnamed product",
+      countryCode,
+      currencyCode,
+      priceMin: priceMinRaw ?? null,
+      priceMax: priceMaxRaw ?? null,
+      modifiedDate,
+      raw: node,
+    },
+    identity: {
+      idKey,
+      brandName,
+      productName: primaryName || resolvedName || null,
+    },
+  };
+}
+
+function createDedupeKey(identity, fallbackIndex) {
+  if (identity?.idKey) return `${identity.idKey}#${identity.brandName || ""}`;
+  if (identity?.brandName && identity?.productName) {
+    return `${identity.brandName}#${identity.productName}`;
+  }
+  if (identity?.productName) return identity.productName;
+  return `raw#${fallbackIndex}`;
+}
+
+function extractPageItems(response) {
+  const items = [];
+  const dedupe = new Set();
+  const visited = new WeakSet();
+  let rawCount = 0;
+
+  const walk = (node, contexts) => {
+    if (!node) return;
+
+    if (Array.isArray(node)) {
+      if (visited.has(node)) return;
+      visited.add(node);
+      rawCount += node.length;
+      for (const entry of node) {
+        walk(entry, contexts);
+      }
+      return;
+    }
+
+    if (typeof node !== "object") return;
+    if (visited.has(node)) return;
+    visited.add(node);
+
+    const record = buildProductRecord(node, contexts);
+    if (record) {
+      const key = createDedupeKey(record.identity, items.length);
+      if (!dedupe.has(key)) {
+        dedupe.add(key);
+        items.push(record.item);
+      }
+    }
+
+    const nextContexts = Array.isArray(contexts) ? contexts.slice(-3) : [];
+    nextContexts.push(node);
+
+    for (const value of Object.values(node)) {
+      if (value && typeof value === "object") {
+        walk(value, nextContexts);
+      }
+    }
+  };
+
+  walk(response, []);
+
+  return { items, rawCount };
+}
+
 async function upsertBambooPage(filter, pageDoc) {
   const update = { $set: pageDoc };
   const baseOptions = { upsert: true, writeConcern: { w: 1 } };
-
-  if (BambooPage && typeof BambooPage.updateOne === "function") {
-    return BambooPage.updateOne(filter, update, baseOptions);
-  }
+  const projection = { _id: 1, pageIndex: 1, updatedAt: 1 };
 
   if (BambooPage && typeof BambooPage.findOneAndUpdate === "function") {
-    return BambooPage.findOneAndUpdate(filter, update, {
-      ...baseOptions,
-      returnDocument: "after",
-      setDefaultsOnInsert: true,
-    });
+    try {
+      const query = BambooPage.findOneAndUpdate(filter, update, {
+        ...baseOptions,
+        setDefaultsOnInsert: true,
+        returnDocument: "after",
+        new: true,
+        projection,
+      });
+      const leanQuery = typeof query.lean === "function" ? query.lean() : query;
+      const doc = await (typeof leanQuery.exec === "function" ? leanQuery.exec() : leanQuery);
+      if (doc) return doc?.toObject?.() || doc;
+    } catch (err) {
+      console.warn("[export] findOneAndUpdate(model) failed:", err?.message || err);
+    }
   }
 
-  const coll = getNativeCollection("bamboo_pages");
-  return coll.updateOne(filter, update, baseOptions);
+  if (BambooPage && typeof BambooPage.updateOne === "function") {
+    try {
+      await BambooPage.updateOne(filter, update, baseOptions);
+      if (typeof BambooPage.findOne === "function") {
+        const findQuery = BambooPage.findOne(filter, projection);
+        const leanFind = typeof findQuery.lean === "function" ? findQuery.lean() : findQuery;
+        const doc = await (typeof leanFind.exec === "function" ? leanFind.exec() : leanFind);
+        if (doc) return doc?.toObject?.() || doc;
+      }
+    } catch (err) {
+      console.warn("[export] updateOne(model) fallback failed:", err?.message || err);
+    }
+  }
+
+  try {
+    const coll = getNativeCollection("bamboo_pages");
+    const native = await coll.findOneAndUpdate(filter, update, {
+      ...baseOptions,
+      returnDocument: "after",
+      projection,
+    });
+    if (native?.value) return native.value;
+    return await coll.findOne(filter, { projection });
+  } catch (err) {
+    console.warn("[export] native upsert failed:", err?.message || err);
+    throw err;
+  }
 }
 
 bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
@@ -177,26 +514,19 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
         break;
       }
 
-      if (!resp || !Array.isArray(resp.items) || resp.items.length === 0) break;
+      const { items: pageItems, rawCount } = extractPageItems(resp);
 
-      const pageItems = [];
-      for (const brand of resp.items || []) {
-        for (const p of brand.products || []) {
-          pageItems.push({
-            brand: brand.name,
-            id: p.id,
-            name: p.name,
-            countryCode: p.countryCode,
-            currencyCode: p.currencyCode || p?.price?.currencyCode,
-            priceMin: p.price?.min,
-            priceMax: p.price?.max,
-            modifiedDate: p.modifiedDate ? new Date(p.modifiedDate) : null,
-            raw: p,
-          });
-        }
+      if (!Array.isArray(pageItems) || pageItems.length === 0) {
+        if (!rawCount) break;
+        console.warn("[export] no catalog items extracted", {
+          pageIndex,
+          rawCount,
+          keys: Object.keys(resp || {}),
+        });
+        continue;
       }
 
-      const items = Array.isArray(pageItems) ? pageItems : [];
+      const items = pageItems;
 
       const pageDoc = {
         key,
@@ -205,12 +535,7 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
         updatedAt: new Date(),
       };
 
-      await upsertBambooPage({ key, pageIndex }, pageDoc);
-
-      const saved = await BambooPage.findOne(
-        { key, pageIndex },
-        { _id: 1, pageIndex: 1, updatedAt: 1 }
-      ).lean();
+      const saved = await upsertBambooPage({ key, pageIndex }, pageDoc);
 
       pagesFetched++;
       totalItems += items.length;
@@ -232,16 +557,44 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
         pageItems: items.length,
         total: totalItems,
         key,
-        docId: saved?._id || null,
+        docId: saved?._id ? String(saved._id) : null,
       });
     }
 
-    const pagesDocs = await BambooPage.find({ key }, { items: 0 }).sort({ pageIndex: 1 }).lean();
+    let pagesDocs = [];
+    if (BambooPage && typeof BambooPage.find === "function") {
+      try {
+        const query = BambooPage.find({ key }, { items: 0 }).sort({ pageIndex: 1 });
+        const leanQuery = typeof query.lean === "function" ? query.lean() : query;
+        const docs = await (typeof leanQuery.exec === "function" ? leanQuery.exec() : leanQuery);
+        if (Array.isArray(docs)) pagesDocs = docs;
+      } catch (err) {
+        console.warn("[export] failed to load pages via model:", err?.message || err);
+      }
+    }
+    if (!Array.isArray(pagesDocs) || pagesDocs.length === 0) {
+      try {
+        const coll = getNativeCollection("bamboo_pages");
+        const docs = await coll
+          .find({ key }, { projection: { items: 0 } })
+          .sort({ pageIndex: 1 })
+          .toArray();
+        if (Array.isArray(docs)) pagesDocs = docs;
+      } catch (err) {
+        console.warn("[export] native page list failed:", err?.message || err);
+        pagesDocs = [];
+      }
+    }
 
     let savedItems = 0;
-    for (const p of pagesDocs) {
-      const full = await BambooPage.findOne({ key, pageIndex: p.pageIndex }, { items: 1 }).lean();
-      savedItems += Array.isArray(full?.items) ? full.items.length : 0;
+    try {
+      savedItems = await sumSavedItemsByKey(key);
+    } catch (err) {
+      console.warn("[export] sumSavedItemsByKey failed at finalize:", err?.message || err);
+      for (const p of pagesDocs) {
+        const full = await BambooPage.findOne({ key, pageIndex: p.pageIndex }, { items: 1 }).lean();
+        savedItems += Array.isArray(full?.items) ? full.items.length : 0;
+      }
     }
 
     return res.json({
