@@ -10,49 +10,7 @@ export const bambooExportRouter = Router();
 
 const RL_KEY = "bamboo:catalog";
 
-// Повертає загальну кількість айтемів у всіх сторінках для key
-export async function sumSavedItemsByKey(key) {
-  // A) Mongoose aggregate — якщо це справжня модель
-  if (BambooPage && typeof BambooPage.aggregate === "function") {
-    try {
-      const r = await BambooPage.aggregate([
-        { $match: { key } },
-        { $project: { count: { $size: "$items" } } },
-        { $group: { _id: null, total: { $sum: "$count" } } },
-      ]);
-      return r?.[0]?.total || 0;
-    } catch (e) {
-      console.warn("[export] aggregate(model) failed:", e?.message || e);
-    }
-  }
-
-  // B) Native aggregate через connection.db.collection(...)
-  try {
-    const coll = getNativeCollection("bamboo_pages");
-    const r = await coll
-      .aggregate([
-        { $match: { key } },
-        { $project: { count: { $size: "$items" } } },
-        { $group: { _id: null, total: { $sum: "$count" } } },
-      ])
-      .toArray();
-    return r?.[0]?.total || 0;
-  } catch (e) {
-    console.warn("[export] aggregate(native) failed:", e?.message || e);
-  }
-
-  // C) Клієнтське сумування як останній фолбек
-  try {
-    const pages = await BambooPage.find({ key }, { items: 1 }).lean();
-    let total = 0;
-    for (const p of pages) total += Array.isArray(p.items) ? p.items.length : 0;
-    return total;
-  } catch (e) {
-    console.warn("[export] client-sum failed:", e?.message || e);
-    return 0;
-  }
-}
-
+// ---------- helpers: picking ----------
 function pickString(...values) {
   for (const value of values) {
     if (typeof value === "string") {
@@ -65,7 +23,6 @@ function pickString(...values) {
   }
   return undefined;
 }
-
 function pickNumber(...values) {
   for (const value of values) {
     if (value === null || value === undefined) continue;
@@ -74,7 +31,6 @@ function pickNumber(...values) {
   }
   return undefined;
 }
-
 function pickDate(...values) {
   for (const value of values) {
     if (!value) continue;
@@ -89,25 +45,164 @@ function pickDate(...values) {
   return null;
 }
 
+// ---------- keys and mappers for flexible API payloads ----------
+const PRODUCT_CONTAINER_KEYS = [
+  "products", "Products",
+  "catalogItems", "CatalogItems",
+  "productList", "ProductList",
+];
+
+const PRODUCT_NAME_KEYS = [
+  "name", "productName", "title", "displayName", "itemName",
+  "Name", "ProductName", "Title", "DisplayName", "ItemName",
+];
+
+const BRAND_KEYS = [
+  "brand", "brandName", "brand_title", "programBrand", "program", "vendor", "vendorName",
+  "Brand", "BrandName", "Brand_title", "ProgramBrand", "Program", "Vendor", "VendorName",
+];
+
+const COUNTRY_KEYS = [
+  "countryCode", "country", "countryIso", "countryIsoCode", "countryISO", "region",
+  "CountryCode", "Country", "CountryIso", "CountryIsoCode", "CountryISO", "Region",
+];
+
+const CURRENCY_KEYS = [
+  "currencyCode", "currency", "currencyIso", "currencyISO", "priceCurrency",
+  "CurrencyCode", "Currency", "CurrencyIso", "CurrencyISO", "PriceCurrency",
+];
+
+const MODIFIED_DATE_KEYS = [
+  "modifiedDate", "lastModified", "updatedAt", "lastUpdate", "lastUpdateDate",
+  "modifiedAt", "updatedOn", "lastModifiedDate",
+  "ModifiedDate", "LastModified", "UpdatedAt", "LastUpdate", "LastUpdateDate",
+  "ModifiedAt", "UpdatedOn", "LastModifiedDate",
+];
+
+function gatherContextValues(contexts, keys) {
+  const values = [];
+  if (!Array.isArray(contexts)) return values;
+  for (let i = contexts.length - 1; i >= 0; i--) {
+    const ctx = contexts[i];
+    if (!ctx || typeof ctx !== "object") continue;
+    for (const key of keys) {
+      if (Object.prototype.hasOwnProperty.call(ctx, key)) {
+        values.push(ctx[key]);
+      }
+    }
+  }
+  return values;
+}
+
+function buildProductRecord(node, contexts) {
+  if (!node || typeof node !== "object") return null;
+
+  // якщо це "контейнер продуктів" — не трактуємо як одиночний продукт
+  for (const key of PRODUCT_CONTAINER_KEYS) {
+    const value = node[key];
+    if (Array.isArray(value) && value.some((entry) => entry && typeof entry === "object")) {
+      return null;
+    }
+  }
+
+  const idKey = pickString(
+    node.id, node.productId, node.productID, node.ProductId,
+    node.sku, node.code, node.itemId, node.itemID, node.programProductId
+  );
+  const productId = pickNumber(
+    node.id, node.productId, node.productID, node.ProductId,
+    node.sku, node.code, node.itemId, node.itemID, node.programProductId
+  );
+
+  const nameKey = pickString(...PRODUCT_NAME_KEYS.map((k) => node[k]));
+  const descriptionName = pickString(node.description, node.shortDescription, node.longDescription);
+
+  const brandName =
+    pickString(
+      ...BRAND_KEYS.map((k) => node[k]),
+      ...gatherContextValues(contexts, [...BRAND_KEYS, "name", "title"])
+    ) || null;
+
+  const countryCode =
+    pickString(...COUNTRY_KEYS.map((k) => node[k]), ...gatherContextValues(contexts, COUNTRY_KEYS)) || null;
+
+  const currencyCode =
+    pickString(
+      node.currencyCode, node.currency, node.currencyIso, node.currencyISO, node.priceCurrency,
+      node.price?.currencyCode, node.price?.currency,
+      ...gatherContextValues(contexts, CURRENCY_KEYS)
+    ) || null;
+
+  const priceMinRaw = pickNumber(
+    node.price?.min, node.priceMin, node.minPrice,
+    node.lowestDenomination, node.minDenomination, node.minDenominationValue,
+    node.denominationMin, node.denominationLow, node.minimumAmount, node.min
+  );
+
+  const priceMaxRaw = pickNumber(
+    node.price?.max, node.priceMax, node.maxPrice,
+    node.highestDenomination, node.maxDenomination, node.maxDenominationValue,
+    node.denominationMax, node.denominationHigh, node.maximumAmount, node.max
+  );
+
+  const modifiedDate =
+    pickDate(
+      ...MODIFIED_DATE_KEYS.map((k) => node[k]),
+      ...gatherContextValues(contexts, MODIFIED_DATE_KEYS)
+    ) || null;
+
+  const primaryName = nameKey || descriptionName;
+  const resolvedName = primaryName || brandName || idKey || null;
+
+  if (!idKey && !primaryName) return null;
+  if (!idKey && !(currencyCode || priceMinRaw !== undefined || priceMaxRaw !== undefined)) {
+    return null;
+  }
+
+  return {
+    item: {
+      brand: brandName,
+      id: productId ?? null,
+      name: resolvedName || "Unnamed product",
+      countryCode,
+      currencyCode,
+      priceMin: priceMinRaw ?? null,
+      priceMax: priceMaxRaw ?? null,
+      modifiedDate,
+      raw: node,
+    },
+    identity: {
+      idKey,
+      brandName,
+      productName: primaryName || resolvedName || null,
+    },
+  };
+}
+
+function createDedupeKey(identity, fallbackIndex) {
+  if (identity?.idKey) return `${identity.idKey}#${identity.brandName || ""}`;
+  if (identity?.brandName && identity?.productName) {
+    return `${identity.brandName}#${identity.productName}`;
+  }
+  if (identity?.productName) return identity.productName;
+  return `raw#${fallbackIndex}`;
+}
+
+// ---------- extraction: deep walk with contexts & dedupe ----------
 function extractPageItems(response) {
   const items = [];
   const dedupe = new Set();
   const visited = new WeakSet();
   let rawCount = 0;
 
-  const isObjectArray = (value) =>
-    Array.isArray(value) && value.some((entry) => entry && typeof entry === "object");
-
-  const walk = (node, ctx) => {
+  const walk = (node, contexts) => {
     if (!node) return;
 
     if (Array.isArray(node)) {
       if (visited.has(node)) return;
       visited.add(node);
       rawCount += node.length;
-      for (const entry of node) {
-        walk(entry, ctx);
-      }
+      for (const entry of node) walk(entry, contexts);
       return;
     }
 
@@ -115,204 +210,129 @@ function extractPageItems(response) {
     if (visited.has(node)) return;
     visited.add(node);
 
-    let forwarded = false;
-    for (const value of Object.values(node)) {
-      if (isObjectArray(value)) {
-        forwarded = true;
-        walk(value, node);
+    // спробувати зібрати продукт з поточного вузла
+    const record = buildProductRecord(node, contexts);
+    if (record) {
+      const key = createDedupeKey(record.identity, items.length);
+      if (!dedupe.has(key)) {
+        dedupe.add(key);
+        items.push(record.item);
       }
     }
 
-    if (forwarded) return;
+    // оновити контексти (беремо останні 3 рівні, + поточний)
+    const nextContexts = Array.isArray(contexts) ? contexts.slice(-3) : [];
+    nextContexts.push(node);
 
-    const product = node;
-
-    const idKey = pickString(
-      product.id,
-      product.productId,
-      product.productID,
-      product.ProductId,
-      product.sku,
-      product.code,
-      product.itemId,
-      product.itemID,
-      product.programProductId
-    );
-    const nameKey = pickString(product.name, product.productName, product.title, product.displayName, product.itemName);
-    const brandName =
-      pickString(
-        product.brand,
-        product.brandName,
-        product.brand_title,
-        product.programBrand,
-        product.program,
-        product.vendor,
-        product.vendorName,
-        ctx?.name,
-        ctx?.brand,
-        ctx?.brandName,
-        ctx?.brand_title,
-        ctx?.programBrand,
-        ctx?.program
-      ) || null;
-
-    let dedupeKey;
-    if (idKey) {
-      dedupeKey = `${idKey}#${brandName || ""}`;
-    } else if (brandName && nameKey) {
-      dedupeKey = `${brandName}#${nameKey}`;
-    } else if (nameKey) {
-      dedupeKey = nameKey;
-    } else {
-      dedupeKey = `raw#${items.length}`;
+    // далі заглянути в усі вкладені обʼєкти
+    for (const value of Object.values(node)) {
+      if (value && typeof value === "object") {
+        walk(value, nextContexts);
+      }
     }
-    if (dedupe.has(dedupeKey)) return;
-    dedupe.add(dedupeKey);
-
-    const productId = pickNumber(
-      product.id,
-      product.productId,
-      product.productID,
-      product.ProductId,
-      product.sku,
-      product.code,
-      product.itemId,
-      product.itemID,
-      product.programProductId
-    );
-
-    const productName =
-      nameKey ||
-      pickString(product.description, product.shortDescription) ||
-      brandName ||
-      idKey ||
-      null;
-
-    const countryCode =
-      pickString(
-        product.countryCode,
-        product.country,
-        product.countryIso,
-        product.countryIsoCode,
-        product.countryISO,
-        product.region,
-        ctx?.countryCode,
-        ctx?.country,
-        ctx?.countryIso,
-        ctx?.countryIsoCode,
-        ctx?.region
-      ) || null;
-
-    const currencyCode =
-      pickString(
-        product.currencyCode,
-        product.currency,
-        product.currencyIso,
-        product.currencyISO,
-        product.priceCurrency,
-        product.price?.currencyCode,
-        product.price?.currency,
-        ctx?.currencyCode,
-        ctx?.currency,
-        ctx?.currencyIso,
-        ctx?.currencyISO
-      ) || null;
-
-    const priceMin =
-      pickNumber(
-        product.price?.min,
-        product.priceMin,
-        product.minPrice,
-        product.lowestDenomination,
-        product.minDenomination,
-        product.minDenominationValue,
-        product.denominationMin,
-        product.denominationLow,
-        product.minimumAmount,
-        product.min
-      ) ?? null;
-
-    const priceMax =
-      pickNumber(
-        product.price?.max,
-        product.priceMax,
-        product.maxPrice,
-        product.highestDenomination,
-        product.maxDenomination,
-        product.maxDenominationValue,
-        product.denominationMax,
-        product.denominationHigh,
-        product.maximumAmount,
-        product.max
-      ) ?? null;
-
-    const modifiedDate =
-      pickDate(
-        product.modifiedDate,
-        product.lastModified,
-        product.updatedAt,
-        product.lastUpdate,
-        product.lastUpdateDate,
-        product.modifiedAt,
-        product.updatedOn,
-        product.lastModifiedDate
-      ) || null;
-
-    items.push({
-      brand: brandName,
-      id: productId ?? null,
-      name: productName || "Unnamed product",
-      countryCode,
-      currencyCode,
-      priceMin,
-      priceMax,
-      modifiedDate,
-      raw: product,
-    });
   };
 
-  walk(response, null);
-
+  walk(response, []);
   return { items, rawCount };
 }
 
+// ---------- sumSavedItemsByKey: model → native → client sum ----------
+export async function sumSavedItemsByKey(key) {
+  // A) через Mongoose aggregate
+  if (BambooPage && typeof BambooPage.aggregate === "function") {
+    try {
+      const r = await BambooPage.aggregate([
+        { $match: { key } },
+        { $project: { count: { $size: "$items" } } },
+        { $group: { _id: null, total: { $sum: "$count" } } },
+      ]);
+      return r?.[0]?.total || 0;
+    } catch (e) {
+      console.warn("[export] aggregate(model) failed:", e?.message || e);
+    }
+  }
+  // B) через native collection
+  try {
+    const coll = getNativeCollection("bamboo_pages");
+    const r = await coll
+      .aggregate([
+        { $match: { key } },
+        { $project: { count: { $size: "$items" } } },
+        { $group: { _id: null, total: { $sum: "$count" } } },
+      ])
+      .toArray();
+    return r?.[0]?.total || 0;
+  } catch (e) {
+    console.warn("[export] aggregate(native) failed:", e?.message || e);
+  }
+  // C) найпростіший фолбек
+  try {
+    const pages = await BambooPage.find({ key }, { items: 1 }).lean();
+    let total = 0;
+    for (const p of pages) total += Array.isArray(p.items) ? p.items.length : 0;
+    return total;
+  } catch (e) {
+    console.warn("[export] client-sum failed:", e?.message || e);
+    return 0;
+  }
+}
+
+// ---------- upsert helper: model (F1U→readback) → updateOne→findOne → native ----------
 async function upsertBambooPage(filter, pageDoc) {
   const update = { $set: pageDoc };
   const baseOptions = { upsert: true, writeConcern: { w: 1 } };
   const projection = { _id: 1, pageIndex: 1, updatedAt: 1 };
 
+  // 1) Спроба через справжню Mongoose-модель (findOneAndUpdate)
   if (BambooPage && typeof BambooPage.findOneAndUpdate === "function") {
-    const query = BambooPage.findOneAndUpdate(filter, update, {
+    try {
+      const query = BambooPage.findOneAndUpdate(filter, update, {
+        ...baseOptions,
+        setDefaultsOnInsert: true,
+        returnDocument: "after",
+        new: true,
+        projection,
+      });
+      const leanQuery = typeof query.lean === "function" ? query.lean() : query;
+      const doc = await (typeof leanQuery.exec === "function" ? leanQuery.exec() : leanQuery);
+      if (doc) return doc?.toObject?.() || doc;
+    } catch (err) {
+      console.warn("[export] findOneAndUpdate(model) failed:", err?.message || err);
+    }
+  }
+
+  // 2) Фолбек: updateOne + readback
+  if (BambooPage && typeof BambooPage.updateOne === "function") {
+    try {
+      await BambooPage.updateOne(filter, update, baseOptions);
+      if (typeof BambooPage.findOne === "function") {
+        const findQuery = BambooPage.findOne(filter, projection);
+        const leanFind = typeof findQuery.lean === "function" ? findQuery.lean() : findQuery;
+        const doc = await (typeof leanFind.exec === "function" ? leanFind.exec() : leanFind);
+        if (doc) return doc?.toObject?.() || doc;
+      }
+    } catch (err) {
+      console.warn("[export] updateOne(model) fallback failed:", err?.message || err);
+    }
+  }
+
+  // 3) Native фолбек
+  try {
+    const coll = getNativeCollection("bamboo_pages");
+    const native = await coll.findOneAndUpdate(filter, update, {
       ...baseOptions,
-      setDefaultsOnInsert: true,
       returnDocument: "after",
-      new: true,
       projection,
     });
-    if (typeof query.lean === "function") {
-      return await query.lean();
-    }
-    const doc = await query;
-    return doc?.toObject?.() || doc;
+    if (native?.value) return native.value;
+    return await coll.findOne(filter, { projection });
+  } catch (err) {
+    console.warn("[export] native upsert failed:", err?.message || err);
+    throw err;
   }
-
-  if (BambooPage && typeof BambooPage.updateOne === "function") {
-    await BambooPage.updateOne(filter, update, baseOptions);
-    if (typeof BambooPage.findOne === "function") {
-      return BambooPage.findOne(filter, projection).lean();
-    }
-  }
-
-  const coll = getNativeCollection("bamboo_pages");
-  const native = await coll.findOneAndUpdate(filter, update, {
-    ...baseOptions,
-    returnDocument: "after",
-    projection,
-  });
-  if (native?.value) return native.value;
-  return coll.findOne(filter, { projection });
 }
 
+// ---------- main route ----------
 bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
   try {
     const rawQuery = { ...req.query };
@@ -340,25 +360,26 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
       : Number.isFinite(defaultMaxPages)
         ? defaultMaxPages
         : 30;
+
     const resume = resumeParam == 1;
     const force = forceParam == 1;
 
+    // стабільний ключ (не включає PageIndex)
     const passthrough = {};
     for (const k of Object.keys(restQuery || {}).sort()) {
       const value = restQuery[k];
-      if (value !== undefined) {
-        passthrough[k] = value;
-      }
+      if (value !== undefined) passthrough[k] = value;
     }
-    // сформуй стабільний ключ (мінімум PageSize; НЕ включай pageIndex у key)
     const keyBase = Object.keys(passthrough).length ? { PageSize, ...passthrough } : { PageSize };
     const key = JSON.stringify(keyBase);
 
+    // rate limit guard
     const rl = await RateLimit.findOne({ key: RL_KEY }).lean();
     if (rl?.nextRetryAt && rl.nextRetryAt > new Date()) {
-      return res.status(429).json({ ok:false, rateLimited:true, nextRetryAt: rl.nextRetryAt });
+      return res.status(429).json({ ok: false, rateLimited: true, nextRetryAt: rl.nextRetryAt });
     }
 
+    // resume / force
     let dump = await BambooDump.findOne({ key }).lean();
     let startPage = 0;
     let pagesFetched = 0;
@@ -397,13 +418,13 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
           pagesFetched = dump?.pagesFetched || 0;
         }
       }
-
       if (!pagesFetched) pagesFetched = dump?.pagesFetched || 0;
       if (!totalItems) totalItems = dump?.total || 0;
     } else if (dump) {
       await BambooPage.deleteMany({ key }).catch(() => {});
     }
 
+    // fetching loop
     for (let i = 0; i < maxPages; i++) {
       const pageIndex = startPage + i;
       const resp = await fetchCatalogPageWithRetry({ ...passthrough, PageSize, PageIndex: pageIndex });
@@ -430,30 +451,27 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
       }
 
       const items = pageItems;
-
-      const pageDoc = {
-        key,
-        pageIndex,
-        items,
-        updatedAt: new Date(),
-      };
-
+      const pageDoc = { key, pageIndex, items, updatedAt: new Date() };
       const saved = await upsertBambooPage({ key, pageIndex }, pageDoc);
 
       pagesFetched++;
       totalItems += items.length;
 
-      const update = {
-        $set: {
-          query: { PageSize, maxPages, PageIndex: pageIndex, ...passthrough },
-          pagesFetched,
-          total: totalItems,
-          lastPage: pageIndex,
-          pageSize: PageSize,
-          updatedAt: new Date(),
+      await BambooDump.findOneAndUpdate(
+        { key },
+        {
+          $set: {
+            query: { PageSize, maxPages, PageIndex: pageIndex, ...passthrough },
+            pagesFetched,
+            total: totalItems,
+            lastPage: pageIndex,
+            pageSize: PageSize,
+            updatedAt: new Date(),
+          },
         },
-      };
-      await BambooDump.findOneAndUpdate({ key }, update, { upsert: true, new: true });
+        { upsert: true, new: true }
+      );
+
       console.log("[export] page persisted", {
         pageIndex,
         pagesFetched,
@@ -464,8 +482,33 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
       });
     }
 
-    const pagesDocs = await BambooPage.find({ key }, { items: 0 }).sort({ pageIndex: 1 }).lean();
+    // collect pages list (без items)
+    let pagesDocs = [];
+    if (BambooPage && typeof BambooPage.find === "function") {
+      try {
+        const query = BambooPage.find({ key }, { items: 0 }).sort({ pageIndex: 1 });
+        const leanQuery = typeof query.lean === "function" ? query.lean() : query;
+        const docs = await (typeof leanQuery.exec === "function" ? leanQuery.exec() : leanQuery);
+        if (Array.isArray(docs)) pagesDocs = docs;
+      } catch (err) {
+        console.warn("[export] failed to load pages via model:", err?.message || err);
+      }
+    }
+    if (!Array.isArray(pagesDocs) || pagesDocs.length === 0) {
+      try {
+        const coll = getNativeCollection("bamboo_pages");
+        const docs = await coll
+          .find({ key }, { projection: { items: 0 } })
+          .sort({ pageIndex: 1 })
+          .toArray();
+        if (Array.isArray(docs)) pagesDocs = docs;
+      } catch (err) {
+        console.warn("[export] native page list failed:", err?.message || err);
+        pagesDocs = [];
+      }
+    }
 
+    // savedItems total
     let savedItems = 0;
     try {
       savedItems = await sumSavedItemsByKey(key);
@@ -483,22 +526,15 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
       totalItems,
       lastPage: pagesDocs?.length ? pagesDocs.at(-1).pageIndex : null,
       rateLimit: null,
-      pages: pagesDocs.map(p => ({ pageIndex: p.pageIndex, updatedAt: p.updatedAt })),
+      pages: pagesDocs.map((p) => ({ pageIndex: p.pageIndex, updatedAt: p.updatedAt })),
       savedItems,
     });
   } catch (error) {
     console.error("[export] handler failed", error);
-    if (res.headersSent) {
-      return req.socket?.destroy?.();
-    }
+    if (res.headersSent) return req.socket?.destroy?.();
     const status = typeof error?.status === "number" ? error.status : 500;
-    const payload = {
-      ok: false,
-      error: error?.message || "Export failed",
-    };
-    if (error?.nextRetryAt) {
-      payload.nextRetryAt = error.nextRetryAt;
-    }
+    const payload = { ok: false, error: error?.message || "Export failed" };
+    if (error?.nextRetryAt) payload.nextRetryAt = error.nextRetryAt;
     return res.status(status).json(payload);
   }
 });
