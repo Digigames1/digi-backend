@@ -253,7 +253,7 @@ export async function sumSavedItemsByKey(key) {
   }
   // B) через native collection
   try {
-    const coll = getNativeCollection("bamboo_pages");
+    const coll = await getNativeCollection("bamboo_pages");
     const r = await coll
       .aggregate([
         { $match: { key } },
@@ -316,9 +316,9 @@ async function upsertBambooPage(filter, pageDoc) {
     }
   }
 
-  // 3) Native фолбек
+  // 3) Native фолбек — НЕ кидаємо помилку назовні
   try {
-    const coll = getNativeCollection("bamboo_pages");
+    const coll = await getNativeCollection("bamboo_pages");
     const native = await coll.findOneAndUpdate(filter, update, {
       ...baseOptions,
       returnDocument: "after",
@@ -328,7 +328,8 @@ async function upsertBambooPage(filter, pageDoc) {
     return await coll.findOne(filter, { projection });
   } catch (err) {
     console.warn("[export] native upsert failed:", err?.message || err);
-    throw err;
+    // повертаємо null — дасть можливість маршруту завершити відповідь без падіння
+    return null;
   }
 }
 
@@ -404,13 +405,13 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
         if (BambooPage && typeof BambooPage.countDocuments === "function") {
           pagesFetched = await BambooPage.countDocuments({ key });
         } else {
-          const coll = getNativeCollection("bamboo_pages");
+          const coll = await getNativeCollection("bamboo_pages");
           pagesFetched = await coll.countDocuments({ key });
         }
       } catch (e) {
         console.warn("[export] countDocuments fallback for resume:", e?.message || e);
         try {
-          const coll = getNativeCollection("bamboo_pages");
+          const coll = await getNativeCollection("bamboo_pages");
           const docs = await coll.find({ key }, { projection: { _id: 1 } }).toArray();
           pagesFetched = Array.isArray(docs) ? docs.length : 0;
         } catch (err) {
@@ -496,7 +497,7 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
     }
     if (!Array.isArray(pagesDocs) || pagesDocs.length === 0) {
       try {
-        const coll = getNativeCollection("bamboo_pages");
+        const coll = await getNativeCollection("bamboo_pages");
         const docs = await coll
           .find({ key }, { projection: { items: 0 } })
           .sort({ pageIndex: 1 })
