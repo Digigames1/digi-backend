@@ -1,5 +1,6 @@
 // src/db/mongoose.mjs
 import mongoose from "mongoose";
+export { default as mongoose } from "mongoose";
 
 let connectPromise = null;
 
