@@ -35,7 +35,32 @@ const PORT = process.env.PORT || 10000;
 
 // Старт з'єднання і роутів
 async function bootstrap() {
-  await connectMongo();
+  // ---- Mongo bootstrap with fallbacks ----
+  const mongoUri =
+    process.env.MONGODB_URI ||
+    process.env.DB_URL ||
+    process.env.MONGO_URL ||
+    "";
+
+  const mongoDbName =
+    process.env.MONGODB_DB_NAME ||
+    process.env.DB_NAME ||
+    undefined;
+
+  if (!mongoUri) {
+    throw new Error(
+      "Bootstrap failed: no Mongo URI found. Expected MONGODB_URI or DB_URL (or MONGO_URL)."
+    );
+  }
+
+  try {
+    const conn = await connectMongo(mongoUri, mongoDbName);
+    const name = conn?.name || mongoose?.connection?.name || "(unknown)";
+    console.log("Mongo connected:", name);
+  } catch (e) {
+    console.error("❌ Mongo connect failed at startup:", e?.message || e);
+    throw e;
+  }
 
   // Force-load models so they compile on the single mongoose instance
   await import("./src/models/BambooDump.mjs");
@@ -53,6 +78,7 @@ async function bootstrap() {
   }
 
   // Імпортуємо роутери
+  const { debugEnvRouter } = await import("./src/routes/debug-env.mjs");
   const { debugModelRouter } = await import("./src/routes/debug-model.mjs");
   const { default: debugRouter } = await import("./src/routes/debug.mjs");
   const { bambooExportRouter } = await import("./src/routes/bamboo-export.mjs");
@@ -61,6 +87,7 @@ async function bootstrap() {
   const { bambooPeekRouter } = await import("./src/routes/bamboo-peek.mjs");
   const { bambooStatusRouter } = await import("./src/routes/bamboo-status.mjs");
   const { curatedRouter } = await import("./src/routes/curated.mjs");
+  app.use("/api", debugEnvRouter);
   app.use("/api", debugModelRouter);
   app.use("/api", debugRouter);
   app.use("/api", bambooExportRouter);

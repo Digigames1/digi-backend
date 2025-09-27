@@ -5,12 +5,15 @@ export { default as mongoose } from "mongoose";
 let connectPromise = null;
 
 export async function connectMongo(uri, dbName) {
-  if (!uri) throw new Error("MONGODB_URI not set");
+  const finalUri = uri || process.env.MONGODB_URI || process.env.DB_URL || process.env.MONGO_URL;
+  if (!finalUri) {
+    throw new Error("MONGODB_URI/DB_URL not set");
+  }
   if (!connectPromise) {
     mongoose.set?.("strictQuery", true);
     connectPromise = mongoose
-      .connect(uri, {
-        dbName: dbName || process.env.MONGODB_DB_NAME || undefined,
+      .connect(finalUri, {
+        dbName: dbName || process.env.MONGODB_DB_NAME || process.env.DB_NAME || undefined,
         maxPoolSize: 10,
         serverSelectionTimeoutMS: 15000,
       })
