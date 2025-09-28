@@ -1,4 +1,3 @@
-// src/models/BambooPage.mjs
 import mongoose from "mongoose";
 
 const BambooPageSchema = new mongoose.Schema(
@@ -11,10 +10,8 @@ const BambooPageSchema = new mongoose.Schema(
   { collection: "bamboo_pages", strict: false, minimize: false }
 );
 
-// унікальність пари key+pageIndex для апсерта
+// Унікальність пари key+pageIndex для апсерта
 BambooPageSchema.index({ key: 1, pageIndex: 1 }, { unique: true });
 
 export const BambooPage =
   mongoose.models.BambooPage || mongoose.model("BambooPage", BambooPageSchema);
-
-export default BambooPage;

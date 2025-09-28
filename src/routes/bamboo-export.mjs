@@ -237,8 +237,8 @@ function extractPageItems(response) {
 
 // ---------- sumSavedItemsByKey (Mongoose-only) ----------
 export async function sumSavedItemsByKey(key) {
-  // A) Спроба через Mongoose aggregate
-  if (BambooPage && typeof BambooPage.aggregate === "function") {
+  // A) через aggregate
+  if (typeof BambooPage.aggregate === "function") {
     try {
       const r = await BambooPage.aggregate([
         { $match: { key } },
@@ -250,8 +250,7 @@ export async function sumSavedItemsByKey(key) {
       console.warn("[export] aggregate(model) failed:", e?.message || e);
     }
   }
-
-  // B) Фолбек — find + клієнтський підрахунок
+  // B) фолбек: find + підсумувати довжини
   try {
     const pages = await BambooPage.find({ key }, { items: 1 }).lean();
     let total = 0;
@@ -265,31 +264,40 @@ export async function sumSavedItemsByKey(key) {
 
 // ---------- upsert helper (Mongoose only) ----------
 async function upsertBambooPage(filter, pageDoc) {
-  const update = { $set: pageDoc };
-  const options = {
-    upsert: true,
-    setDefaultsOnInsert: true,
-    new: true, // <- для Mongoose повертаємо "після"
-  };
-
-  // головний шлях — F1U
+  // 1) Спроба №1 — F1U: одразу повертаємо документ "після"
   try {
-    const q = BambooPage.findOneAndUpdate(filter, update, options);
+    const q = BambooPage.findOneAndUpdate(
+      filter,
+      { $set: pageDoc },
+      { upsert: true, setDefaultsOnInsert: true, new: true }
+    );
     const doc = typeof q.lean === "function" ? await q.lean() : await q;
-    return doc?.toObject?.() || doc || null;
+    if (doc) return doc?.toObject?.() || doc;
   } catch (e) {
-    console.warn("[export] findOneAndUpdate failed, fallback to updateOne:", e?.message || e);
+    console.warn("[export] findOneAndUpdate failed:", e?.message || e);
   }
 
-  // фолбек — updateOne + readback
+  // 2) Спроба №2 — updateOne + readback
   try {
-    await BambooPage.updateOne(filter, update, { upsert: true });
+    await BambooPage.updateOne(filter, { $set: pageDoc }, { upsert: true });
     const r = await BambooPage.findOne(filter, { _id: 1, pageIndex: 1, updatedAt: 1 }).lean();
-    return r || null;
+    if (r) return r;
   } catch (e) {
-    console.warn("[export] updateOne + readback failed:", e?.message || e);
-    return null;
+    console.warn("[export] updateOne fallback failed:", e?.message || e);
   }
+
+  // 3) Спроба №3 — FINAL: створити документ вручну, якщо його досі немає
+  try {
+    const exists = await BambooPage.findOne(filter, { _id: 1 }).lean();
+    if (!exists) {
+      const created = await BambooPage.create({ ...filter, ...pageDoc });
+      return created?.toObject?.() || created || null;
+    }
+  } catch (e) {
+    console.warn("[export] create final fallback failed:", e?.message || e);
+  }
+
+  return null;
 }
 
 // ---------- main route ----------
@@ -449,8 +457,7 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
       const docs = typeof q.lean === "function" ? await q.lean() : await q;
       if (Array.isArray(docs)) pagesDocs = docs;
     } catch (err) {
-      console.warn("[export] failed to load pages via model:", err?.message || err);
-      pagesDocs = [];
+      console.warn("[export] load pages via model failed:", err?.message || err);
     }
 
     // savedItems total
