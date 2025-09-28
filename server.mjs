@@ -67,11 +67,19 @@ async function bootstrap() {
   await import("./src/models/BambooPage.mjs");
   await import("./src/models/CuratedCatalog.mjs");
 
-  const modelNames = mongoose.modelNames();
-  console.log("🧩 Models registered:", modelNames);
+  let BambooPageModel;
+  try {
+    const { BambooPage } = await import("./src/models/BambooPage.mjs");
+    const { BambooDump } = await import("./src/models/BambooDump.mjs");
+    await BambooPage.init(); // створює індекси
+    await BambooDump.init();
+    console.log("🧩 Models registered:", Object.keys(mongoose.models));
+    BambooPageModel = BambooPage;
+  } catch (e) {
+    console.warn("Model init warning:", e?.message || e);
+  }
 
-  const { BambooPage } = await import("./src/models/BambooPage.mjs");
-  if (!BambooPage?.modelName || typeof BambooPage.find !== "function") {
+  if (!BambooPageModel?.modelName || typeof BambooPageModel.find !== "function") {
     throw new Error(
       "[fatal] BambooPage is not a real Mongoose model (modelName is null or find missing)."
     );

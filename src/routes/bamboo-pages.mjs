@@ -3,28 +3,28 @@ import { BambooPage } from "../models/BambooPage.mjs";
 
 export const bambooPagesRouter = Router();
 
-bambooPagesRouter.get("/bamboo/pages", async (_req, res) => {
-  // знайдемо будь-який останній key, що є у колекції
-  const keys = await BambooPage.distinct("key").catch(() => []);
-  const key = keys?.[0] || null;
+// GET /api/bamboo/pages?key=<json-string>
+bambooPagesRouter.get("/bamboo/pages", async (req, res) => {
+  try {
+    const key = req.query.key
+      ? String(req.query.key)
+      : JSON.stringify({ PageSize: 50 });
 
-  if (!key) return res.json({ ok: true, key: null, pages: [], savedItems: 0 });
+    const pages = await BambooPage.find({ key })
+      .sort({ pageIndex: 1 })
+      .lean();
 
-  const pages = await BambooPage.find({ key }, { items: 0 })
-    .sort({ pageIndex: 1 })
-    .lean();
+    const summary = pages.map(p => ({
+      pageIndex: p.pageIndex,
+      count: Array.isArray(p.items) ? p.items.length : 0,
+      updatedAt: p.updatedAt,
+      _id: String(p._id),
+    }));
 
-  let savedItems = 0;
-  const withCounts = [];
-  for (const p of pages) {
-    const doc = await BambooPage.findOne(
-      { key, pageIndex: p.pageIndex },
-      { items: 1 }
-    ).lean();
-    const cnt = Array.isArray(doc?.items) ? doc.items.length : 0;
-    savedItems += cnt;
-    withCounts.push({ pageIndex: p.pageIndex, count: cnt, updatedAt: p.updatedAt });
+    const savedItems = summary.reduce((s, p) => s + p.count, 0);
+
+    res.json({ ok: true, key, pages: summary, savedItems });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e?.message || "pages failed" });
   }
-
-  return res.json({ ok: true, key, pages: withCounts, savedItems });
 });
