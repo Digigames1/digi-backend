@@ -1,6 +1,5 @@
 // src/routes/bamboo-export.mjs
 import { Router } from "express";
-import { getNativeCollection } from "../db/mongoose.mjs";
 import { RateLimit } from "../models/RateLimit.mjs";
 import { BambooDump } from "../models/BambooDump.mjs";
 import { BambooPage } from "../models/BambooPage.mjs";
@@ -236,9 +235,9 @@ function extractPageItems(response) {
   return { items, rawCount };
 }
 
-// ---------- sumSavedItemsByKey: model → native → client sum ----------
+// ---------- sumSavedItemsByKey (Mongoose-only) ----------
 export async function sumSavedItemsByKey(key) {
-  // A) через Mongoose aggregate
+  // A) Спроба через Mongoose aggregate
   if (BambooPage && typeof BambooPage.aggregate === "function") {
     try {
       const r = await BambooPage.aggregate([
@@ -251,21 +250,8 @@ export async function sumSavedItemsByKey(key) {
       console.warn("[export] aggregate(model) failed:", e?.message || e);
     }
   }
-  // B) через native collection
-  try {
-    const coll = await getNativeCollection("bamboo_pages");
-    const r = await coll
-      .aggregate([
-        { $match: { key } },
-        { $project: { count: { $size: "$items" } } },
-        { $group: { _id: null, total: { $sum: "$count" } } },
-      ])
-      .toArray();
-    return r?.[0]?.total || 0;
-  } catch (e) {
-    console.warn("[export] aggregate(native) failed:", e?.message || e);
-  }
-  // C) найпростіший фолбек
+
+  // B) Фолбек — find + клієнтський підрахунок
   try {
     const pages = await BambooPage.find({ key }, { items: 1 }).lean();
     let total = 0;
@@ -277,58 +263,31 @@ export async function sumSavedItemsByKey(key) {
   }
 }
 
-// ---------- upsert helper: model (F1U→readback) → updateOne→findOne → native ----------
+// ---------- upsert helper (Mongoose only) ----------
 async function upsertBambooPage(filter, pageDoc) {
   const update = { $set: pageDoc };
-  const baseOptions = { upsert: true, writeConcern: { w: 1 } };
-  const projection = { _id: 1, pageIndex: 1, updatedAt: 1 };
+  const options = {
+    upsert: true,
+    setDefaultsOnInsert: true,
+    new: true, // <- для Mongoose повертаємо "після"
+  };
 
-  // 1) Спроба через справжню Mongoose-модель (findOneAndUpdate)
-  if (BambooPage && typeof BambooPage.findOneAndUpdate === "function") {
-    try {
-      const query = BambooPage.findOneAndUpdate(filter, update, {
-        ...baseOptions,
-        setDefaultsOnInsert: true,
-        returnDocument: "after",
-        new: true,
-        projection,
-      });
-      const leanQuery = typeof query.lean === "function" ? query.lean() : query;
-      const doc = await (typeof leanQuery.exec === "function" ? leanQuery.exec() : leanQuery);
-      if (doc) return doc?.toObject?.() || doc;
-    } catch (err) {
-      console.warn("[export] findOneAndUpdate(model) failed:", err?.message || err);
-    }
-  }
-
-  // 2) Фолбек: updateOne + readback
-  if (BambooPage && typeof BambooPage.updateOne === "function") {
-    try {
-      await BambooPage.updateOne(filter, update, baseOptions);
-      if (typeof BambooPage.findOne === "function") {
-        const findQuery = BambooPage.findOne(filter, projection);
-        const leanFind = typeof findQuery.lean === "function" ? findQuery.lean() : findQuery;
-        const doc = await (typeof leanFind.exec === "function" ? leanFind.exec() : leanFind);
-        if (doc) return doc?.toObject?.() || doc;
-      }
-    } catch (err) {
-      console.warn("[export] updateOne(model) fallback failed:", err?.message || err);
-    }
-  }
-
-  // 3) Native фолбек — НЕ кидаємо помилку назовні
+  // головний шлях — F1U
   try {
-    const coll = await getNativeCollection("bamboo_pages");
-    const native = await coll.findOneAndUpdate(filter, update, {
-      ...baseOptions,
-      returnDocument: "after",
-      projection,
-    });
-    if (native?.value) return native.value;
-    return await coll.findOne(filter, { projection });
-  } catch (err) {
-    console.warn("[export] native upsert failed:", err?.message || err);
-    // повертаємо null — дасть можливість маршруту завершити відповідь без падіння
+    const q = BambooPage.findOneAndUpdate(filter, update, options);
+    const doc = typeof q.lean === "function" ? await q.lean() : await q;
+    return doc?.toObject?.() || doc || null;
+  } catch (e) {
+    console.warn("[export] findOneAndUpdate failed, fallback to updateOne:", e?.message || e);
+  }
+
+  // фолбек — updateOne + readback
+  try {
+    await BambooPage.updateOne(filter, update, { upsert: true });
+    const r = await BambooPage.findOne(filter, { _id: 1, pageIndex: 1, updatedAt: 1 }).lean();
+    return r || null;
+  } catch (e) {
+    console.warn("[export] updateOne + readback failed:", e?.message || e);
     return null;
   }
 }
@@ -405,14 +364,14 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
         if (BambooPage && typeof BambooPage.countDocuments === "function") {
           pagesFetched = await BambooPage.countDocuments({ key });
         } else {
-          const coll = await getNativeCollection("bamboo_pages");
-          pagesFetched = await coll.countDocuments({ key });
+          const docs = await BambooPage.find({ key }, { _id: 1 }).lean();
+          pagesFetched = Array.isArray(docs) ? docs.length : 0;
         }
       } catch (e) {
         console.warn("[export] countDocuments fallback for resume:", e?.message || e);
         try {
-          const coll = await getNativeCollection("bamboo_pages");
-          const docs = await coll.find({ key }, { projection: { _id: 1 } }).toArray();
+          const q = BambooPage.find({ key }, { _id: 1 });
+          const docs = typeof q.lean === "function" ? await q.lean() : await q;
           pagesFetched = Array.isArray(docs) ? docs.length : 0;
         } catch (err) {
           console.warn("[export] resume fallback using dump stats:", err?.message || err);
@@ -485,28 +444,13 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
 
     // collect pages list (без items)
     let pagesDocs = [];
-    if (BambooPage && typeof BambooPage.find === "function") {
-      try {
-        const query = BambooPage.find({ key }, { items: 0 }).sort({ pageIndex: 1 });
-        const leanQuery = typeof query.lean === "function" ? query.lean() : query;
-        const docs = await (typeof leanQuery.exec === "function" ? leanQuery.exec() : leanQuery);
-        if (Array.isArray(docs)) pagesDocs = docs;
-      } catch (err) {
-        console.warn("[export] failed to load pages via model:", err?.message || err);
-      }
-    }
-    if (!Array.isArray(pagesDocs) || pagesDocs.length === 0) {
-      try {
-        const coll = await getNativeCollection("bamboo_pages");
-        const docs = await coll
-          .find({ key }, { projection: { items: 0 } })
-          .sort({ pageIndex: 1 })
-          .toArray();
-        if (Array.isArray(docs)) pagesDocs = docs;
-      } catch (err) {
-        console.warn("[export] native page list failed:", err?.message || err);
-        pagesDocs = [];
-      }
+    try {
+      const q = BambooPage.find({ key }, { items: 0 }).sort({ pageIndex: 1 });
+      const docs = typeof q.lean === "function" ? await q.lean() : await q;
+      if (Array.isArray(docs)) pagesDocs = docs;
+    } catch (err) {
+      console.warn("[export] failed to load pages via model:", err?.message || err);
+      pagesDocs = [];
     }
 
     // savedItems total
