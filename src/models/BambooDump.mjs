@@ -1,26 +1,21 @@
-import { mongoose } from "../db/mongoose.mjs";
+import mongoose from "mongoose";
 
-const Schema = new mongoose.Schema(
+const BambooDumpSchema = new mongoose.Schema(
   {
-    key: { type: String, required: true, index: true },
-    query: {},
-    pagesFetched: Number,
-    total: Number,
-    lastPage: Number,
-    pageSize: Number,
+    key: { type: String, required: true, unique: true, index: true },
+    query: { type: Object, default: {} },
+    pagesFetched: { type: Number, default: 0 },
+    total: { type: Number, default: 0 },
+    lastPage: { type: Number, default: null },
+    pageSize: { type: Number, default: 100 },
     updatedAt: { type: Date, default: Date.now, index: true },
   },
-  { collection: "bamboo_dump" }
+  {
+    collection: "bamboo_dump",
+    strict: false,
+    minimize: false,
+  }
 );
 
-Schema.index({ key: 1 }, { unique: true });
-
-const _Model =
-  (mongoose.models?.BambooDump) || mongoose.model("BambooDump", Schema);
-
-export const BambooDump = _Model;
-export default _Model;
-
-console.log("[model] BambooDump registered (has deleteOne)", {
-  hasDeleteOne: typeof BambooDump?.deleteOne === "function",
-});
+export const BambooDump =
+  mongoose.models.BambooDump || mongoose.model("BambooDump", BambooDumpSchema);
