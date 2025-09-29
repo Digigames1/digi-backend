@@ -237,34 +237,21 @@ function extractPageItems(response) {
 
 // ---------- sumSavedItemsByKey (Mongoose-only) ----------
 export async function sumSavedItemsByKey(key) {
-  // A) через aggregate
-  if (typeof BambooPage.aggregate === "function") {
-    try {
-      const r = await BambooPage.aggregate([
-        { $match: { key } },
-        { $project: { count: { $size: "$items" } } },
-        { $group: { _id: null, total: { $sum: "$count" } } },
-      ]);
-      return r?.[0]?.total || 0;
-    } catch (e) {
-      console.warn("[export] aggregate(model) failed:", e?.message || e);
-    }
-  }
-  // B) фолбек: find + підсумувати довжини
   try {
+    const r = await BambooPage.aggregate([
+      { $match: { key } },
+      { $project: { count: { $size: "$items" } } },
+      { $group: { _id: null, total: { $sum: "$count" } } },
+    ]);
+    return r?.[0]?.total || 0;
+  } catch {
     const pages = await BambooPage.find({ key }, { items: 1 }).lean();
-    let total = 0;
-    for (const p of pages) total += Array.isArray(p.items) ? p.items.length : 0;
-    return total;
-  } catch (e) {
-    console.warn("[export] client-sum failed:", e?.message || e);
-    return 0;
+    return pages.reduce((s, p) => s + (Array.isArray(p.items) ? p.items.length : 0), 0);
   }
 }
 
 // ---------- upsert helper (Mongoose only) ----------
 async function upsertBambooPage(filter, pageDoc) {
-  // 1) Спроба №1 — F1U: одразу повертаємо документ "після"
   try {
     const q = BambooPage.findOneAndUpdate(
       filter,
@@ -273,29 +260,21 @@ async function upsertBambooPage(filter, pageDoc) {
     );
     const doc = typeof q.lean === "function" ? await q.lean() : await q;
     if (doc) return doc?.toObject?.() || doc;
-  } catch (e) {
-    console.warn("[export] findOneAndUpdate failed:", e?.message || e);
-  }
+  } catch {}
 
-  // 2) Спроба №2 — updateOne + readback
   try {
     await BambooPage.updateOne(filter, { $set: pageDoc }, { upsert: true });
     const r = await BambooPage.findOne(filter, { _id: 1, pageIndex: 1, updatedAt: 1 }).lean();
     if (r) return r;
-  } catch (e) {
-    console.warn("[export] updateOne fallback failed:", e?.message || e);
-  }
+  } catch {}
 
-  // 3) Спроба №3 — FINAL: створити документ вручну, якщо його досі немає
   try {
     const exists = await BambooPage.findOne(filter, { _id: 1 }).lean();
     if (!exists) {
       const created = await BambooPage.create({ ...filter, ...pageDoc });
       return created?.toObject?.() || created || null;
     }
-  } catch (e) {
-    console.warn("[export] create final fallback failed:", e?.message || e);
-  }
+  } catch {}
 
   return null;
 }
@@ -456,21 +435,11 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
       const q = BambooPage.find({ key }, { items: 0 }).sort({ pageIndex: 1 });
       const docs = typeof q.lean === "function" ? await q.lean() : await q;
       if (Array.isArray(docs)) pagesDocs = docs;
-    } catch (err) {
-      console.warn("[export] load pages via model failed:", err?.message || err);
-    }
+    } catch {}
 
     // savedItems total
     let savedItems = 0;
-    try {
-      savedItems = await sumSavedItemsByKey(key);
-    } catch (err) {
-      console.warn("[export] sumSavedItemsByKey failed at finalize:", err?.message || err);
-      for (const p of pagesDocs) {
-        const full = await BambooPage.findOne({ key, pageIndex: p.pageIndex }, { items: 1 }).lean();
-        savedItems += Array.isArray(full?.items) ? full.items.length : 0;
-      }
-    }
+    try { savedItems = await sumSavedItemsByKey(key); } catch {}
 
     return res.json({
       ok: true,

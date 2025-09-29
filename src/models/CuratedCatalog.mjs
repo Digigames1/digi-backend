@@ -1,22 +1,14 @@
-import { mongoose } from "../db/mongoose.mjs";
+import mongoose from "mongoose";
 
-const Schema = new mongoose.Schema(
+const CuratedSchema = new mongoose.Schema(
   {
-    key: { type: String, required: true, index: true },
-    payload: {},
+    key: { type: String, required: true, unique: true, index: true },
+    groups: { type: Array, default: [] },
     updatedAt: { type: Date, default: Date.now, index: true },
   },
-  { collection: "curated_catalog" }
+  { collection: "curated_catalog", strict: false, minimize: false }
 );
 
-Schema.index({ key: 1 }, { unique: true });
+export const CuratedCatalog =
+  mongoose.models.CuratedCatalog || mongoose.model("CuratedCatalog", CuratedSchema);
 
-const _Model =
-  (mongoose.models?.CuratedCatalog) || mongoose.model("CuratedCatalog", Schema);
-
-export const CuratedCatalog = _Model;
-export default _Model;
-
-console.log("[model] CuratedCatalog registered (has findOne)", {
-  hasFindOne: typeof CuratedCatalog?.findOne === "function",
-});
