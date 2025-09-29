@@ -67,28 +67,12 @@ async function bootstrap() {
   const { BambooPage } = await import("./src/models/BambooPage.mjs");
   const { CuratedCatalog } = await import("./src/models/CuratedCatalog.mjs");
 
-  // Хелпер перевірки «це реальна модель?»
-  const isModel = (m) =>
-    m && typeof m === "function" && m.modelName && typeof m.find === "function";
-
-  // Ініціалізуємо індекси де підтримується
+  // best-effort indexes (не падаємо, якщо щось)
   for (const m of [BambooDump, BambooPage, CuratedCatalog]) {
-    if (isModel(m) && typeof m.init === "function") {
-      try { await m.init(); } catch (e) { console.warn(`[model:init] ${m.modelName}:`, e?.message || e); }
-    }
+    if (m?.init) { try { await m.init(); } catch {} }
   }
 
-  const registered = Object.keys(mongooseDefault.models || {});
-  console.log("🧩 Models registered:", registered);
-
-  // Якщо якась модель все ще «не справжня» — лише попереджаємо, але не падаємо сервером
-  for (const [name, m] of Object.entries({ BambooDump, BambooPage, CuratedCatalog })) {
-    if (!isModel(m)) {
-      console.warn(`[model] ${name} is not a real Mongoose model — check export/import`);
-    } else {
-      console.log(`[model] ${name} OK (modelName=${m.modelName})`);
-    }
-  }
+  console.log("🧩 Models registered:", Object.keys(mongooseDefault.models || {}));
 
   // Імпортуємо роутери
   const { debugEnvRouter } = await import("./src/routes/debug-env.mjs");
