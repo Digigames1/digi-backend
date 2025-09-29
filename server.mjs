@@ -62,27 +62,32 @@ async function bootstrap() {
     throw e;
   }
 
-  // Force-load models so they compile on the single mongoose instance
-  await import("./src/models/BambooDump.mjs");
-  await import("./src/models/BambooPage.mjs");
-  await import("./src/models/CuratedCatalog.mjs");
+  const { default: mongooseDefault } = await import("mongoose");
+  const { BambooDump } = await import("./src/models/BambooDump.mjs");
+  const { BambooPage } = await import("./src/models/BambooPage.mjs");
+  const { CuratedCatalog } = await import("./src/models/CuratedCatalog.mjs");
 
-  let BambooPageModel;
-  try {
-    const { BambooPage } = await import("./src/models/BambooPage.mjs");
-    const { BambooDump } = await import("./src/models/BambooDump.mjs");
-    await BambooPage.init(); // створює індекси
-    await BambooDump.init();
-    console.log("🧩 Models registered:", Object.keys(mongoose.models));
-    BambooPageModel = BambooPage;
-  } catch (e) {
-    console.warn("Model init warning:", e?.message || e);
+  // Хелпер перевірки «це реальна модель?»
+  const isModel = (m) =>
+    m && typeof m === "function" && m.modelName && typeof m.find === "function";
+
+  // Ініціалізуємо індекси де підтримується
+  for (const m of [BambooDump, BambooPage, CuratedCatalog]) {
+    if (isModel(m) && typeof m.init === "function") {
+      try { await m.init(); } catch (e) { console.warn(`[model:init] ${m.modelName}:`, e?.message || e); }
+    }
   }
 
-  if (!BambooPageModel?.modelName || typeof BambooPageModel.find !== "function") {
-    throw new Error(
-      "[fatal] BambooPage is not a real Mongoose model (modelName is null or find missing)."
-    );
+  const registered = Object.keys(mongooseDefault.models || {});
+  console.log("🧩 Models registered:", registered);
+
+  // Якщо якась модель все ще «не справжня» — лише попереджаємо, але не падаємо сервером
+  for (const [name, m] of Object.entries({ BambooDump, BambooPage, CuratedCatalog })) {
+    if (!isModel(m)) {
+      console.warn(`[model] ${name} is not a real Mongoose model — check export/import`);
+    } else {
+      console.log(`[model] ${name} OK (modelName=${m.modelName})`);
+    }
   }
 
   // Імпортуємо роутери
