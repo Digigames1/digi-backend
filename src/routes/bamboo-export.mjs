@@ -252,6 +252,7 @@ export async function sumSavedItemsByKey(key) {
 
 // ---------- upsert helper (Mongoose only) ----------
 async function upsertBambooPage(filter, pageDoc) {
+  // 1) findOneAndUpdate → повернути документ «після»
   try {
     const q = BambooPage.findOneAndUpdate(
       filter,
@@ -260,21 +261,29 @@ async function upsertBambooPage(filter, pageDoc) {
     );
     const doc = typeof q.lean === "function" ? await q.lean() : await q;
     if (doc) return doc?.toObject?.() || doc;
-  } catch {}
+  } catch (e) {
+    console.warn("[export] F1U failed:", e?.message || e);
+  }
 
+  // 2) updateOne + readback
   try {
     await BambooPage.updateOne(filter, { $set: pageDoc }, { upsert: true });
     const r = await BambooPage.findOne(filter, { _id: 1, pageIndex: 1, updatedAt: 1 }).lean();
     if (r) return r;
-  } catch {}
+  } catch (e) {
+    console.warn("[export] updateOne fallback failed:", e?.message || e);
+  }
 
+  // 3) FINAL — create, якщо досі порожньо
   try {
     const exists = await BambooPage.findOne(filter, { _id: 1 }).lean();
     if (!exists) {
       const created = await BambooPage.create({ ...filter, ...pageDoc });
       return created?.toObject?.() || created || null;
     }
-  } catch {}
+  } catch (e) {
+    console.warn("[export] create final fallback failed:", e?.message || e);
+  }
 
   return null;
 }
@@ -404,20 +413,46 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
       pagesFetched++;
       totalItems += items.length;
 
-      await BambooDump.findOneAndUpdate(
-        { key },
-        {
-          $set: {
-            query: { PageSize, maxPages, PageIndex: pageIndex, ...passthrough },
-            pagesFetched,
-            total: totalItems,
-            lastPage: pageIndex,
-            pageSize: PageSize,
-            updatedAt: new Date(),
-          },
+      const dumpUpdate = {
+        $set: {
+          query: { PageSize, maxPages, PageIndex: pageIndex, ...passthrough },
+          pagesFetched,
+          total: totalItems,
+          lastPage: pageIndex,
+          pageSize: PageSize,
+          updatedAt: new Date(),
         },
-        { upsert: true, new: true }
-      );
+      };
+
+      let dumpDoc = null;
+      try {
+        const dumpQ = BambooDump.findOneAndUpdate(
+          { key },
+          dumpUpdate,
+          { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
+        dumpDoc = typeof dumpQ.lean === "function" ? await dumpQ.lean() : await dumpQ;
+      } catch (e) {
+        console.warn("[export] BambooDump upsert failed:", e?.message || e);
+        // Фінальний фолбек — create, якщо немає
+        try {
+          const exists = await BambooDump.findOne({ key }, { _id: 1 }).lean();
+          if (!exists) {
+            dumpDoc = await BambooDump.create({
+              key,
+              query: { PageSize, maxPages, PageIndex: pageIndex, ...passthrough },
+              pagesFetched,
+              total: totalItems,
+              lastPage: pageIndex,
+              pageSize: PageSize,
+              updatedAt: new Date(),
+            });
+            dumpDoc = dumpDoc?.toObject?.() || dumpDoc || null;
+          }
+        } catch (err) {
+          console.warn("[export] BambooDump create fallback failed:", err?.message || err);
+        }
+      }
 
       console.log("[export] page persisted", {
         pageIndex,
@@ -426,6 +461,7 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
         total: totalItems,
         key,
         docId: saved?._id ? String(saved._id) : null,
+        dumpId: dumpDoc?._id ? String(dumpDoc._id) : null,
       });
     }
 
@@ -435,11 +471,21 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
       const q = BambooPage.find({ key }, { items: 0 }).sort({ pageIndex: 1 });
       const docs = typeof q.lean === "function" ? await q.lean() : await q;
       if (Array.isArray(docs)) pagesDocs = docs;
-    } catch {}
+    } catch (err) {
+      console.warn("[export] page list via model failed:", err?.message || err);
+    }
 
     // savedItems total
     let savedItems = 0;
-    try { savedItems = await sumSavedItemsByKey(key); } catch {}
+    try {
+      savedItems = await sumSavedItemsByKey(key);
+    } catch (err) {
+      console.warn("[export] sumSavedItemsByKey failed:", err?.message || err);
+      for (const p of pagesDocs) {
+        const full = await BambooPage.findOne({ key, pageIndex: p.pageIndex }, { items: 1 }).lean();
+        savedItems += Array.isArray(full?.items) ? full.items.length : 0;
+      }
+    }
 
     return res.json({
       ok: true,
