@@ -1,4 +1,5 @@
 // src/routes/bamboo-export.mjs
+import mongoose from "mongoose";
 import { Router } from "express";
 import { RateLimit } from "../models/RateLimit.mjs";
 import { BambooDump } from "../models/BambooDump.mjs";
@@ -250,9 +251,15 @@ export async function sumSavedItemsByKey(key) {
   }
 }
 
+async function nativeCollection(name) {
+  const conn = mongoose.connection;
+  if (!conn?.db) throw new Error("Mongo connection DB is not ready");
+  return conn.db.collection(name);
+}
+
 // ---------- upsert helper (Mongoose only) ----------
 async function upsertBambooPage(filter, pageDoc) {
-  // 1) findOneAndUpdate → повернути документ «після»
+  // 1) F1U as operator-update
   try {
     const q = BambooPage.findOneAndUpdate(
       filter,
@@ -260,29 +267,32 @@ async function upsertBambooPage(filter, pageDoc) {
       { upsert: true, setDefaultsOnInsert: true, new: true }
     );
     const doc = typeof q.lean === "function" ? await q.lean() : await q;
-    if (doc) return doc?.toObject?.() || doc;
+    if (doc?._id) return doc;
   } catch (e) {
     console.warn("[export] F1U failed:", e?.message || e);
   }
 
   // 2) updateOne + readback
   try {
-    await BambooPage.updateOne(filter, { $set: pageDoc }, { upsert: true });
-    const r = await BambooPage.findOne(filter, { _id: 1, pageIndex: 1, updatedAt: 1 }).lean();
-    if (r) return r;
+    if (typeof BambooPage.updateOne === "function") {
+      await BambooPage.updateOne(filter, { $set: pageDoc }, { upsert: true });
+      const r = await BambooPage.findOne(filter, { _id: 1, pageIndex: 1, updatedAt: 1 }).lean();
+      if (r?._id) return r;
+    }
   } catch (e) {
     console.warn("[export] updateOne fallback failed:", e?.message || e);
   }
 
-  // 3) FINAL — create, якщо досі порожньо
+  // 3) NATIVE fallback
   try {
-    const exists = await BambooPage.findOne(filter, { _id: 1 }).lean();
-    if (!exists) {
-      const created = await BambooPage.create({ ...filter, ...pageDoc });
-      return created?.toObject?.() || created || null;
+    const coll = await nativeCollection("bamboo_pages");
+    const r = await coll.updateOne(filter, { $set: pageDoc }, { upsert: true });
+    if (r?.upsertedId || r?.matchedCount === 1 || r?.modifiedCount === 1) {
+      const doc = await coll.findOne(filter, { projection: { _id: 1, pageIndex: 1, updatedAt: 1 } });
+      if (doc?._id) return doc;
     }
   } catch (e) {
-    console.warn("[export] create final fallback failed:", e?.message || e);
+    console.warn("[export] native updateOne failed:", e?.message || e);
   }
 
   return null;
@@ -413,44 +423,72 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
       pagesFetched++;
       totalItems += items.length;
 
-      const dumpUpdate = {
-        $set: {
-          query: { PageSize, maxPages, PageIndex: pageIndex, ...passthrough },
-          pagesFetched,
-          total: totalItems,
-          lastPage: pageIndex,
-          pageSize: PageSize,
-          updatedAt: new Date(),
-        },
-      };
-
       let dumpDoc = null;
+      // F1U
       try {
         const dumpQ = BambooDump.findOneAndUpdate(
           { key },
-          dumpUpdate,
-          { upsert: true, new: true, setDefaultsOnInsert: true }
-        );
-        dumpDoc = typeof dumpQ.lean === "function" ? await dumpQ.lean() : await dumpQ;
-      } catch (e) {
-        console.warn("[export] BambooDump upsert failed:", e?.message || e);
-        // Фінальний фолбек — create, якщо немає
-        try {
-          const exists = await BambooDump.findOne({ key }, { _id: 1 }).lean();
-          if (!exists) {
-            dumpDoc = await BambooDump.create({
-              key,
+          {
+            $set: {
               query: { PageSize, maxPages, PageIndex: pageIndex, ...passthrough },
               pagesFetched,
               total: totalItems,
               lastPage: pageIndex,
               pageSize: PageSize,
               updatedAt: new Date(),
-            });
-            dumpDoc = dumpDoc?.toObject?.() || dumpDoc || null;
+            },
+          },
+          { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
+        dumpDoc = typeof dumpQ.lean === "function" ? await dumpQ.lean() : await dumpQ;
+      } catch (e) {
+        console.warn("[export] BambooDump F1U failed:", e?.message || e);
+      }
+      // updateOne
+      if (!dumpDoc?._id) {
+        try {
+          if (typeof BambooDump.updateOne === "function") {
+            await BambooDump.updateOne(
+              { key },
+              {
+                $set: {
+                  query: { PageSize, maxPages, PageIndex: pageIndex, ...passthrough },
+                  pagesFetched,
+                  total: totalItems,
+                  lastPage: pageIndex,
+                  pageSize: PageSize,
+                  updatedAt: new Date(),
+                },
+              },
+              { upsert: true }
+            );
+            dumpDoc = await BambooDump.findOne({ key }, { _id: 1 }).lean();
           }
-        } catch (err) {
-          console.warn("[export] BambooDump create fallback failed:", err?.message || err);
+        } catch (e) {
+          console.warn("[export] BambooDump updateOne failed:", e?.message || e);
+        }
+      }
+      // NATIVE
+      if (!dumpDoc?._id) {
+        try {
+          const coll = await nativeCollection("bamboo_dump");
+          await coll.updateOne(
+            { key },
+            {
+              $set: {
+                query: { PageSize, maxPages, PageIndex: pageIndex, ...passthrough },
+                pagesFetched,
+                total: totalItems,
+                lastPage: pageIndex,
+                pageSize: PageSize,
+                updatedAt: new Date(),
+              },
+            },
+            { upsert: true }
+          );
+          dumpDoc = await coll.findOne({ key }, { projection: { _id: 1 } });
+        } catch (e) {
+          console.warn("[export] BambooDump native updateOne failed:", e?.message || e);
         }
       }
 
