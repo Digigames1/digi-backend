@@ -23,10 +23,6 @@ function sanitizeForSet(obj) {
   return out;
 }
 
-function mongoReady() {
-  return mongoose.connection?.readyState === 1;
-}
-
 // ---------- helpers: picking ----------
 function pickString(...values) {
   for (const value of values) {
@@ -278,7 +274,7 @@ async function upsertBambooPage(filter, pageDoc) {
 
 // ---------- main route ----------
 bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
-  if (!mongoReady()) {
+  if (mongoose.connection?.readyState !== 1) {
     return res.status(503).json({ ok: false, error: "Mongo not connected yet" });
   }
   try {
