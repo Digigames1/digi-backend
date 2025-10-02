@@ -35,21 +35,49 @@ export function isMongoReady() {
  */
 export function getNativeDb() {
   const conn = mongoose.connection;
-  // 1 = connected
+
   if (!conn || conn.readyState !== 1) {
     throw new Error(`Mongo connection not connected (state=${conn?.readyState ?? "n/a"})`);
   }
+
   if (conn.db) return conn.db;
 
-  // Ініціалізуємо db, якщо відсутній (Atlas/driver 6 інколи не виставляє його автоматично)
-  const client = conn.getClient?.();
-  const name = conn.name || process.env.MONGODB_DB_NAME || "test";
+  const client =
+    (typeof conn.getClient === "function" ? conn.getClient() : null) ||
+    conn.client ||
+    (mongoose.connections && mongoose.connections[0] && mongoose.connections[0].client) ||
+    null;
+
+  const name =
+    conn.name ||
+    process.env.MONGODB_DB_NAME ||
+    (() => {
+      try {
+        const raw = process.env.MONGODB_URI || process.env.DB_URL || "";
+        if (!raw) return null;
+        const u = new URL(raw);
+        const path = (u.pathname || "").replace(/^\/+/, "");
+        return path || null;
+      } catch {
+        return null;
+      }
+    })() ||
+    "test";
+
   if (client && typeof client.db === "function") {
     const db = client.db(name);
-    // збережемо, щоб наступні виклики були швидкі
     conn.db = db;
     return db;
   }
+
+  const maybeDb =
+    (mongoose.connections && mongoose.connections[0] && mongoose.connections[0].db) ||
+    null;
+  if (maybeDb) {
+    conn.db = maybeDb;
+    return maybeDb;
+  }
+
   throw new Error("Mongo client db handle is not available");
 }
 
