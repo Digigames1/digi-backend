@@ -4,6 +4,10 @@ export { default as mongoose } from "mongoose";
 
 let connectPromise = null;
 
+/**
+ * ПОВИННО бути викликано на старті (у вас вже є connectMongo).
+ * Тут змін не робимо, лише залишаємо як є.
+ */
 export async function connectMongo(uri, dbName) {
   const finalUri = uri || process.env.MONGODB_URI || process.env.DB_URL || process.env.MONGO_URL;
   if (!finalUri) {
@@ -31,7 +35,8 @@ export function isMongoReady() {
 }
 
 /**
- * Повертає native Db-інстанс, ініціалізуючи його за потреби.
+ * Надійно повертає native DB handle і кешує його в connection.db,
+ * навіть якщо драйвер/версія Mongoose не виставили його автоматично.
  */
 export function getNativeDb() {
   const conn = mongoose.connection;
