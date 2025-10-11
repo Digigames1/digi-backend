@@ -266,7 +266,7 @@ export async function sumSavedItemsByKey(key) {
 
 // ---------- upsert helper (native only) ----------
 async function upsertBambooPage(filter, pageDoc) {
-  const coll = getNativeCollection("bamboo_pages");
+  const coll = await getNativeCollection("bamboo_pages");
   const safeDoc = sanitizeForSet(pageDoc);
   await coll.updateOne(filter, { $set: safeDoc }, { upsert: true });
   return await coll.findOne(filter, { projection: { _id: 1, pageIndex: 1, updatedAt: 1 } });
@@ -410,7 +410,7 @@ bambooExportRouter.get("/bamboo/export.json", async (req, res) => {
         updatedAt: new Date(),
       };
       try {
-        const collDump = getNativeCollection("bamboo_dump");
+        const collDump = await getNativeCollection("bamboo_dump");
         await collDump.updateOne(
           { key },
           { $set: sanitizeForSet(dumpSet) },
