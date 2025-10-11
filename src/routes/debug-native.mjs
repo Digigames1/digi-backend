@@ -1,14 +1,14 @@
 // src/routes/debug-native.mjs
 import { Router } from "express";
 import mongoose from "mongoose";
-import { getNativeDb } from "../db/mongoose.mjs";
+import { getNativeDbAsync } from "../db/mongoose.mjs";
 
 export const debugNativeRouter = Router();
 
-debugNativeRouter.get("/debug/native", (req, res) => {
+debugNativeRouter.get("/debug/native", async (req, res) => {
   const conn = mongoose.connection;
   try {
-    const db = getNativeDb();
+    const db = await getNativeDbAsync();
     return res.json({
       ok: true,
       readyState: conn?.readyState ?? null,

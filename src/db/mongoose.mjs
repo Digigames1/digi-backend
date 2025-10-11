@@ -3,6 +3,8 @@ import mongoose from "mongoose";
 export { default as mongoose } from "mongoose";
 
 let connectPromise = null;
+let nativeDb = null;
+let nativeDbInitPromise = null;
 
 /**
  * ПОВИННО бути викликано на старті (у вас вже є connectMongo).
@@ -34,27 +36,9 @@ export function isMongoReady() {
   return mongoose?.connection?.readyState === 1;
 }
 
-/**
- * Надійно повертає native DB handle і кешує його в connection.db,
- * навіть якщо драйвер/версія Mongoose не виставили його автоматично.
- */
-export function getNativeDb() {
-  const conn = mongoose.connection;
-
-  if (!conn || conn.readyState !== 1) {
-    throw new Error(`Mongo connection not connected (state=${conn?.readyState ?? "n/a"})`);
-  }
-
-  if (conn.db) return conn.db;
-
-  const client =
-    (typeof conn.getClient === "function" ? conn.getClient() : null) ||
-    conn.client ||
-    (mongoose.connections && mongoose.connections[0] && mongoose.connections[0].client) ||
-    null;
-
-  const name =
-    conn.name ||
+function resolveDbName(conn) {
+  return (
+    conn?.name ||
     process.env.MONGODB_DB_NAME ||
     (() => {
       try {
@@ -67,27 +51,69 @@ export function getNativeDb() {
         return null;
       }
     })() ||
-    "test";
-
-  if (client && typeof client.db === "function") {
-    const db = client.db(name);
-    conn.db = db;
-    return db;
-  }
-
-  const maybeDb =
-    (mongoose.connections && mongoose.connections[0] && mongoose.connections[0].db) ||
-    null;
-  if (maybeDb) {
-    conn.db = maybeDb;
-    return maybeDb;
-  }
-
-  throw new Error("Mongo client db handle is not available");
+    "test"
+  );
 }
 
-export function getNativeCollection(name) {
-  const db = getNativeDb();
+/**
+ * Асинхронно отримуємо native DB. Кешуємо в module scope.
+ */
+export async function getNativeDbAsync() {
+  if (nativeDb) return nativeDb;
+
+  const conn = mongoose.connection;
+  if (!conn || conn.readyState !== 1) {
+    if (typeof mongoose.connection?.asPromise === "function") {
+      await mongoose.connection.asPromise();
+    } else if (connectPromise) {
+      await connectPromise;
+    } else {
+      throw new Error(`Mongo connection not connected (state=${conn?.readyState ?? "n/a"})`);
+    }
+  }
+
+  if (nativeDbInitPromise) return nativeDbInitPromise;
+
+  nativeDbInitPromise = (async () => {
+    const c = mongoose.connection;
+
+    if (c.db) {
+      nativeDb = c.db;
+      nativeDbInitPromise = null;
+      return nativeDb;
+    }
+
+    const client =
+      (typeof c.getClient === "function" ? c.getClient() : null) ||
+      c.client ||
+      (mongoose.connections?.[0]?.client ?? null);
+
+    const name = resolveDbName(c);
+
+    if (client && typeof client.db === "function") {
+      nativeDb = client.db(name);
+      c.db = nativeDb;
+      nativeDbInitPromise = null;
+      return nativeDb;
+    }
+
+    const maybeDb = mongoose.connections?.[0]?.db ?? null;
+    if (maybeDb) {
+      nativeDb = maybeDb;
+      c.db = nativeDb;
+      nativeDbInitPromise = null;
+      return nativeDb;
+    }
+
+    nativeDbInitPromise = null;
+    throw new Error("Mongo client db handle is not available");
+  })();
+
+  return nativeDbInitPromise;
+}
+
+export async function getNativeCollection(name) {
+  const db = await getNativeDbAsync();
   return db.collection(name);
 }
 
